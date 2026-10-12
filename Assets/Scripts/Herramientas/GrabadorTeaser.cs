@@ -17,6 +17,7 @@ using UnityEngine.Rendering.Universal;
 ///  - "cinematica": 6 s en cuatro planos con corte seco: primer plano de Nilo, detalle de la
 ///    batería, Maia y una grúa que sube desde el agua y descubre el nivel. Sin HUD, con
 ///    profundidad de campo y bandas de cine.
+///  - "nivel": el Nivel 1 completo, de la introducción al menú final, con el recuerdo opcional.
 ///  - "jugabilidad": 5 s del Nivel 1 con la cámara y el HUD del juego. Un piloto automático pulsa
 ///    teclas simuladas: Nilo recoge la batería, la coloca en la base y cruza el puente.
 ///
@@ -30,12 +31,16 @@ public sealed class GrabadorTeaser : MonoBehaviour
     string modo;
     public static string Estado = "";
 
-    public static string Iniciar(string modo, string ruta)
+    float velocidad = 1f;
+
+    /// <summary>'velocidad' acelera el clip: con 1,2, cada segundo de video muestra 1,2 s de juego.</summary>
+    public static string Iniciar(string modo, string ruta, float velocidad = 1f)
     {
         GameObject go = new GameObject("Grabador teaser");
         GrabadorTeaser g = go.AddComponent<GrabadorTeaser>();
         g.modo = modo;
         g.ruta = ruta;
+        g.velocidad = velocidad;
         Estado = "iniciando " + modo;
         return ruta;
     }
@@ -74,9 +79,18 @@ public sealed class GrabadorTeaser : MonoBehaviour
         Time.captureFramerate = Fps;
     }
 
+    float acumulado;
+
     IEnumerator Grabar()
     {
         yield return new WaitForEndOfFrame();
+
+        // Acelerar sin tocar la simulación: se descartan fotogramas en vez de agrandar el paso de
+        // tiempo (con pasos grandes Nilo se pasa de las esquinas).
+        acumulado += 1f / velocidad;
+        if (acumulado < 1f) yield break;
+        acumulado -= 1f;
+
         RenderTexture previa = RenderTexture.active;
         RenderTexture.active = lienzo;
         fotograma.ReadPixels(new Rect(0, 0, Ancho, Alto), 0, 0, false);
@@ -281,20 +295,75 @@ public sealed class GrabadorTeaser : MonoBehaviour
 
     // ------------------------------------------------------------------ jugabilidad
 
+    /// <summary>Un tramo del piloto: caminar hasta 'destino' y, si hay 'mirar', girarse hacia ahí y pulsar E.</summary>
+    struct Paso
+    {
+        public Vector3 destino;
+        public float parada;
+        public Vector3? mirar;
+    }
+
+    static Paso Ir(Vector3 destino) { return new Paso { destino = destino, parada = 0.35f }; }
+    static Paso Usar(Vector3 desde, Vector3 objeto) { return new Paso { destino = desde, parada = 0.3f, mirar = objeto }; }
+
     IEnumerator Jugabilidad()
     {
-        CerrarDialogo();
+        LevelLayout m = LevelLayouts.Obtener(1);
+        Vector3 bateria = FindFirstObjectByType<BatteryController>().transform.position;
+        var pasos = new List<Paso>();
+        bool completo = modo == "nivel";
+
+        if (completo)
+        {
+            // Solución completa del Nivel 1, con el recuerdo opcional.
+            pasos.Add(Usar(m.CentroTile(1, 4), bateria));                       // recoger la batería
+            pasos.Add(Usar(m.CentroTile(2, 5), m.CentroTile(2, 4)));            // insertarla en A
+            pasos.Add(Ir(m.CentroTile(3, 4)));
+            pasos.Add(Ir(m.CentroTile(10, 4)));                                 // cruzar el puente
+            pasos.Add(Ir(m.CentroTile(11, 4)));
+            pasos.Add(Usar(m.CentroTile(11, 5), m.CentroTile(10, 5)));          // palanca
+            pasos.Add(Ir(m.CentroTile(10, 5)));
+            pasos.Add(Ir(m.CentroTile(10, 6)));
+            pasos.Add(Ir(m.CentroTile(3, 6)));                                  // pasarela de vuelta
+            pasos.Add(Ir(m.CentroTile(3, 8)));
+            pasos.Add(Usar(m.CentroTile(1, 8), m.CentroTile(1, 9)));            // recuerdo
+            pasos.Add(Ir(m.CentroTile(1, 5)));
+            pasos.Add(Usar(m.CentroTile(2, 5), m.CentroTile(2, 4)));            // recuperar la batería
+            pasos.Add(Ir(m.CentroTile(1, 5)));
+            pasos.Add(Ir(m.CentroTile(1, 8)));
+            pasos.Add(Ir(m.CentroTile(3, 8)));
+            pasos.Add(Ir(m.CentroTile(3, 6)));
+            pasos.Add(Ir(m.CentroTile(10, 6)));
+            pasos.Add(Ir(m.CentroTile(10, 5)));
+            pasos.Add(Ir(m.CentroTile(11, 4)));
+            pasos.Add(Usar(m.CentroTile(11, 3), m.CentroTile(12, 3)));          // salida
+        }
+        else
+        {
+            pasos.Add(Usar(m.CentroTile(0, 4), bateria));
+            pasos.Add(Usar(m.CentroTile(2, 5), m.CentroTile(2, 4)));
+            pasos.Add(Ir(m.CentroTile(4, 4)));
+            pasos.Add(Ir(m.CentroTile(9, 4)));
+        }
+
+        // El clip completo deja ver el diálogo de entrada; el corto lo cierra antes de grabar.
+        if (!completo) CerrarDialogo();
+
         var ajustes = InputSystem.settings;
         var previo = ajustes.editorInputBehaviorInPlayMode;
         ajustes.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+        // Sin foco, el Input System desactiva el teclado y descarta las teclas simuladas.
+        var fondoPrevio = ajustes.backgroundBehavior;
+        ajustes.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+        if (Keyboard.current != null && !Keyboard.current.enabled) InputSystem.EnableDevice(Keyboard.current);
         yield return null;
 
-        LevelLayout mapa = LevelLayouts.Obtener(1);
         PlayerController nilo = RelevoGame.Jugador;
         Camera principal = Camera.main;
+        UIManager ui = FindFirstObjectByType<UIManager>();
 
         // El HUD pasa a dibujarse con la cámara del juego para que entre en la textura.
-        Canvas hud = FindFirstObjectByType<UIManager>().GetComponentInChildren<Canvas>();
+        Canvas hud = ui.GetComponentInChildren<Canvas>();
         RenderMode modoPrevio = hud.renderMode;
         hud.renderMode = RenderMode.ScreenSpaceCamera;
         hud.worldCamera = principal;
@@ -303,58 +372,70 @@ public sealed class GrabadorTeaser : MonoBehaviour
         Abrir(false);
         principal.targetTexture = lienzo;
 
-        // Ruta: batería (Y), base A, y por el puente hacia el este.
-        var pasos = new List<KeyValuePair<Vector3, bool>>
-        {
-            new KeyValuePair<Vector3, bool>(mapa.CentroTile(1, 3), true),
-            new KeyValuePair<Vector3, bool>(mapa.CentroTile(2, 4), true),
-            new KeyValuePair<Vector3, bool>(mapa.CentroTile(4, 4), false),
-            new KeyValuePair<Vector3, bool>(mapa.CentroTile(9, 4), false),
-        };
-
-        int total = Fps * 5;
+        int maximo = completo ? Fps * 40 : Fps * 5;
         int paso = 0;
-        int esperar = 12;      // un respiro inicial
-        int pulsarE = -1;
+        int esperar = completo ? 0 : 12;
+        int pulsando = -1;
+        int enDialogo = 0;
+        int trasCompletar = -1;
 
-        for (int f = 0; f < total; f++)
+        for (int f = 0; f < maximo; f++)
         {
-            Estado = "jugabilidad " + f + "/" + total;
+            Estado = modo + " " + f + " paso " + paso + "/" + pasos.Count;
             Keyboard teclado = Keyboard.current;
             var teclas = new List<Key>();
 
             DialogoUI d = FindFirstObjectByType<DialogoUI>();
-            if (d != null && d.Abierto) d.Cerrar();
+            bool hayDialogo = d != null && d.Abierto;
 
-            if (pulsarE >= 0)
+            if (hayDialogo)
             {
-                if (pulsarE < 3) teclas.Add(Key.E);
-                pulsarE++;
-                if (pulsarE > 10) { pulsarE = -1; paso++; }
+                // Se deja leer un momento y se cierra con E, como lo haría un jugador.
+                enDialogo++;
+                if (!completo) d.Cerrar();
+                else if ((enDialogo >= 30 && enDialogo < 33) || (enDialogo >= 46 && enDialogo < 49)) teclas.Add(Key.E);
+                else if (enDialogo > 75) { d.Avanzar(); enDialogo = 40; }   // respaldo si la pulsación no llegó
             }
-            else if (esperar > 0) esperar--;
-            else if (paso < pasos.Count)
+            else
             {
-                Vector3 objetivo = pasos[paso].Key;
-                bool interactuar = pasos[paso].Value;
-                Vector3 delta = objetivo - nilo.transform.position;
-                delta.y = 0f;
-                float parar = interactuar ? 1.05f : 0.4f;
-                if (delta.magnitude < parar)
+                enDialogo = 0;
+
+                if (pulsando >= 0)
                 {
-                    if (interactuar) pulsarE = 0; else paso++;
+                    // Girarse hacia el objeto unos fotogramas y pulsar E.
+                    Vector3 hacia = pasos[paso].mirar.Value - nilo.transform.position;
+                    hacia.y = 0f;
+                    if (hacia.sqrMagnitude > 0.01f)
+                        nilo.transform.rotation = Quaternion.Slerp(nilo.transform.rotation, Quaternion.LookRotation(hacia), 0.35f);
+                    if (pulsando >= 6 && pulsando < 9) teclas.Add(Key.E);
+                    pulsando++;
+                    if (pulsando > 16) { pulsando = -1; paso++; }
                 }
-                else
+                else if (esperar > 0) esperar--;
+                else if (paso < pasos.Count)
                 {
-                    Vector3 adelante = Plano(principal.transform.forward);
-                    Vector3 derecha = Plano(principal.transform.right);
-                    Vector2 local = new Vector2(Vector3.Dot(delta, derecha), Vector3.Dot(delta, adelante)).normalized;
-                    if (local.x > 0.38f) teclas.Add(Key.D);
-                    if (local.x < -0.38f) teclas.Add(Key.A);
-                    if (local.y > 0.38f) teclas.Add(Key.W);
-                    if (local.y < -0.38f) teclas.Add(Key.S);
+                    Vector3 delta = pasos[paso].destino - nilo.transform.position;
+                    delta.y = 0f;
+                    if (delta.magnitude < pasos[paso].parada)
+                    {
+                        if (pasos[paso].mirar.HasValue) pulsando = 0; else paso++;
+                    }
+                    else
+                    {
+                        Vector3 adelante = Plano(principal.transform.forward);
+                        Vector3 derecha = Plano(principal.transform.right);
+                        Vector2 local = new Vector2(Vector3.Dot(delta, derecha), Vector3.Dot(delta, adelante)).normalized;
+                        if (local.x > 0.38f) teclas.Add(Key.D);
+                        if (local.x < -0.38f) teclas.Add(Key.A);
+                        if (local.y > 0.38f) teclas.Add(Key.W);
+                        if (local.y < -0.38f) teclas.Add(Key.S);
+                    }
                 }
             }
+
+            // Al completar el nivel se graba un momento del menú final y se corta.
+            if (trasCompletar < 0 && paso >= pasos.Count && ui.BloqueaJuego) trasCompletar = 0;
+            if (trasCompletar >= 0 && ++trasCompletar > Fps * 2) break;
 
             if (teclado != null) InputSystem.QueueStateEvent(teclado, new KeyboardState(teclas.ToArray()));
             yield return Grabar();
@@ -365,6 +446,7 @@ public sealed class GrabadorTeaser : MonoBehaviour
         principal.targetTexture = null;
         hud.renderMode = modoPrevio;
         ajustes.editorInputBehaviorInPlayMode = previo;
+        ajustes.backgroundBehavior = fondoPrevio;
         Cerrar();
     }
 }
