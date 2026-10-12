@@ -52,8 +52,78 @@ public static class DioramaVestido
             }
         }
 
+        Malecon(Hijo("Vestido malecon", detalles), kit, limites);
         Fondo(fondo, kit, limites);
         Particulas(fondo, kit, layout, limites);
+    }
+
+    // ------------------------------------------------------------------ malecón
+
+    // Cara superior del zócalo (DioramaBuilder): centro -1,7, alto 1,6, y 1,5 de margen por lado.
+    const float CimaZocalo = -0.9f;
+    const float AnchoMalecon = 1.5f;
+
+    /// <summary>
+    /// El margen del zócalo alrededor del recinto se viste de malecón: adoquinado por dentro, una
+    /// albardilla de sillares sueltos en el canto que da al mar y postes de amarre cada pocos
+    /// metros. Sustituye a la franja lisa color arena, que leía como cartón y no como piedra.
+    /// </summary>
+    static void Malecon(Transform padre, KitRelevo kit, Bounds limites)
+    {
+        Vector3 c = limites.center;
+        float medioX = limites.size.x * 0.5f + AnchoMalecon;
+        float medioZ = limites.size.z * 0.5f + AnchoMalecon;
+        float mitad = AnchoMalecon * 0.5f;
+
+        // Cada lado: centro de la franja, eje a lo largo y hacia fuera. Los lados norte y sur
+        // cubren también las esquinas; este y oeste van entre ellos.
+        TramoMalecon(padre, kit, new Vector3(c.x, 0f, c.z + medioZ - mitad), Vector3.right, Vector3.forward, medioX * 2f, 0);
+        TramoMalecon(padre, kit, new Vector3(c.x, 0f, c.z - medioZ + mitad), Vector3.right, Vector3.back, medioX * 2f, 1);
+        TramoMalecon(padre, kit, new Vector3(c.x + medioX - mitad, 0f, c.z), Vector3.forward, Vector3.right, (medioZ - AnchoMalecon) * 2f, 2);
+        TramoMalecon(padre, kit, new Vector3(c.x - medioX + mitad, 0f, c.z), Vector3.forward, Vector3.left, (medioZ - AnchoMalecon) * 2f, 3);
+    }
+
+    static void TramoMalecon(Transform padre, KitRelevo kit, Vector3 centro, Vector3 eje, Vector3 fuera, float largo, int lado)
+    {
+        // Adoquinado: losas de RockPath escaladas al ancho de la franja (las del recinto miden 2).
+        int losas = Mathf.Max(1, Mathf.RoundToInt(largo / AnchoMalecon));
+        float paso = largo / losas;
+        float escalaLosa = 0.485f * AnchoMalecon;
+        for (int i = 0; i < losas; i++)
+        {
+            GameObject losa = KitRelevo.Elegir(kit.losasDePiedra, Ruido(i, lado, 71));
+            if (losa == null) break;
+            Vector3 p = centro + eje * (-largo * 0.5f + (i + 0.5f) * paso);
+            float giro = (Ruido(i, lado, 72) > 0.5f ? 180f : 0f) + (lado >= 2 ? 90f : 0f);
+            KitRelevo.Colocar(losa, padre, new Vector3(p.x, CimaZocalo - 0.085f * AnchoMalecon * 0.5f, p.z), giro, escalaLosa, false);
+        }
+
+        // Albardilla: sillares de 0,7 con junta, alternando dos tonos y con alturas que varían un
+        // poco, para que el borde se lea tallado a mano.
+        Material claro = kit.piedraMuro;
+        Material oscuro = kit.piedraJunta;
+        int sillares = Mathf.Max(1, Mathf.RoundToInt(largo / 0.72f));
+        float largoSillar = largo / sillares;
+        Vector3 linea = centro + fuera * (AnchoMalecon * 0.5f - 0.17f);
+        for (int i = 0; i < sillares; i++)
+        {
+            float alto = 0.16f + Ruido(i, lado, 73) * 0.05f;
+            Vector3 p = linea + eje * (-largo * 0.5f + (i + 0.5f) * largoSillar);
+            Vector3 tam = eje.x != 0f
+                ? new Vector3(largoSillar - 0.05f, alto, 0.34f)
+                : new Vector3(0.34f, alto, largoSillar - 0.05f);
+            DioramaBuilder.CrearCaja("Sillar", padre, new Vector3(p.x, CimaZocalo + alto * 0.5f - 0.02f, p.z), tam,
+                Ruido(i, lado, 74) > 0.72f ? oscuro : claro, false);
+        }
+
+        // Pilotes de madera de amarre, pegados a la cara exterior del zócalo.
+        if (kit.pilarMadera == null) return;
+        int postes = Mathf.Max(1, Mathf.FloorToInt(largo / 5.5f));
+        for (int i = 0; i < postes; i++)
+        {
+            Vector3 p = centro + eje * (-largo * 0.5f + (i + 0.5f) * largo / postes) + fuera * (AnchoMalecon * 0.5f + 0.18f);
+            KitRelevo.Colocar(kit.pilarMadera, padre, new Vector3(p.x, -1.5f, p.z), Ruido(i, lado, 75) * 360f, 0.55f, false);
+        }
     }
 
     // ------------------------------------------------------------------ partículas ambientales

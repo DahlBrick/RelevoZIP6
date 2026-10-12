@@ -577,6 +577,10 @@ public static class DioramaBuilder
         float separacion = 1.7f;
         float desplazamiento = bordeX + separacion + anchoMuelle * 0.5f;
 
+        // Con kit, el fondo es solo mar con barcas (DioramaVestido): las plataformas lisas de los
+        // muelles vecinos desentonaban con el resto de la maqueta.
+        if (kit != null) return;
+
         MuelleLejano(padre, centro.x - desplazamiento, centro.z, anchoMuelle, 1f, kit);
         MuelleLejano(padre, centro.x + desplazamiento, centro.z, anchoMuelle, -1f, kit);
 

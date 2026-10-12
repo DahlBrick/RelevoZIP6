@@ -200,7 +200,6 @@ proyecto).
 - **Maia, la base de energía, la palanca, la salida y el recuerdo** siguen hechos con
   primitivas. Junto al arte nuevo desentonan (se nota en el primer plano). Los packs no traen
   equivalentes de estas piezas, así que hay que diseñarlas: es el siguiente paso.
-- Los muelles vecinos del fondo siguen siendo cajas lisas.
 - Replicar todo en el Nivel 2, el Nivel 3 y el Cuaderno.
 
 ---
@@ -310,7 +309,39 @@ salir): todo funciona, sin errores en la consola, y la escena sigue con sus 74 c
 
 ### Pendiente
 
-- Los muelles vecinos del fondo siguen siendo cajas lisas.
 - Llevar el arte, las piezas y el HUD al Nivel 2, el Nivel 3 y el Cuaderno (el HUD nuevo ya
   aplica a todos los niveles porque se construye por código). El Cuaderno ya toma las fuentes y los paneles nuevos; su leyenda aún usa las teclas en cápsula.
 
+
+---
+
+## Entrada 9 — Malecón de piedra y fin de los muelles vecinos
+
+**Pedido:** los bordes del muelle se veían muy básicos y las franjas cafés de los lados
+desentonaban con el juego.
+
+**Antes:** el margen del zócalo alrededor del recinto era una franja lisa color arena, y a los
+lados había dos "muelles vecinos" hechos con cajas de madera lisa (las franjas cafés).
+
+![Antes](img/15_antes_bordes_y_muelles_vecinos.jpg)
+
+**Cambios:**
+
+- Se quitaron los muelles vecinos cuando el kit visual está activo. El fondo queda como mar
+  abierto con las barcas, las boyas y las gaviotas.
+- El margen del zócalo ahora es un malecón:
+  - Está adoquinado con las mismas losas de RockPath del recinto, escaladas al ancho de la franja.
+  - En el canto que da al mar lleva una albardilla de sillares sueltos de unos 0,7 m, con junta,
+    dos tonos de piedra y alturas un poco distintas, para que se lea tallado a mano.
+  - En la cara exterior hay pilotes de madera de amarre cada 5,5 m aproximadamente.
+- Todo es decoración sin colisionadores: la escena sigue con 74, como antes.
+
+![Después](img/16_malecon_de_piedra.jpg)
+
+**Problema en el camino:** el modelo "poste" del kit resultó ser un mástil con travesaños, y
+plantado alrededor del malecón parecía una cerca de cruces. Se cambió por el pilar de madera de
+Fantasy Town.
+
+**Archivos:** `Assets/Scripts/Level/DioramaVestido.cs` (función `Malecon`),
+`Assets/Scripts/Level/DioramaBuilder.cs` (sin muelles vecinos con kit),
+`Assets/Scenes/Nivel1_MuelleDeCobre.unity` (horneada de nuevo).
