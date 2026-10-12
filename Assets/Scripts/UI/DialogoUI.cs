@@ -20,7 +20,25 @@ public sealed class DialogoUI : MonoBehaviour
     const float LetrasPorSegundo = 48f;
     const float AnchoMaximoBurbuja = 760f;
 
-    struct Mensaje { public string titulo; public string texto; public Color acento; }
+    /// <summary>
+    /// Un mensaje del diálogo. Además del texto puede llevar una tarjeta ilustrada (Maia explicando
+    /// una mecánica), opciones para elegir con ↑↓ y E, y una acción al cerrarse.
+    /// </summary>
+    public struct Mensaje
+    {
+        public string titulo;
+        public string texto;
+        public Color acento;
+        public IlustracionTutorial.Tipo ilustracion;
+        public string[] opciones;
+        public System.Action<int> alElegir;
+        public System.Action alCerrar;
+    }
+
+    Mensaje actual;
+    IlustracionTutorial ilustracion;
+    readonly List<Opcion> opciones = new List<Opcion>();
+    int seleccion;
 
     readonly Queue<Mensaje> cola = new Queue<Mensaje>();
 
@@ -113,6 +131,8 @@ public sealed class DialogoUI : MonoBehaviour
         textoAviso = RelevoUI.Texto(aviso.transform, "Texto", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
             new Vector2(54f, 0f), new Vector2(200f, 40f), 20, TextAnchor.MiddleLeft, RelevoUI.ConAlfa(RelevoUI.Tinta, 0.9f));
 
+        ilustracion = IlustracionTutorial.Crear(raiz);
+
         camaraIzq = new Retrato("Camara retrato", retratoIzq, 25f);
         camaraDer = new Retrato("Camara retrato Nilo", retratoDer, -25f);
 
@@ -155,8 +175,32 @@ public sealed class DialogoUI : MonoBehaviour
 
     public void Encolar(string titulo, string texto, Color acento)
     {
-        cola.Enqueue(new Mensaje { titulo = titulo, texto = texto, acento = acento });
+        Encolar(new Mensaje { titulo = titulo, texto = texto, acento = acento });
+    }
+
+    public void Encolar(Mensaje mensaje)
+    {
+        cola.Enqueue(mensaje);
         if (!Abierto) Siguiente();
+    }
+
+    /// <summary>Verdadero cuando el mensaje en pantalla ya terminó de escribirse y ofrece opciones.</summary>
+    public bool EligiendoOpcion { get { return Abierto && opciones.Count > 0 && burbujaActual >= burbujas.Count; } }
+
+    public void MoverSeleccion(int paso)
+    {
+        if (!EligiendoOpcion) return;
+        seleccion = (seleccion + paso + opciones.Count) % opciones.Count;
+        PintarOpciones();
+        AudioDirector.Pedir(Tono.Mensaje);
+    }
+
+    /// <summary>Ejecuta la acción de cierre del mensaje actual una sola vez.</summary>
+    void SoltarMensaje()
+    {
+        System.Action alCerrar = actual.alCerrar;
+        actual.alCerrar = null;
+        if (alCerrar != null) alCerrar();
     }
 
     /// <summary>Tecla de avanzar: completa la frase en curso, pasa a la siguiente o cierra.</summary>
@@ -173,6 +217,16 @@ public sealed class DialogoUI : MonoBehaviour
             return;
         }
 
+        if (opciones.Count > 0)
+        {
+            // Elegir: la acción puede encolar más mensajes (por ejemplo, repetir la explicación).
+            System.Action<int> alElegir = actual.alElegir;
+            int elegida = seleccion;
+            actual.alElegir = null;
+            if (alElegir != null) alElegir(elegida);
+        }
+
+        SoltarMensaje();
         if (cola.Count > 0) Siguiente();
         else Cerrar();
     }
@@ -181,6 +235,8 @@ public sealed class DialogoUI : MonoBehaviour
     {
         cola.Clear();
         if (!Abierto) return;
+        SoltarMensaje();
+        ilustracion.Ocultar();
         camaraIzq.Apagar();
         camaraDer.Apagar();
         frameCierre = Time.frameCount;
@@ -194,6 +250,7 @@ public sealed class DialogoUI : MonoBehaviour
     void Siguiente()
     {
         Mensaje m = cola.Dequeue();
+        actual = m;
         bool estabaAbierto = Abierto;
 
         string t = m.titulo != null ? m.titulo.ToLowerInvariant() : "";
@@ -230,7 +287,10 @@ public sealed class DialogoUI : MonoBehaviour
         pila.anchorMin = pila.anchorMax = new Vector2(hablaNilo ? 1f : 0f, 0f);
         pila.pivot = new Vector2(hablaNilo ? 1f : 0f, 0f);
         pila.sizeDelta = new Vector2(anchoMax, y);
-        pila.anchoredPosition = new Vector2(hablaNilo ? -430f : izquierda, 70f);
+        // Con opciones, la pila sube para dejar sitio a las filas debajo.
+        int numOpciones = m.opciones != null ? m.opciones.Length : 0;
+        float alzado = numOpciones * 54f;
+        pila.anchoredPosition = new Vector2(hablaNilo ? -430f : izquierda, 70f + alzado);
         foreach (Burbuja b in burbujas)
         {
             RectTransform r = b.raiz;
@@ -253,6 +313,27 @@ public sealed class DialogoUI : MonoBehaviour
         textoAviso.text = cola.Count > 0 ? "Continuar" : "Cerrar";
         teclaAviso.Tenir(m.acento);
         aviso.SetActive(false);
+
+        // Opciones: filas debajo de las burbujas; aparecen cuando el texto termina.
+        foreach (Opcion o in opciones) Destroy(o.raiz.gameObject);
+        opciones.Clear();
+        seleccion = 0;
+        for (int i = 0; i < numOpciones; i++)
+        {
+            Opcion o = new Opcion(pila, m.opciones[i], m.acento);
+            o.raiz.anchoredPosition = new Vector2(24f, -16f - i * 54f);
+            o.raiz.gameObject.SetActive(false);
+            opciones.Add(o);
+        }
+        PintarOpciones();
+
+        // Tarjeta ilustrada encima de las burbujas. Se coloca antes de mostrarla: la animación de
+        // entrada toma como reposo la posición que tenga en ese momento.
+        RectTransform ri = (RectTransform)ilustracion.transform;
+        ri.anchorMin = ri.anchorMax = ri.pivot = Vector2.zero;
+        float xTarjeta = hablaNilo ? 1920f * 0.5f - 270f : Mathf.Max(izquierda, 470f);
+        ri.anchoredPosition = new Vector2(xTarjeta, 70f + alzado + y + 70f);
+        ilustracion.Mostrar(m.ilustracion, m.acento);
 
         burbujaActual = 0;
         letras = 0f;
@@ -351,7 +432,74 @@ public sealed class DialogoUI : MonoBehaviour
         foreach (Burbuja b in burbujas) b.Animar(dt);
 
         bool listo = burbujaActual >= burbujas.Count;
-        if (listo && !aviso.activeSelf) RelevoUIAnim.Entrada(aviso, 0.16f, 8f, true);
+        // La cola puede crecer con el mensaje ya en pantalla (Maia encola tras la intro).
+        string etiqueta = cola.Count > 0 ? "Continuar" : "Cerrar";
+        if (textoAviso.text != etiqueta) textoAviso.text = etiqueta;
+        if (listo && opciones.Count == 0 && !aviso.activeSelf) RelevoUIAnim.Entrada(aviso, 0.16f, 8f, true);
+        if (listo)
+            for (int i = 0; i < opciones.Count; i++)
+                if (!opciones[i].raiz.gameObject.activeSelf)
+                {
+                    opciones[i].raiz.gameObject.SetActive(true);
+                    RelevoUIAnim.Entrada(opciones[i].raiz.gameObject, 0.16f + i * 0.05f, 10f, true);
+                }
+        for (int i = 0; i < opciones.Count; i++) opciones[i].Animar(i == seleccion, dt);
+    }
+
+    void PintarOpciones()
+    {
+        for (int i = 0; i < opciones.Count; i++) opciones[i].Seleccionar(i == seleccion);
+    }
+
+    // ------------------------------------------------------------------ opción
+
+    sealed class Opcion
+    {
+        public readonly RectTransform raiz;
+        readonly Image relleno, contorno, marca;
+        readonly Text texto;
+        readonly Color acento;
+        float brillo;
+
+        public Opcion(Transform padre, string etiqueta, Color acento)
+        {
+            this.acento = acento;
+            GameObject go = new GameObject("Opcion");
+            go.transform.SetParent(padre, false);
+            raiz = go.AddComponent<RectTransform>();
+            raiz.anchorMin = raiz.anchorMax = new Vector2(0f, 0f);
+            raiz.pivot = new Vector2(0f, 1f);
+            raiz.sizeDelta = new Vector2(420f, 46f);
+
+            relleno = Imagen(raiz, "Relleno", Formas.BurbujaRelleno(), Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero, new Color(0.03f, 0.075f, 0.085f, 0.9f));
+            relleno.type = Image.Type.Sliced;
+            contorno = Imagen(raiz, "Contorno", Formas.BurbujaContorno(), Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero, acento);
+            contorno.type = Image.Type.Sliced;
+            marca = Imagen(raiz, "Marca", null, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f),
+                new Vector2(36f, 0f), new Vector2(10f, 10f), acento);
+            marca.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            texto = RelevoUI.Texto(raiz, "Texto", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(54f, 0f),
+                new Vector2(350f, 40f), 21, TextAnchor.MiddleLeft, new Color(0.96f, 0.93f, 0.86f, 1f));
+            texto.font = RelevoUI.Fuente();
+            texto.text = etiqueta;
+        }
+
+        public void Seleccionar(bool si)
+        {
+            contorno.color = si ? acento : RelevoUI.ConAlfa(acento, 0.3f);
+            marca.enabled = si;
+            texto.color = si ? new Color(1f, 0.98f, 0.92f, 1f) : new Color(0.75f, 0.75f, 0.72f, 0.85f);
+            relleno.color = si ? new Color(acento.r * 0.22f, acento.g * 0.22f, acento.b * 0.22f, 0.94f) : new Color(0.03f, 0.075f, 0.085f, 0.85f);
+        }
+
+        public void Animar(bool si, float dt)
+        {
+            brillo = Mathf.MoveTowards(brillo, si ? 1f : 0f, dt * 8f);
+            raiz.localScale = Vector3.one * (1f + 0.035f * brillo);
+            if (si) marca.rectTransform.anchoredPosition = new Vector2(36f + Mathf.Sin(Time.unscaledTime * 6f) * 3f, 0f);
+        }
     }
 
     static float Suave(float x)

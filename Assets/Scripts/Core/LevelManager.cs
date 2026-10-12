@@ -124,6 +124,12 @@ public class LevelManager : MonoBehaviour
         BatteryController bateria = RelevoGame.Bateria;
         string objetivo;
 
+        if (bateria != null && Definicion != null && Definicion.tutorialPatio)
+        {
+            GameEvents.RaiseObjetivoCambiado(ObjetivoPatio(bateria));
+            return;
+        }
+
         if (bateria == null)
         {
             objetivo = "Explora el muelle.";
@@ -152,6 +158,44 @@ public class LevelManager : MonoBehaviour
         }
 
         GameEvents.RaiseObjetivoCambiado(objetivo);
+    }
+
+    /// <summary>
+    /// Objetivo del Patio de Bombas, paso a paso según el estado real: compuerta, palanca, caja
+    /// del muelle este y dónde está la batería.
+    /// </summary>
+    string ObjetivoPatio(BatteryController bateria)
+    {
+        bool compuertaAbierta = true, puentePlaca = false;
+        for (int i = 0; i < PlacaPresion.Todas.Count; i++)
+        {
+            PlacaPresion p = PlacaPresion.Todas[i];
+            if (p == null) continue;
+            if (p.Compuerta != null && !p.PorCaja) compuertaAbierta = false;
+            if (p.Puente != null && p.PorCaja) puentePlaca = true;
+        }
+
+        string baseActual = bateria.BaseActual != null ? bateria.BaseActual.Identificador : "";
+
+        if (bateria.Estado == EstadoBateria.EnSuelo) return "Recoge la batería.";
+        if (!compuertaAbierta && QuedanPalancas)
+            return "Empuja la caja sobre la placa: abre la compuerta del norte.";
+
+        if (QuedanPalancas)
+        {
+            if (bateria.EnManos) return "Coloca la batería en la base A para desplegar el puente.";
+            return "Cruza, acciona la palanca y vuelve por la pasarela sin agotar la reserva.";
+        }
+
+        if (!puentePlaca)
+        {
+            if (baseActual == "A") return "Retira la batería de la base A y llévala al muelle central.";
+            if (bateria.EnManos) return "Coloca la batería en la base D para cruzar al muelle este.";
+            return "Empuja la caja del muelle este hasta su placa y vuelve por el camino corto.";
+        }
+
+        if (baseActual != "") return "Retira la batería de la base y cruza por el puente de la placa.";
+        return "Lleva la batería hasta " + (Salida != null ? Salida.Etiqueta : "la salida") + ".";
     }
 
     public void RegistrarRecuerdo(MemoryInteractable recuerdo)

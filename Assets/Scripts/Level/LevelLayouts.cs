@@ -40,42 +40,42 @@ public static class LevelLayouts
     }
 
     /// <summary>
-    /// Nivel 2 - Patio de Bombas. Dos canales parten el patio en tres bandas —oeste (0-3), central
-    /// (6-8) y este (11-12)— y cada canal se cruza de dos formas y solo dos: el oeste por el puente
-    /// de la base A (fila 2) o por la pasarela de la palanca L (fila 10); el este por el puente de
-    /// la base D (fila 3) o por la pasarela de la palanca K (fila 8).
+    /// Nivel 2 - Patio de Bombas. Tres muelles separados por dos canales: oeste (0-3), central (6-8)
+    /// y este (11-13). Añade la reserva de energía de Nilo (12 casillas lejos de la batería) y las
+    /// cajas con placas de presión.
     ///
-    /// Con una sola batería, el orden es lo que manda: B se retrae en cuanto la batería sale de A,
-    /// así que el cruce de la fila 2 se cierra solo y la banda oeste solo vuelve a conectar con la
-    /// central por P, que es permanente. Igual al este: cuando la batería sale de D, C se retrae y
-    /// la única salida es Q. Sin soft-lock, porque la batería siempre puede volver a una base.
-    ///
-    /// Las filas de cruce 10 y 8 se eligieron para que ningún poste decorativo de
-    /// DioramaBuilder.AnadirFarolesDeMadera —(3,7) y (6,9), fijos y sin luz propia— quede dentro
-    /// del volumen de una plataforma que asciende.
-    ///</summary>
+    ///  1. Oeste: la compuerta g separa el sur del norte. Se abre empujando la caja k sobre la
+    ///     placa o (tutorial de cajas).
+    ///  2. La batería en la base A despliega el puente B. Lejos de la batería, la reserva cuenta:
+    ///     hay que cruzar, accionar la palanca L y volver por la pasarela P, que es corta.
+    ///  3. Con la pasarela abierta, la batería viaja en manos de Nilo al muelle central y entra en
+    ///     la base D, que despliega el puente C al muelle este.
+    ///  4. En el este, la caja se empuja dos casillas hasta la placa u, que despliega el puente R
+    ///     (manual, turquesa). La vuelta a D tiene que ser por C, el camino corto: volver por R
+    ///     agota la reserva y Nilo se apaga.
+    ///  5. Se retira la batería de D (C se repliega) y se cruza por R con ella hasta la salida.
+    /// </summary>
     public static LevelLayout Nivel2()
     {
         return new LevelLayout("Nivel 2 - Patio de Bombas", TamanoTile,
-            "####ww###ww##",
-            "###vww#v#ww##",
-            "###ABB###ww##",
-            "##ccww#cDCC#c",
-            "#M##ww###ww##",
-            "N#Y#ww###wwcE",
-            "####ww#c#ww#K",
-            "#c##wwL##ww#c",
-            "#v##ww###QQcc",
-            "###cww###ww##",
-            "##ccPP#v#ww##",
-            "####ww##Xww##");
+            "v##vww#v#ww#v#",
+            "####ww###ww###",
+            "###ABB##DCC###",
+            "####ww###ww###",
+            "###cPPc#Lwwk##",
+            "####ww###ww###",
+            "wwgwww###wwu##",
+            "####ww###ww###",
+            "#ok#ww###ww###",
+            "M###ww##cRRc##",
+            "NY##ww#v#ww##E",
+            "v###wwX##ww#v#");
     }
 
     /// <summary>
     /// Nivel 3 - Faro de Liria. Una sola banda al oeste (columnas 0-3), el canal en las 4-5 y la
     /// isla del faro en las 6-10: el mismo encuadre cerrado que el Muelle, sin una segunda banda
     /// que ensanche el plano.
-    ///
     /// La isla tiene una única entrada —el puente de la base D, en la fila 2— y la salida por Q es
     /// obligatoria: al retirar la batería de D, C se retrae y la fila 2 se cierra, de modo que el
     /// regreso desde la isla pasa por la pasarela de la palanca K. La salida (E) es el faro y la

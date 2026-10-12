@@ -14,7 +14,14 @@ public enum Tono
     Salida,
     Faro,
     Bloqueado,
-    Mensaje
+    Mensaje,
+    Empujar,
+    PlacaPisada,
+    PlacaSuelta,
+    CompuertaAbre,
+    CompuertaCierra,
+    Alerta,
+    Apagado
 }
 
 /// <summary>
@@ -106,6 +113,41 @@ public class AudioDirector : MonoBehaviour
         tonosGenerados[Tono.Faro] = GenerarTono("tono_faro", 174f, 1.20f, 0.5f, 2.0f);
         tonosGenerados[Tono.Bloqueado] = GenerarTono("tono_bloqueado", 160f, 0.16f, 0.4f, 1.0f);
         tonosGenerados[Tono.Mensaje] = GenerarTono("tono_mensaje", 700f, 0.10f, 0.28f, 1.0f);
+        tonosGenerados[Tono.Empujar] = GenerarBarrido("tono_empujar", 140f, 95f, 0.22f, 0.35f, true);
+        tonosGenerados[Tono.PlacaPisada] = GenerarTono("tono_placa_pisada", 415f, 0.16f, 0.4f, 2.0f);
+        tonosGenerados[Tono.PlacaSuelta] = GenerarTono("tono_placa_suelta", 262f, 0.14f, 0.32f, 2.0f);
+        tonosGenerados[Tono.CompuertaAbre] = GenerarBarrido("tono_compuerta_abre", 180f, 360f, 0.4f, 0.32f, false);
+        tonosGenerados[Tono.CompuertaCierra] = GenerarBarrido("tono_compuerta_cierra", 360f, 160f, 0.35f, 0.3f, false);
+        tonosGenerados[Tono.Alerta] = GenerarTono("tono_alerta", 988f, 0.12f, 0.3f, 1.5f);
+        tonosGenerados[Tono.Apagado] = GenerarBarrido("tono_apagado", 620f, 55f, 1.3f, 0.5f, false);
+    }
+
+    /// <summary>
+    /// Barrido de frecuencia: el "apagado" de un robot que se queda sin energía (de agudo a grave,
+    /// cada vez más lento) o el roce de una caja (con ruido).
+    /// </summary>
+    static AudioClip GenerarBarrido(string nombre, float desde, float hasta, float duracion, float volumen, bool ruido)
+    {
+        const int frecuenciaMuestreo = 44100;
+        int muestras = Mathf.Max(256, Mathf.RoundToInt(frecuenciaMuestreo * duracion));
+        float[] datos = new float[muestras];
+        float fase = 0f;
+        System.Random azar = new System.Random(7);
+
+        for (int i = 0; i < muestras; i++)
+        {
+            float progreso = (float)i / muestras;
+            float frecuencia = Mathf.Lerp(desde, hasta, 1f - (1f - progreso) * (1f - progreso));
+            fase += 2f * Mathf.PI * frecuencia / frecuenciaMuestreo;
+            float envolvente = Mathf.Clamp01(progreso * 25f) * (1f - progreso);
+            float onda = Mathf.Sin(fase) + 0.3f * Mathf.Sign(Mathf.Sin(fase * 0.5f));
+            if (ruido) onda = onda * 0.4f + ((float)azar.NextDouble() * 2f - 1f) * 0.6f;
+            datos[i] = Mathf.Clamp(onda * envolvente * volumen, -1f, 1f);
+        }
+
+        AudioClip clip = AudioClip.Create(nombre, muestras, 1, frecuenciaMuestreo, false);
+        clip.SetData(datos, 0);
+        return clip;
     }
 
     /// <summary>Genera un tono con envolvente de ataque/decadencia y un armónico suave.</summary>

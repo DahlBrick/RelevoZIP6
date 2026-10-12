@@ -45,6 +45,14 @@ public class MaiaTerminal : MonoBehaviour, IInteractable
     {
         PresentacionMostrada = true;
         AudioDirector.Pedir(Tono.Mensaje);
+
+        // En el Patio de Bombas, Maia abre un menú para repasar las mecánicas nuevas.
+        if (RelevoGame.Definicion != null && RelevoGame.Definicion.tutorialPatio)
+        {
+            TutorialMaia.Menu();
+            return;
+        }
+
         GameEvents.RaiseMensajeMostrado("Maia", TextoActual());
     }
 }

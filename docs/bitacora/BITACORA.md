@@ -434,3 +434,144 @@ clip sale fluido aunque el editor renderice más lento.
 - La grúa empezaba frente a la pared del zócalo. Ahora arranca por encima del malecón.
 - Para que el HUD salga en el clip de jugabilidad, el lienzo pasa a "Screen Space - Camera"
   durante la grabación y vuelve a su modo al terminar.
+
+---
+
+## Entrada 12 — Nivel 2: Patio de Bombas, con reserva de energía y cajas
+
+**Pedido:** aplicar los gráficos nuevos al Nivel 2 y rediseñarlo para que sea desafiante y
+creativo, con dos mecánicas nuevas (la reserva de energía de Nilo y las cajas con placas de
+presión, propias del Patio de Bombas). Maia las explica en un diálogo interactivo y gráfico. Si
+Nilo se descarga, se apaga como un robot: antena en rojo, ojos apagados y cabeza agachada. Las
+mareas y los condensadores quedan para más adelante.
+
+**Decisiones del usuario:** la reserva se gasta **por distancia**, al apagarse **se reinicia el
+nivel**, y las cajas **solo se empujan sobre placas** (no flotan en el agua).
+
+![Patio de Bombas](img/21_nivel2_patio_de_bombas.jpg)
+
+### El nivel
+
+Tres muelles separados por dos canales: oeste, central y este.
+
+1. **Oeste (tutorial de cajas):** una compuerta de barrotes turquesa separa el sur del norte. Se
+   abre empujando la caja sobre la placa.
+2. **Base A:** la batería despliega el puente eléctrico hacia el muelle central. Lejos de la
+   batería, la reserva cuenta: hay que cruzar, accionar la palanca y volver por la pasarela, que
+   es corta.
+3. **Base D:** con la pasarela abierta, la batería viaja en manos de Nilo al muelle central. En la
+   base D despliega el puente al muelle este.
+4. **Muelle este:** la caja se empuja dos casillas hasta su placa, que despliega un puente manual
+   (turquesa) cerca de la salida. **La trampa:** volver a la base D por ese puente nuevo agota la
+   reserva y Nilo se apaga. Hay que volver por el puente eléctrico, que es el camino corto.
+5. **Salida:** se retira la batería de D (su puente se repliega) y se cruza con ella por el
+   puente de la placa hasta la salida. Hay un recuerdo opcional en el sur del muelle central.
+
+Con 12 casillas de reserva, la ruta correcta deja unas 2 de margen y la ruta equivocada necesita
+unas 17.
+
+### Reserva de energía de Nilo
+
+- Cerca de la batería (a 1,5 casillas) o llevándola, Nilo se recarga. La zona segura se ve como
+  un aro ámbar discontinuo que gira alrededor de la batería.
+- Fuera de la zona, cada casilla recorrida gasta un segmento y empujar una caja gasta medio más.
+  Quedarse quieto no gasta.
+- En el HUD hay un panel nuevo, "Reserva de Nilo", con un segmento por casilla. Es turquesa con
+  carga, ámbar a media carga y coral parpadeando cuando queda poca, y dice "Recargando" o "Lejos
+  de la batería".
+- La antena de Nilo cambia de color con la reserva y, por debajo del 30 %, parpadea y pita.
+
+### Nilo se apaga
+
+Si la reserva llega a cero lejos de la batería:
+
+1. La antena destella en rojo (con una luz roja real) y sale humo gris de la cabeza.
+2. La animación se va frenando hasta pararse, los ojos se apagan, la cabeza cae hacia el pecho y
+   el cuerpo se asienta.
+3. Maia lo explica con su tarjeta y, al cerrar el diálogo, el patio se reinicia.
+
+Para poder apagarle los ojos, Nilo tiene ahora **ojos luminosos** turquesa sobre las lentes. Se
+colocan buscando las lentes en la propia malla de la cabeza, así que encajan sea cual sea la pose.
+
+![Nilo se apaga](img/26_nilo_se_apaga_primer_plano.jpg)
+
+![Diálogo del apagado](img/27_apagado_dialogo_maia.jpg)
+
+### Cajas, placas y compuertas
+
+- **Cajas:** se empujan caminando contra ellas, una casilla cada vez y solo en las cuatro
+  direcciones. Hay que empujar un instante, así que rozarlas no las mueve. Solo entran en suelo
+  firme, nunca en el agua ni en los puentes.
+- **Placas:** están pisadas mientras haya una caja encima o Nilo esté de pie sobre ellas. Tienen
+  marco claro, losa de cobre y un rombo turquesa. Al pisarlas se encienden en turquesa junto con
+  un cable en el suelo que lleva hasta lo que accionan.
+- **Compuerta:** sus barrotes se hunden en el suelo. Nunca se cierra encima de Nilo ni de una caja.
+- **Puente de placa:** es el mismo puente que los eléctricos, pintado en turquesa porque es un
+  mecanismo manual.
+
+![Caja, placa y compuerta](img/25_caja_placa_compuerta_y_reserva.jpg)
+
+### Maia explica, con imágenes
+
+Al entrar al patio, Maia explica las dos mecánicas con **tarjetas ilustradas animadas** encima
+de las burbujas:
+
+- **Reserva:** Nilo se aleja de la batería y su barra baja paso a paso; luego vuelve y se recarga.
+- **Sin energía:** la antena se pone roja, se apagan los ojos y cae la cabeza.
+- **Cajas y placas:** Nilo empuja la caja, la placa se enciende y baja la compuerta.
+
+Al final pregunta "¿Lo tienes claro, Nilo?", con las opciones **Entendido** o **Explícamelo otra
+vez**, que se eligen con ↑↓ y E. Hablar con ella después abre un menú: la reserva, las cajas, una
+pista o "nada, gracias".
+
+![Tarjeta de la reserva](img/22_maia_tarjeta_reserva.jpg)
+
+![Tarjeta de las cajas](img/23_maia_tarjeta_cajas.jpg)
+
+![Diálogo con opciones](img/24_maia_dialogo_con_opciones.jpg)
+
+### Verificación
+
+- **Solución completa con piloto automático:** se probó con teclas simuladas y la recorrió de
+  principio a fin: caja oeste, base A, palanca, recuperar la batería, base D, caja este, vuelta
+  corta, recuperar la batería y salida, hasta "Nivel restaurado". La reserva mínima fue 2,3 de 12.
+- **Apagado:** se agotó la reserva lejos de la batería. Nilo se apagó, apareció el diálogo y el
+  nivel se reinició.
+- **Nivel 1:** se volvió a completar con el piloto. Sin reserva y sin cambios de comportamiento.
+- **Consola:** una sesión limpia del Nivel 2 no dio excepciones. Las que aparecieron antes en el
+  log eran de recompilar con el editor todavía en Play.
+
+![Solución completa](img/28_solucion_completa_nivel2.jpg)
+
+### Problemas en el camino
+
+- **Tarjeta ilustrada fuera de lugar:** salía en la esquina, encima del retrato. La animación de
+  entrada guarda la posición la primera vez y la tarjeta cambia de sitio en cada mensaje; ahora
+  tiene su propio fundido.
+- **Etiqueta del aviso:** la intro decía "Cerrar" aunque Maia tenía mensajes en cola. La etiqueta
+  ahora se actualiza sola.
+- **Teclado simulado:** sin el foco del editor, el Input System descarta las teclas simuladas. Las
+  herramientas de prueba lo habilitan mientras pulsan.
+- **Ojos de Nilo:** la malla de la cabeza es hija del hueso "Head" y se llama igual, y el modelo
+  necesitaba lectura de malla activada (ahora la activa `PrepararKitVisual`).
+- **Placas poco legibles:** se veían como huecos oscuros. Ahora tienen marco claro y rombo
+  turquesa.
+
+**Archivos nuevos:** `Interactions/CajaEmpujable.cs`, `Interactions/PlacaPresion.cs`,
+`Interactions/Compuerta.cs`, `Player/ReservaEnergia.cs`, `Level/ActorPatio.cs`,
+`UI/IlustracionTutorial.cs`, `UI/TutorialMaia.cs` y `Herramientas/PilotoPrueba.cs` (solo
+editor).
+
+**Archivos modificados:** `LevelLayouts.cs` (mapa nuevo del Nivel 2), `LevelLayout.cs`
+(casillas k, o, u, g y R), `LevelDefinition.cs` (reserva, tutorial y textos), `LevelBootstrap.cs`,
+`LevelManager.cs` (objetivos del patio paso a paso), `PlayerController.cs` (empujar),
+`MaiaTerminal.cs`, `DialogoUI.cs` (ilustraciones, opciones y acción al cerrar), `UIManager.cs`
+(panel de reserva y bloqueo al apagarse), `AudioDirector.cs` (sonidos de empujar, placa,
+compuerta, alerta y apagado), `GrabadorTeaser.cs` (ruta del patio), `PrepararKitVisual.cs`, el
+`Robot.fbx.meta` y la escena `Nivel2_PatioDeBombas.unity` (horneada de nuevo).
+
+### Pendiente
+
+- El Nivel 3 queda fuera de la beta por ahora.
+- Mareas y condensadores: más adelante.
+- Las pruebas guardaron progreso local (Nivel 2 completado y su recuerdo).

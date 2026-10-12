@@ -445,6 +445,9 @@ public static class PrepararKitVisual
         }
 
         importador.clipAnimations = clips;
+        // La reserva de energía busca las lentes en la malla de la cabeza para ponerle ojos que se
+        // apagan: la malla tiene que poder leerse también en la build.
+        importador.isReadable = true;
         importador.SaveAndReimport();
     }
 

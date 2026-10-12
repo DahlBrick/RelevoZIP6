@@ -23,7 +23,9 @@ public enum TipoTile
 ///   P pasarela manual de la palanca L  Q pasarela manual de la palanca K
 ///   A base A      D base D      L palanca 1   K palanca 2
 ///   E salida      X recuerdo    N inicio de Nilo   Y batería   M Maia
-/// Las casillas marcadas (A, D, L, K, E, X, N, Y, M) se apoyan sobre piedra transitable.
+///   k caja empujable   o placa de la compuerta g   g compuerta
+///   u placa del puente R   R puente de placa (se despliega mientras la placa u está pisada)
+/// Las casillas marcadas (A, D, L, K, E, X, N, Y, M, k, o, u, g) se apoyan sobre piedra transitable.
 /// </summary>
 public sealed class LevelLayout
 {
@@ -67,10 +69,17 @@ public sealed class LevelLayout
         return new Vector3((columna + 0.5f) * TamanoTile, 0f, -(fila + 0.5f) * TamanoTile);
     }
 
+    /// <summary>Casilla que contiene un punto del mundo (inversa de CentroTile).</summary>
+    public Vector2Int Casilla(Vector3 posicion)
+    {
+        return new Vector2Int(Mathf.FloorToInt(posicion.x / TamanoTile), Mathf.FloorToInt(-posicion.z / TamanoTile));
+    }
+
     public static TipoTile Mapear(char c)
     {
         switch (c)
         {
+            case 'R': return TipoTile.PuenteTemporal;
             case 'm': return TipoTile.Madera;
             case 'c': return TipoTile.Cobre;
             case 'v': return TipoTile.Vegetacion;

@@ -23,6 +23,12 @@ public class LevelDefinition : ScriptableObject
     public string recuerdoTitulo = "Recuerdo de Liria";
     [TextArea(2, 5)] public string recuerdoTexto = "";
 
+    [Header("Patio de Bombas")]
+    [Tooltip("Casillas que Nilo puede recorrer lejos de la batería. 0 = sin reserva (Nivel 1).")]
+    public int reservaCasillas = 0;
+    [Tooltip("Maia explica la reserva y las cajas con tarjetas ilustradas al empezar.")]
+    public bool tutorialPatio = false;
+
     [Header("Final")]
     [Tooltip("Nivel 3: la salida es el faro y la batería se entrega físicamente.")]
     public bool salidaEsFaro = false;
@@ -41,9 +47,11 @@ public static class DefinicionesPorDefecto
             case 2:
                 d.nombre = "Nivel 2 - Patio de Bombas";
                 d.tituloIntro = "Patio de Bombas";
-                d.textoIntro = "Dos bases y dos pasarelas manuales. Solo una base puede estar alimentada a la vez.";
-                d.pistaMaia = "El orden importa: primero abre la ruta permanente y después recupera la energía.";
-                d.textoCierre = "Las bombas vuelven a girar. El faro espera al final del canal.";
+                d.textoIntro = "Las bombas que drenaban Liria están paradas. Aquí la batería no solo abre caminos: también es lo que mantiene a Nilo en pie.";
+                d.pistaMaia = "Abre primero la pasarela del patio central sin alejarte demasiado de la base A. En el muelle este, empuja la caja y vuelve por el camino más corto.";
+                d.textoCierre = "Las bombas vuelven a girar y el patio se vacía. El faro espera al final del canal.";
+                d.reservaCasillas = 12;
+                d.tutorialPatio = true;
                 d.recuerdoIdentificador = "nivel2_recuerdo";
                 d.recuerdoTitulo = "Recuerdo de Liria - El aprendiz de bombas";
                 d.recuerdoTexto = "\"Aprendí a leer los cables antes que las letras. Turquesa es manual; ámbar, prestado.\"";

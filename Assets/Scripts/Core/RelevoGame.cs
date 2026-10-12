@@ -14,6 +14,8 @@ public static class RelevoGame
     public static UIManager UI;
     public static RelevoInput Input;
     public static LevelDefinition Definicion;
+    public static LevelLayout Layout;
+    public static ReservaEnergia Reserva;
 
     public static void Limpiar()
     {
@@ -24,5 +26,7 @@ public static class RelevoGame
         UI = null;
         Input = null;
         Definicion = null;
+        Layout = null;
+        Reserva = null;
     }
 }

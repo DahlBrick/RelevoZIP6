@@ -40,6 +40,7 @@ public class LevelBootstrap : MonoBehaviour
         }
 
         LevelDefinition def = DefinicionActiva();
+        RelevoGame.Layout = layout;
 
         ActorFactory.ConfigurarEntorno();
 
@@ -212,6 +213,44 @@ public class LevelBootstrap : MonoBehaviour
             Vector3 posMaia = ActorFactory.PosicionMarcador(layout, 'M', inicioNilo);
             ActorFactory.CrearMaia(raizActores, posMaia, def);
         }
+
+        CrearPiezasDelPatio(layout, raizActores);
+    }
+
+    /// <summary>
+    /// Cajas, placas de presión, compuertas y el puente de placa (Patio de Bombas). La placa 'o'
+    /// acciona la compuerta 'g' y la placa 'u' despliega el puente 'R'. En niveles sin esas
+    /// casillas no se crea nada.
+    /// </summary>
+    static void CrearPiezasDelPatio(LevelLayout layout, Transform raiz)
+    {
+        Compuerta compuerta = null;
+        foreach (Vector2Int c in layout.Casillas('g')) compuerta = ActorPatio.CrearCompuerta(raiz, layout, c);
+
+        TemporaryBridge puenteR = null;
+        if (layout.TieneCasilla('R'))
+        {
+            puenteR = ActorFactory.CrearPuente(raiz, layout, 'R', "R");
+            ActorPatio.PintarPuenteManual(puenteR);
+        }
+
+        foreach (Vector2Int c in layout.Casillas('o'))
+        {
+            Vector3 centro = layout.CentroTile(c.x, c.y);
+            ActorPatio.CrearPlaca(raiz, layout, c, compuerta, null, ActorPatio.CasillaMasCercana(layout, 'g', centro));
+        }
+
+        foreach (Vector2Int c in layout.Casillas('u'))
+        {
+            // El cable llega a la casilla de tierra junto al puente, no al agua.
+            Vector3 centro = layout.CentroTile(c.x, c.y);
+            Vector3 destino = ActorPatio.CasillaMasCercana(layout, 'R', centro);
+            Vector2Int cd = layout.Casilla(destino);
+            Vector3 orilla = layout.CentroTile(cd.x + (c.x > cd.x ? 1 : -1), cd.y);
+            ActorPatio.CrearPlaca(raiz, layout, c, null, puenteR, orilla);
+        }
+
+        foreach (Vector2Int c in layout.Casillas('k')) ActorPatio.CrearCaja(raiz, layout, c);
     }
 
     // ------------------------------------------------------------------ enlace
@@ -283,6 +322,22 @@ public class LevelBootstrap : MonoBehaviour
         MemoryInteractable recuerdo = Object.FindFirstObjectByType<MemoryInteractable>(FindObjectsInactive.Include);
         if (recuerdo != null) recuerdo.Vincular();
 
+        // Piezas del Patio de Bombas: vuelven a su estado inicial también en escena horneada.
+        foreach (CajaEmpujable caja in Object.FindObjectsByType<CajaEmpujable>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            caja.Vincular(layout);
+        foreach (Compuerta c in Object.FindObjectsByType<Compuerta>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            c.Vincular();
+        foreach (PlacaPresion p in Object.FindObjectsByType<PlacaPresion>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            p.Vincular();
+
+        // Reserva de energía de Nilo: solo en niveles que la definen. Se añade en ejecución.
+        if (nilo != null && def != null && def.reservaCasillas > 0)
+        {
+            ReservaEnergia reserva = nilo.GetComponent<ReservaEnergia>();
+            if (reserva == null) reserva = nilo.gameObject.AddComponent<ReservaEnergia>();
+            reserva.Configurar(def.reservaCasillas, layout.TamanoTile);
+        }
+
         MaiaTerminal maia = Object.FindFirstObjectByType<MaiaTerminal>(FindObjectsInactive.Include);
 
         nivel.Vincular(salida, recuerdo, maia);
@@ -301,6 +356,7 @@ public class LevelBootstrap : MonoBehaviour
         // La intro del nivel ya cuenta la presentación, así que Maia pasa directa a la pista.
         if (maia != null) maia.MarcarPresentacion();
         if (def != null) GameEvents.RaiseMensajeMostrado(def.tituloIntro, def.textoIntro);
+        if (def != null && def.tutorialPatio) TutorialMaia.Presentacion();
 
         Debug.Log("RELEVO: " + nivel.NombreNivel
             + (escenaHorneada ? " (escena horneada)" : " (construido en ejecución)")

@@ -44,6 +44,17 @@ public class PlayerController : MonoBehaviour
         alturaFija = transform.position.y;
     }
 
+    // Dirección en la que el jugador intenta avanzar este fotograma: la usan las cajas.
+    Vector3 intencion;
+
+    /// <summary>Al chocar con una caja mientras se camina contra ella, se empuja.</summary>
+    void OnControllerColliderHit(ControllerColliderHit golpe)
+    {
+        if (!PuedeMoverse || golpe.collider == null) return;
+        CajaEmpujable caja = golpe.collider.GetComponentInParent<CajaEmpujable>();
+        if (caja != null) caja.Empujado(intencion, transform.position);
+    }
+
     void Update()
     {
         if (controlador == null) return;
@@ -59,6 +70,7 @@ public class PlayerController : MonoBehaviour
 
         Vector3 deseada = adelante * entrada.y + derecha * entrada.x;
         if (deseada.sqrMagnitude > 1f) deseada.Normalize();
+        intencion = deseada;
 
         velocidadActual = Vector3.Lerp(velocidadActual, deseada * velocidad, 1f - Mathf.Exp(-suavizado * Time.deltaTime));
         controlador.Move(velocidadActual * Time.deltaTime);

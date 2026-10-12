@@ -32,6 +32,7 @@ public sealed class GrabadorTeaser : MonoBehaviour
     public static string Estado = "";
 
     float velocidad = 1f;
+    static float minimaReserva = float.MaxValue;
 
     /// <summary>'velocidad' acelera el clip: con 1,2, cada segundo de video muestra 1,2 s de juego.</summary>
     public static string Iniciar(string modo, string ruta, float velocidad = 1f)
@@ -120,7 +121,9 @@ public sealed class GrabadorTeaser : MonoBehaviour
         codificador = null;
         Time.captureFramerate = 0;
         if (lienzo != null) { lienzo.Release(); Destroy(lienzo); }
-        Estado = "terminado " + modo + " (" + cuenta + " fotogramas) " + ruta;
+        if (!Estado.StartsWith("APAGADO"))
+            Estado = "terminado " + modo + " (" + cuenta + " fotogramas) " + ruta
+                + (minimaReserva < float.MaxValue ? " | reserva mínima " + minimaReserva.ToString("F1") : "");
         Destroy(gameObject);
     }
 
@@ -305,15 +308,60 @@ public sealed class GrabadorTeaser : MonoBehaviour
 
     static Paso Ir(Vector3 destino) { return new Paso { destino = destino, parada = 0.35f }; }
     static Paso Usar(Vector3 desde, Vector3 objeto) { return new Paso { destino = desde, parada = 0.3f, mirar = objeto }; }
+    /// <summary>Caminar contra una caja hasta 'destino': la caja avanza delante de Nilo.</summary>
+    static Paso Empujar(Vector3 destino) { return new Paso { destino = destino, parada = 0.5f }; }
+
+    /// <summary>
+    /// Solución del Patio de Bombas, con el recuerdo opcional. Las vueltas lejos de la batería son
+    /// las cortas: el piloto también comprueba que la reserva alcanza.
+    /// </summary>
+    static void RutaPatio(LevelLayout m, Vector3 bateria, List<Paso> pasos)
+    {
+        pasos.Add(Usar(m.CentroTile(0, 10), bateria));                    // recoger la batería
+        pasos.Add(Ir(m.CentroTile(3, 10)));
+        pasos.Add(Ir(m.CentroTile(3, 8)));
+        pasos.Add(Empujar(m.CentroTile(2, 8)));                           // caja a la placa: compuerta
+        pasos.Add(Ir(m.CentroTile(2, 7)));
+        pasos.Add(Ir(m.CentroTile(2, 5)));
+        pasos.Add(Usar(m.CentroTile(3, 3), m.CentroTile(3, 2)));          // batería en A: puente B
+        pasos.Add(Ir(m.CentroTile(4, 2)));
+        pasos.Add(Ir(m.CentroTile(6, 2)));
+        pasos.Add(Usar(m.CentroTile(8, 3), m.CentroTile(8, 4)));          // palanca: pasarela P
+        pasos.Add(Ir(m.CentroTile(7, 4)));
+        pasos.Add(Ir(m.CentroTile(3, 4)));
+        pasos.Add(Usar(m.CentroTile(3, 3), m.CentroTile(3, 2)));          // recuperar de A
+        pasos.Add(Ir(m.CentroTile(3, 4)));
+        pasos.Add(Ir(m.CentroTile(6, 4)));
+        pasos.Add(Ir(m.CentroTile(7, 3)));
+        pasos.Add(Usar(m.CentroTile(7, 2), m.CentroTile(8, 2)));          // batería en D: puente C
+        pasos.Add(Ir(m.CentroTile(9, 2)));
+        pasos.Add(Ir(m.CentroTile(11, 2)));
+        pasos.Add(Ir(m.CentroTile(11, 3)));
+        pasos.Add(Empujar(m.CentroTile(11, 5)));                          // caja a la placa: puente R
+        pasos.Add(Ir(m.CentroTile(11, 2)));                               // vuelta corta, por C
+        pasos.Add(Ir(m.CentroTile(9, 2)));
+        pasos.Add(Ir(m.CentroTile(8, 3)));
+        pasos.Add(Usar(m.CentroTile(8, 3), m.CentroTile(8, 2)));          // recuperar de D
+        pasos.Add(Ir(m.CentroTile(8, 9)));
+        pasos.Add(Ir(m.CentroTile(8, 10)));
+        pasos.Add(Usar(m.CentroTile(7, 11), m.CentroTile(6, 11)));        // recuerdo
+        pasos.Add(Ir(m.CentroTile(8, 10)));
+        pasos.Add(Ir(m.CentroTile(8, 9)));
+        pasos.Add(Ir(m.CentroTile(11, 9)));                               // puente de la placa
+        pasos.Add(Ir(m.CentroTile(12, 10)));
+        pasos.Add(Usar(m.CentroTile(12, 10), m.CentroTile(13, 10)));      // salida
+    }
 
     IEnumerator Jugabilidad()
     {
-        LevelLayout m = LevelLayouts.Obtener(1);
+        LevelLayout m = RelevoGame.Layout != null ? RelevoGame.Layout : LevelLayouts.Obtener(1);
         Vector3 bateria = FindFirstObjectByType<BatteryController>().transform.position;
         var pasos = new List<Paso>();
-        bool completo = modo == "nivel";
+        bool patio = modo.StartsWith("patio");
+        bool completo = modo == "nivel" || modo == "patio";
 
-        if (completo)
+        if (patio) RutaPatio(m, bateria, pasos);
+        else if (completo)
         {
             // Solución completa del Nivel 1, con el recuerdo opcional.
             pasos.Add(Usar(m.CentroTile(1, 4), bateria));                       // recoger la batería
@@ -372,7 +420,8 @@ public sealed class GrabadorTeaser : MonoBehaviour
         Abrir(false);
         principal.targetTexture = lienzo;
 
-        int maximo = completo ? Fps * 40 : Fps * 5;
+        int maximo = patio ? Fps * 90 : (completo ? Fps * 40 : Fps * 5);
+        minimaReserva = float.MaxValue;
         int paso = 0;
         int esperar = completo ? 0 : 12;
         int pulsando = -1;
@@ -381,12 +430,20 @@ public sealed class GrabadorTeaser : MonoBehaviour
 
         for (int f = 0; f < maximo; f++)
         {
-            Estado = modo + " " + f + " paso " + paso + "/" + pasos.Count;
+            Estado = modo + " " + f + " paso " + paso + "/" + pasos.Count
+                + (RelevoGame.Reserva != null ? " reserva " + RelevoGame.Reserva.Actual.ToString("F1") : "");
+            if (RelevoGame.Reserva != null) minimaReserva = Mathf.Min(minimaReserva, RelevoGame.Reserva.Actual);
             Keyboard teclado = Keyboard.current;
             var teclas = new List<Key>();
 
             DialogoUI d = FindFirstObjectByType<DialogoUI>();
             bool hayDialogo = d != null && d.Abierto;
+
+            if (RelevoGame.Reserva != null && RelevoGame.Reserva.Apagado)
+            {
+                Estado = "APAGADO en paso " + paso + " fotograma " + f;
+                break;
+            }
 
             if (hayDialogo)
             {

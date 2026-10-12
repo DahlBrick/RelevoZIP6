@@ -60,6 +60,13 @@ public class UIManager : MonoBehaviour
     // --- diálogo (modal, con retratos)
     DialogoUI dialogo;
     bool ultimoBloqueo;
+    public DialogoUI Dialogo { get { return dialogo; } }
+
+    // --- reserva de energía (Patio de Bombas)
+    GameObject panelReserva;
+    Image[] segmentosReserva;
+    Text textoReserva;
+    Image marcoReserva;
 
     // --- pausa
     GameObject panelPausa;
@@ -90,7 +97,17 @@ public class UIManager : MonoBehaviour
     int seleccionConfirmar;
     bool flanco;
 
-    public bool BloqueaJuego { get { return enPausa || completado || (dialogo != null && dialogo.Bloquea); } }
+    public bool BloqueaJuego
+    {
+        get
+        {
+            return enPausa || completado || (dialogo != null && dialogo.Bloquea)
+                || (RelevoGame.Reserva != null && RelevoGame.Reserva.Apagado);
+        }
+    }
+
+    /// <summary>Vuelve a aplicar el bloqueo del jugador (lo pide la reserva al apagarse Nilo).</summary>
+    public void RefrescarBloqueo() { AplicarBloqueo(); }
 
     void Awake()
     {
@@ -124,6 +141,7 @@ public class UIManager : MonoBehaviour
         this.definicion = definicion;
 
         if (tituloNivel != null) tituloNivel.text = NombreDelNivel().ToUpperInvariant();
+        if (panelReserva != null) panelReserva.SetActive(definicion != null && definicion.reservaCasillas > 0);
 
         AplicarBloqueo();
     }
@@ -149,15 +167,27 @@ public class UIManager : MonoBehaviour
 
         RefrescarFondoPrompt();
         AnimarTeclasPulsadas();
+        RefrescarReserva();
 
         if (entrada == null) return;
 
         if (teclaPrompt != null && promptVisible && entrada.Pulsado(entrada.Interactuar)) teclaPrompt.Presionar();
 
-        // Con diálogo abierto, la entrada es solo suya: avanzar o cerrar.
+        // Con diálogo abierto, la entrada es solo suya: avanzar, elegir o cerrar.
         if (dialogo != null && dialogo.Abierto)
         {
             var raton = UnityEngine.InputSystem.Mouse.current;
+            if (dialogo.EligiendoOpcion)
+            {
+                Vector2 mover = entrada.LeerMovimiento();
+                if (Mathf.Abs(mover.y) < 0.5f) flanco = false;
+                else if (!flanco)
+                {
+                    flanco = true;
+                    dialogo.MoverSeleccion(mover.y > 0f ? -1 : 1);
+                }
+            }
+
             if (entrada.Pulsado(entrada.Interactuar) || entrada.Pulsado(entrada.Confirmar)
                 || (raton != null && raton.leftButton.wasPressedThisFrame))
                 dialogo.Avanzar();
@@ -165,6 +195,8 @@ public class UIManager : MonoBehaviour
                 dialogo.Cerrar();
             return;
         }
+
+        if (RelevoGame.Reserva != null && RelevoGame.Reserva.Apagado) return;
 
         if (completado)
         {
@@ -499,6 +531,45 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Barra de la reserva: un segmento por casilla de autonomía. Turquesa con reserva de sobra,
+    /// ámbar a media carga y coral parpadeando cuando queda poca. Dentro de la zona de la batería
+    /// dice "RECARGANDO"; fuera, "LEJOS DE LA BATERÍA".
+    /// </summary>
+    void RefrescarReserva()
+    {
+        if (panelReserva == null || !panelReserva.activeSelf) return;
+        ReservaEnergia r = RelevoGame.Reserva;
+        if (r == null) return;
+
+        int total = Mathf.Clamp(Mathf.RoundToInt(r.Maximo), 1, segmentosReserva.Length);
+        float f = r.Fraccion;
+        float restantes = r.Actual;
+        Color lleno = f > 0.5f ? RelevoUI.Turquesa : (f > 0.25f ? RelevoUI.Ambar : RelevoUI.Coral);
+        bool parpadeo = !r.EnZona && f <= 0.3f && Mathf.Sin(Time.unscaledTime * 12f) < 0f;
+
+        for (int i = 0; i < segmentosReserva.Length; i++)
+        {
+            Image s = segmentosReserva[i];
+            bool visible = i < total;
+            if (s.gameObject.activeSelf != visible) s.gameObject.SetActive(visible);
+            if (!visible) continue;
+
+            float llenado = Mathf.Clamp01(restantes - i);
+            Color c = Color.Lerp(new Color(0.16f, 0.2f, 0.22f, 0.9f), lleno, llenado);
+            if (parpadeo && llenado > 0f) c = Color.Lerp(c, Color.white, 0.35f);
+            s.color = c;
+            s.rectTransform.sizeDelta = new Vector2(16f, 10f + 8f * llenado);
+        }
+
+        if (textoReserva != null)
+        {
+            if (r.Apagado) { textoReserva.text = "SIN ENERGÍA"; textoReserva.color = RelevoUI.Coral; }
+            else if (r.EnZona) { textoReserva.text = "RECARGANDO"; textoReserva.color = RelevoUI.Turquesa; }
+            else { textoReserva.text = "LEJOS DE LA BATERÍA"; textoReserva.color = f > 0.3f ? RelevoUI.AmbarSuave : RelevoUI.Coral; }
+        }
+    }
+
     void AlCambiarObjetivo(string objetivo)
     {
         // La etiqueta "OBJETIVO" ya está en el panel, así que el texto va sin prefijo.
@@ -721,6 +792,35 @@ public class UIManager : MonoBehaviour
         textoBateria.text = "EN EL SUELO";
 
         RelevoUI.Cable(bateria.transform, "Cable", new Vector2(-166f, -22f), new Vector2(166f, -22f), 2f, RelevoUI.CobreTenue);
+
+        // --- reserva de energía: un segmento por casilla, encima de los recuerdos
+        panelReserva = RelevoUI.Panel(padre, "PanelReserva", new Vector2(1f, 0f), new Vector2(1f, 0f),
+            new Vector2(-22f, 172f), new Vector2(380f, 72f), RelevoUI.Fondo);
+        RelevoUI.Marco(panelReserva.transform, RelevoUI.Cobre, 2f);
+        marcoReserva = panelReserva.GetComponent<Image>();
+
+        RelevoUI.Texto(panelReserva.transform, "Etiqueta", new Vector2(0f, 0f), new Vector2(0f, 0f),
+            new Vector2(18f, 46f), new Vector2(160f, 16f), 13, TextAnchor.LowerLeft,
+            RelevoUI.ConAlfa(RelevoUI.Cobre, 0.95f)).text = "RESERVA DE NILO";
+
+        textoReserva = RelevoUI.Texto(panelReserva.transform, "Estado", new Vector2(1f, 0f), new Vector2(1f, 0f),
+            new Vector2(-18f, 46f), new Vector2(200f, 16f), 13, TextAnchor.LowerRight, RelevoUI.AmbarSuave);
+
+        const int maxSegmentos = 16;
+        segmentosReserva = new Image[maxSegmentos];
+        for (int i = 0; i < maxSegmentos; i++)
+        {
+            GameObject seg = new GameObject("Segmento");
+            seg.transform.SetParent(panelReserva.transform, false);
+            Image img = seg.AddComponent<Image>();
+            img.raycastTarget = false;
+            RectTransform rt = img.rectTransform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 0f);
+            rt.sizeDelta = new Vector2(16f, 18f);
+            rt.anchoredPosition = new Vector2(18f + i * 21.5f, 16f);
+            segmentosReserva[i] = img;
+        }
+        panelReserva.SetActive(false);
 
         // --- recuerdos
         GameObject recuerdos = RelevoUI.Panel(padre, "PanelRecuerdos", new Vector2(1f, 0f), new Vector2(1f, 0f),
