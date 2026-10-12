@@ -35,6 +35,23 @@ public static class ActorFactory
         RenderSettings.fogMode = FogMode.Exponential;
         RenderSettings.fogDensity = 0.011f;
         RenderSettings.fogColor = RelevoPalette.ColorDe(ClaveMaterial.Neblina);
+
+        // Con el kit visual, luz de tarde (GDD: la aventura transcurre durante una tarde): cielo
+        // más claro y un rebote cálido desde el agua y la piedra, que es lo que hace que el
+        // follaje y la piedra crema se vean bañados por el sol y no grises.
+        if (KitRelevo.Activo != null)
+        {
+            RenderSettings.ambientSkyColor = new Color(0.66f, 0.74f, 0.84f);
+            RenderSettings.ambientEquatorColor = new Color(0.62f, 0.58f, 0.52f);
+            RenderSettings.ambientGroundColor = new Color(0.36f, 0.31f, 0.26f);
+            // Niebla lineal y no exponencial: la cámara ortográfica está a unos 45 m del muelle, y
+            // la exponencial lavaba un tercio del color de todo el nivel. La lineal empieza
+            // detrás de la maqueta y solo funde el mar lejano con el cielo.
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogStartDistance = 58f;
+            RenderSettings.fogEndDistance = 120f;
+            RenderSettings.fogColor = new Color(0.55f, 0.68f, 0.72f);
+        }
     }
 
     public static Light CrearSol(Transform padre)
@@ -51,6 +68,17 @@ public static class ActorFactory
         luz.intensity = 1.45f;
         luz.shadows = LightShadows.Soft;
         luz.shadowStrength = 0.7f;
+
+        // Sol de media tarde: más bajo y más dorado, con sombras largas que dan volumen a los
+        // árboles y a los muelles vistos desde la cámara inclinada.
+        if (KitRelevo.Activo != null)
+        {
+            go.transform.rotation = Quaternion.Euler(38f, -38f, 0f);
+            luz.color = new Color(1f, 0.87f, 0.7f);
+            luz.intensity = 1.65f;
+            luz.shadowStrength = 0.62f;
+        }
+
         return luz;
     }
 
@@ -58,6 +86,9 @@ public static class ActorFactory
 
     public static PlayerController CrearNilo(Transform padre, Vector3 posicion, float giroY)
     {
+        KitRelevo kit = KitRelevo.Activo;
+        if (kit != null && kit.niloModelo != null) return CrearNiloModelo(padre, posicion, giroY, kit);
+
         GameObject raiz = new GameObject("Nilo");
         raiz.transform.SetParent(padre, false);
         raiz.transform.localPosition = posicion;
@@ -173,6 +204,100 @@ public static class ActorFactory
         }, 2.6f, 0f, 0.5f, 1.7f, 0f);
 
         return jugador;
+    }
+
+    /// <summary>
+    /// Nilo con el modelo del kit visual: el robot animado de Quaternius, pintado con la paleta de
+    /// Nilo y con sus señas propias (bufanda naranja, antena con luz cian) colgadas de los huesos.
+    ///
+    /// Lo funcional es idéntico a la versión de primitivas: mismo CharacterController, mismos
+    /// componentes de juego y el ancla 'ManoBateria'. La batería ahora va a la espalda, colgada del
+    /// hueso del torso, para que el balanceo de los brazos al andar no la atraviese.
+    /// </summary>
+    static PlayerController CrearNiloModelo(Transform padre, Vector3 posicion, float giroY, KitRelevo kit)
+    {
+        GameObject raiz = new GameObject("Nilo");
+        raiz.transform.SetParent(padre, false);
+        raiz.transform.localPosition = posicion;
+        raiz.transform.localRotation = Quaternion.Euler(0f, giroY, 0f);
+
+        CharacterController controlador = raiz.AddComponent<CharacterController>();
+        controlador.height = 1.8f;
+        controlador.radius = 0.34f;
+        controlador.center = new Vector3(0f, 0.9f, 0f);
+        controlador.skinWidth = 0.03f;
+        controlador.stepOffset = 0.3f;
+        controlador.slopeLimit = 45f;
+        controlador.minMoveDistance = 0f;
+
+        PlayerController jugador = raiz.AddComponent<PlayerController>();
+        raiz.AddComponent<PlayerInteractor>();
+
+        Transform cuerpo = DioramaBuilder.CrearAncla("Cuerpo", raiz.transform, Vector3.zero);
+        Transform figura = DioramaBuilder.CrearAncla("Figura", cuerpo, Vector3.zero);
+
+        GameObject modelo = KitRelevo.Colocar(kit.niloModelo, figura, Vector3.zero, 0f, kit.niloEscala);
+        modelo.name = "Modelo";
+
+        Animator animador = modelo.GetComponent<Animator>();
+        if (animador == null) animador = modelo.AddComponent<Animator>();
+        animador.runtimeAnimatorController = kit.niloAnimador;
+        animador.applyRootMotion = false;
+        animador.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+        // Sombra de contacto, igual que en la versión de primitivas: separa la carcasa clara del
+        // adoquinado crema.
+        GameObject huella = DioramaBuilder.CrearEsfera("Sombra de contacto", cuerpo,
+            new Vector3(0f, 0.02f, 0f), 1f, RelevoPalette.MaterialDe(ClaveMaterial.Maqueta));
+        huella.transform.localScale = new Vector3(0.9f, 0.03f, 0.9f);
+        MeshRenderer renderHuella = huella.GetComponent<MeshRenderer>();
+        if (renderHuella != null) renderHuella.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+        Transform cuello = BuscarHueso(modelo.transform, "Neck");
+        Transform cabeza = BuscarHueso(modelo.transform, "Head");
+        Transform torso = BuscarHueso(modelo.transform, "Torso");
+
+        // --- bufanda: aro al cuello y cola que ondea (la anima AnimadorNiloModelo).
+        Material bufanda = RelevoPalette.MaterialDe(ClaveMaterial.NiloBufanda);
+        Transform grupoBufanda = DioramaBuilder.CrearAncla("Bufanda", figura, new Vector3(0f, 1.07f, 0f));
+        DioramaBuilder.CrearCilindro("Aro bufanda", grupoBufanda, Vector3.zero, 0.27f, 0.13f, bufanda);
+        DioramaBuilder.CrearEsfera("Nudo bufanda", grupoBufanda, new Vector3(0.12f, -0.02f, -0.24f), 0.15f, bufanda);
+        Transform cola = DioramaBuilder.CrearAncla("Bufanda cola", grupoBufanda, new Vector3(0.12f, -0.02f, -0.26f));
+        DioramaBuilder.CrearCaja("Tira", cola, new Vector3(0f, -0.2f, -0.02f), new Vector3(0.13f, 0.4f, 0.05f), bufanda, false);
+        if (cuello != null) grupoBufanda.SetParent(cuello, true);
+
+        // --- antena con punta luminosa sobre la cabeza.
+        Transform antena = DioramaBuilder.CrearAncla("Antena base", figura, new Vector3(0.12f, 1.8f, -0.06f));
+        DioramaBuilder.CrearCilindro("Antena", antena, new Vector3(0f, 0.15f, 0f), 0.02f, 0.3f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
+        GameObject antenaPunta = DioramaBuilder.CrearEsfera("Antena punta", antena, new Vector3(0f, 0.33f, 0f), 0.09f, RelevoPalette.MaterialDe(ClaveMaterial.NiloOjos));
+        GameObject aroAntena = DioramaBuilder.CrearAro("Aro de antena", antena, new Vector3(0f, 0.38f, 0f), 0.14f, RelevoPalette.MaterialDe(ClaveMaterial.NiloOjos));
+        if (cabeza != null) antena.SetParent(cabeza, true);
+
+        // --- la batería va a la espalda, sobre el torso y algo reducida.
+        Transform mano = DioramaBuilder.CrearAncla("ManoBateria", cuerpo, new Vector3(0f, 0.86f, -0.4f));
+        mano.localScale = Vector3.one * 0.75f;
+        if (torso != null) mano.SetParent(torso, true);
+
+        AnimadorNiloModelo animacion = raiz.AddComponent<AnimadorNiloModelo>();
+        animacion.Configurar(animador, cola, antena);
+
+        CrearAcento(antena.gameObject, new List<Renderer>
+        {
+            RendererDe(antenaPunta),
+            RendererDe(aroAntena)
+        }, 2.6f, 0f, 0.5f, 1.8f, 0f);
+
+        return jugador;
+    }
+
+    /// <summary>Busca un hueso por nombre en todo el esqueleto (el primero que aparezca).</summary>
+    static Transform BuscarHueso(Transform raiz, string nombre)
+    {
+        foreach (Transform t in raiz.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name == nombre) return t;
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------ Maia
@@ -307,7 +432,10 @@ public static class ActorFactory
     {
         if (bateria == null || jugador == null) return;
 
+        // Con el modelo del kit, 'ManoBateria' cuelga de un hueso y no de 'Cuerpo': se busca por
+        // nombre en todo Nilo si la ruta directa no existe.
         Transform mano = jugador.transform.Find("Cuerpo/ManoBateria");
+        if (mano == null) mano = BuscarHueso(jugador.transform, "ManoBateria");
         if (mano == null) mano = jugador.transform;
 
         bateria.Inicializar(mano, bateria.transform.parent, bateria.Ancla);

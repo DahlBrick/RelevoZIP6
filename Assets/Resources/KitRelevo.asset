@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb629f1a032d58244808575846c3a9a9, type: 3}
+  m_Name: KitRelevo
+  m_EditorClassIdentifier: Assembly-CSharp::KitRelevo
+  agua: {fileID: 2100000, guid: efb06d97ee95ae04c8af3f7c2292a410, type: 2}
+  aguaMar: {fileID: 2100000, guid: 6dd3de8b2b6933043b6150e61a655be7, type: 2}
+  losasDePiedra:
+  - {fileID: 919132149155446097, guid: 225829fe1a5e07441b112b12807893b5, type: 3}
+  tablones: {fileID: 919132149155446097, guid: 2d616ddd86eb67045a2e1b08c90f50ac, type: 3}
+  piedraJunta: {fileID: 2100000, guid: bcbf86701be6009469418ac73c63e11b, type: 2}
+  piedraMuro: {fileID: 2100000, guid: 75dcb2975f116ac498b3e8801af50049, type: 2}
+  maderaMuelle: {fileID: 2100000, guid: a9a8986e43cf5a64b8679b16f29d20b4, type: 2}
+  arboles:
+  - {fileID: 919132149155446097, guid: f43f95f9e3c70ee41a1b634441508f47, type: 3}
+  - {fileID: 919132149155446097, guid: 42665cc8695a9654f83f55a1540d33d4, type: 3}
+  - {fileID: 919132149155446097, guid: a1ab371ed4a009048a3560616df374f0, type: 3}
+  - {fileID: 919132149155446097, guid: 4db2a893f6edafe44b023706e70b4599, type: 3}
+  - {fileID: 919132149155446097, guid: f5d2c73bef01cd64bb306ac8d4f197d8, type: 3}
+  - {fileID: 919132149155446097, guid: fd5b34a7c4c29fa488d94f8dc3eeb7f2, type: 3}
+  - {fileID: 919132149155446097, guid: 9bace6c62a370cd4aa06d1b4e89d1e4d, type: 3}
+  arbustos:
+  - {fileID: 919132149155446097, guid: a1c76702f09d6f745b793423eb5287ff, type: 3}
+  - {fileID: 919132149155446097, guid: a52afac2d076add499926df5c2d0135d, type: 3}
+  - {fileID: 919132149155446097, guid: 45eb24ff32888d143888d044e61e2814, type: 3}
+  - {fileID: 919132149155446097, guid: 3e2550dd264fd6f448d8cf9e0f91b448, type: 3}
+  - {fileID: 919132149155446097, guid: 6a74a6a48d73c6c4f9ce3ae12f1b223a, type: 3}
+  flores:
+  - {fileID: 919132149155446097, guid: a5e38f250a3ee7149916d5d937839c10, type: 3}
+  - {fileID: 919132149155446097, guid: 1938b2ad4b5db25408be88de5f0f4550, type: 3}
+  - {fileID: 919132149155446097, guid: 41893c9fb66fed540aa91d80bd70dfa4, type: 3}
+  - {fileID: 919132149155446097, guid: 54afd1a2a15137146bc830e72451e271, type: 3}
+  - {fileID: 919132149155446097, guid: d522abc451de77b4582edd63e5372e3a, type: 3}
+  hierbas:
+  - {fileID: 919132149155446097, guid: 3890803dbbfcccb43855de7982eaaa5d, type: 3}
+  - {fileID: 919132149155446097, guid: 948167155113c224fa9df331574f08ed, type: 3}
+  - {fileID: 919132149155446097, guid: 953bad59e6895aa4cb9b3d4d8e413e78, type: 3}
+  - {fileID: 919132149155446097, guid: e2cfa20ad9b7c6b4a90f8fcf44f3e606, type: 3}
+  rocas:
+  - {fileID: 919132149155446097, guid: 8ff260f12b748434da6a318411e0249d, type: 3}
+  - {fileID: 919132149155446097, guid: 8708b22c0b11aa149927ed4059918718, type: 3}
+  - {fileID: 919132149155446097, guid: 5929d7808937fe34da8728563bdcbf03, type: 3}
+  guijarros:
+  - {fileID: 919132149155446097, guid: 076185d4a326bfe46ae9df9fee4772bc, type: 3}
+  - {fileID: 919132149155446097, guid: 0726ef5ef31365f46a75ba7044fd98d9, type: 3}
+  - {fileID: 919132149155446097, guid: a120b83d573943541bc0ea938d0551ad, type: 3}
+  - {fileID: 919132149155446097, guid: bd37fb05b0bd0854d8ff397bdbb9dad2, type: 3}
+  - {fileID: 919132149155446097, guid: c95ae03489ad9e3408317183c3f782f7, type: 3}
+  barril: {fileID: 919132149155446097, guid: 2d25facf0859b3845a03461f498af476, type: 3}
+  caja: {fileID: 919132149155446097, guid: 2ba78e3d13296cc48894357fe9677cc8, type: 3}
+  botes:
+  - {fileID: 919132149155446097, guid: 1fe32eea3ac9538428a79532e0b66e5c, type: 3}
+  - {fileID: 919132149155446097, guid: 6cbccb543f4a15c429f3278914ccd5cf, type: 3}
+  - {fileID: 919132149155446097, guid: 0512bd37d44a88642b35be367c303e84, type: 3}
+  - {fileID: 919132149155446097, guid: 93ac33a7ddce154439d8288f3ba81590, type: 3}
+  boya: {fileID: 919132149155446097, guid: 46dc705072bae99459ca1cfc6a329548, type: 3}
+  muelle: {fileID: 919132149155446097, guid: b5c5efe1f6db32e4b8f42da187acd578, type: 3}
+  poste: {fileID: 919132149155446097, guid: bb33839aa0994af40996285c59fa3248, type: 3}
+  particula: {fileID: 2100000, guid: b8a1bbd0586e7ce409c898578b47183e, type: 2}
+  niloModelo: {fileID: 919132149155446097, guid: a335e72a90b26fd459e8a889f79c74ef, type: 3}
+  niloAnimador: {fileID: 9100000, guid: 126d893d1dbcea344b298857da2e10c4, type: 2}
+  niloEscala: 0.4

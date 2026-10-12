@@ -26,12 +26,16 @@ public static class DioramaBuilder
         Bounds limites = layout.Limites();
         float t = layout.TamanoTile;
 
+        // Con kit visual, las cajas siguen siendo las mismas (son el suelo y las colisiones) pero
+        // cambian de material, y encima se colocan los modelos (DioramaVestido).
+        KitRelevo kit = KitRelevo.Activo;
+
         // Zócalo: refuerza la lectura de maqueta, tapa los laterales y esconde los
         // tramos retraídos de puentes y pasarelas.
         CrearCaja("Zocalo", raiz,
             new Vector3(limites.center.x, -1.7f, limites.center.z),
             new Vector3(limites.size.x + 3f, 1.6f, limites.size.z + 3f),
-            RelevoPalette.MaterialDe(ClaveMaterial.Maqueta), false);
+            kit != null && kit.piedraJunta != null ? kit.piedraJunta : RelevoPalette.MaterialDe(ClaveMaterial.Maqueta), false);
 
         for (int fila = 0; fila < layout.FilasCuenta; fila++)
         {
@@ -54,13 +58,13 @@ public static class DioramaBuilder
                     CrearCaja("Terreno", suelo,
                         new Vector3(centro.x, -0.5f, centro.z),
                         new Vector3(ancho, 1f, t),
-                        MaterialTerreno(tipo), true);
+                        MaterialTerreno(tipo, kit), true);
 
-                    if (tipo == TipoTile.Vegetacion) AnadirVegetacion(detalles, centro);
+                    if (tipo == TipoTile.Vegetacion) AnadirVegetacion(detalles, centro, kit == null);
                 }
                 else if (tipo == TipoTile.Agua)
                 {
-                    CrearLosaAgua(agua, centro, ancho, t);
+                    CrearLosaAgua(agua, centro, ancho, t, kit);
                     CrearVolumen("Bloqueo agua", bloqueos,
                         new Vector3(centro.x, 0.6f, centro.z),
                         new Vector3(ancho, 3.2f, t));
@@ -75,7 +79,7 @@ public static class DioramaBuilder
                 {
                     // Puente temporal (B/C) o pasarela permanente (P/Q): canal visible
                     // bajo la plataforma, sin bloqueo permanente.
-                    CrearLosaAgua(agua, centro, ancho, t);
+                    CrearLosaAgua(agua, centro, ancho, t, kit);
                 }
 
                 columna = fin + 1;
@@ -84,23 +88,34 @@ public static class DioramaBuilder
 
         AnadirPerimetro(limites, bloqueos);
         AnadirNorays(detalles, layout);
-        AnadirDetallesDeTerreno(detalles, layout);
-        AnadirFondo(fondo, limites);
+        AnadirDetallesDeTerreno(detalles, layout, kit == null);
+        AnadirFondo(fondo, limites, kit);
+
+        if (kit != null) DioramaVestido.Vestir(layout, raiz, detalles, fondo, limites, kit);
 
         return limites;
     }
 
     /// <summary>Superficie de agua visible, hundida 0,45 respecto al suelo caminable.</summary>
-    static void CrearLosaAgua(Transform padreAgua, Vector3 centro, float ancho, float fondo)
+    static void CrearLosaAgua(Transform padreAgua, Vector3 centro, float ancho, float fondo, KitRelevo kit)
     {
-        CrearCaja("Agua", padreAgua,
+        GameObject losa = CrearCaja("Agua", padreAgua,
             new Vector3(centro.x, -0.75f, centro.z),
             new Vector3(ancho, 0.6f, fondo),
-            RelevoPalette.MaterialDe(ClaveMaterial.Agua), false);
+            kit != null && kit.agua != null ? kit.agua : RelevoPalette.MaterialDe(ClaveMaterial.Agua), false);
+
+        // El agua del kit es transparente y dibuja la sombra que recibe: no debe proyectar otra.
+        if (kit != null) SinSombra(losa);
     }
 
-    static Material MaterialTerreno(TipoTile tipo)
+    static Material MaterialTerreno(TipoTile tipo, KitRelevo kit)
     {
+        if (kit != null)
+        {
+            if (tipo == TipoTile.Madera && kit.maderaMuelle != null) return kit.maderaMuelle;
+            if (tipo != TipoTile.Cobre && kit.piedraMuro != null) return kit.piedraMuro;
+        }
+
         switch (tipo)
         {
             case TipoTile.Madera: return RelevoPalette.MaterialDe(ClaveMaterial.MaderaOscura);
@@ -110,11 +125,15 @@ public static class DioramaBuilder
     }
 
     /// <summary>Vegetación y farol cálido sobre las casillas marcadas con 'v'.</summary>
-    static void AnadirVegetacion(Transform padre, Vector3 centro)
+    static void AnadirVegetacion(Transform padre, Vector3 centro, bool conCopa)
     {
-        CrearCilindro("Tronco", padre, centro + new Vector3(0f, 0.3f, 0f), 0.1f, 0.6f, RelevoPalette.MaterialDe(ClaveMaterial.MaderaOscura));
-        CrearEsfera("Copa A", padre, centro + new Vector3(0.08f, 0.85f, 0.05f), 0.7f, RelevoPalette.MaterialDe(ClaveMaterial.Vegetacion));
-        CrearEsfera("Copa B", padre, centro + new Vector3(-0.24f, 0.68f, -0.18f), 0.48f, RelevoPalette.MaterialDe(ClaveMaterial.Vegetacion));
+        // Con kit visual el árbol lo pone DioramaVestido; aquí queda solo el farol.
+        if (conCopa)
+        {
+            CrearCilindro("Tronco", padre, centro + new Vector3(0f, 0.3f, 0f), 0.1f, 0.6f, RelevoPalette.MaterialDe(ClaveMaterial.MaderaOscura));
+            CrearEsfera("Copa A", padre, centro + new Vector3(0.08f, 0.85f, 0.05f), 0.7f, RelevoPalette.MaterialDe(ClaveMaterial.Vegetacion));
+            CrearEsfera("Copa B", padre, centro + new Vector3(-0.24f, 0.68f, -0.18f), 0.48f, RelevoPalette.MaterialDe(ClaveMaterial.Vegetacion));
+        }
 
         CrearCilindro("Poste farol", padre, centro + new Vector3(0.55f, 0.75f, -0.55f), 0.05f, 1.5f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
         CrearCaja("Luz farol", padre, centro + new Vector3(0.55f, 1.55f, -0.55f), new Vector3(0.22f, 0.22f, 0.22f), RelevoPalette.MaterialDe(ClaveMaterial.Ambar), false);
@@ -128,6 +147,8 @@ public static class DioramaBuilder
         componente.range = 9f;
         componente.intensity = 1.4f;
         componente.shadows = LightShadows.None;
+
+        if (!conCopa) luz.AddComponent<LuzTitilante>();
     }
 
     /// <summary>Norays de cobre en los extremos de los muelles, sin coste de colisión.</summary>
@@ -148,15 +169,20 @@ public static class DioramaBuilder
     /// y no dentro del bucle de casillas, porque los cantos y las juntas abarcan varias filas a la
     /// vez. Nada de esto lleva collider.
     /// </summary>
-    static void AnadirDetallesDeTerreno(Transform padre, LevelLayout layout)
+    static void AnadirDetallesDeTerreno(Transform padre, LevelLayout layout, bool primitivo)
     {
         AnadirBordes(padre, layout);
+        AnadirFarolesDeMadera(padre, layout);
+
+        // Juntas, losas, manchas, travesaños y macetas dibujaban con cajas lo que con el kit visual
+        // ya traen los adoquines, los tablones y las plantas: solo se construyen sin kit.
+        if (!primitivo) return;
+
         AnadirJuntasDeMadera(padre, layout);
         AnadirLozasDePiedra(padre, layout);
         AnadirManchasDePiedra(padre, layout);
         AnadirTravesanosDeMadera(padre, layout);
         AnadirMacetas(padre, layout);
-        AnadirFarolesDeMadera(padre, layout);
     }
 
     /// <summary>
@@ -511,7 +537,7 @@ public static class DioramaBuilder
     /// sin collider, fuera del recinto jugable y sin proyectar sombra, de modo que no puede alterar
     /// el paso de Nilo ni el cupo de cuatro luces adicionales por objeto del asset URP.
     /// </summary>
-    static void AnadirFondo(Transform padre, Bounds limites)
+    static void AnadirFondo(Transform padre, Bounds limites, KitRelevo kit)
     {
         Vector3 centro = limites.center;
 
@@ -521,7 +547,7 @@ public static class DioramaBuilder
         GameObject mar = CrearCaja("Mar", padre,
             new Vector3(centro.x, -1.65f, centro.z),
             new Vector3(300f, 0.6f, 300f),
-            RelevoPalette.MaterialDe(ClaveMaterial.Agua), false);
+            kit != null && kit.aguaMar != null ? kit.aguaMar : RelevoPalette.MaterialDe(ClaveMaterial.Agua), false);
         SinSombra(mar);
 
         // El zócalo mide 3 unidades más que los límites en cada eje; desde su borde se deja una
@@ -532,8 +558,11 @@ public static class DioramaBuilder
         float separacion = 1.7f;
         float desplazamiento = bordeX + separacion + anchoMuelle * 0.5f;
 
-        MuelleLejano(padre, centro.x - desplazamiento, centro.z, anchoMuelle, 1f);
-        MuelleLejano(padre, centro.x + desplazamiento, centro.z, anchoMuelle, -1f);
+        MuelleLejano(padre, centro.x - desplazamiento, centro.z, anchoMuelle, 1f, kit);
+        MuelleLejano(padre, centro.x + desplazamiento, centro.z, anchoMuelle, -1f, kit);
+
+        // Con kit, las boyas son las de Kenney y flotan (DioramaVestido).
+        if (kit != null) return;
 
         float boya = bordeX + 0.9f;
         Boya(padre, new Vector3(centro.x - boya, -1.15f, centro.z - 2f));
@@ -547,12 +576,12 @@ public static class DioramaBuilder
     /// interior, que es el único que el encuadre muestra. 'haciaElNivel' vale 1 para el muelle de
     /// poniente y -1 para el de levante.
     /// </summary>
-    static void MuelleLejano(Transform padre, float x, float z, float ancho, float haciaElNivel)
+    static void MuelleLejano(Transform padre, float x, float z, float ancho, float haciaElNivel, KitRelevo kit)
     {
         GameObject muelle = CrearCaja("Muelle vecino", padre,
             new Vector3(x, -0.95f, z),
             new Vector3(ancho, 0.5f, 30f),
-            RelevoPalette.MaterialDe(ClaveMaterial.MaderaOscura), false);
+            kit != null && kit.maderaMuelle != null ? kit.maderaMuelle : RelevoPalette.MaterialDe(ClaveMaterial.MaderaOscura), false);
         SinSombra(muelle);
 
         float medio = ancho * 0.5f - 0.25f;
