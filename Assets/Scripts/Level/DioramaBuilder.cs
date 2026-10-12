@@ -135,8 +135,11 @@ public static class DioramaBuilder
             CrearEsfera("Copa B", padre, centro + new Vector3(-0.24f, 0.68f, -0.18f), 0.48f, RelevoPalette.MaterialDe(ClaveMaterial.Vegetacion));
         }
 
-        CrearCilindro("Poste farol", padre, centro + new Vector3(0.55f, 0.75f, -0.55f), 0.05f, 1.5f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
-        CrearCaja("Luz farol", padre, centro + new Vector3(0.55f, 1.55f, -0.55f), new Vector3(0.22f, 0.22f, 0.22f), RelevoPalette.MaterialDe(ClaveMaterial.Ambar), false);
+        if (!FarolDelKit(padre, centro + new Vector3(0.55f, 0f, -0.55f)))
+        {
+            CrearCilindro("Poste farol", padre, centro + new Vector3(0.55f, 0.75f, -0.55f), 0.05f, 1.5f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
+            CrearCaja("Luz farol", padre, centro + new Vector3(0.55f, 1.55f, -0.55f), new Vector3(0.22f, 0.22f, 0.22f), RelevoPalette.MaterialDe(ClaveMaterial.Ambar), false);
+        }
 
         GameObject luz = new GameObject("Luz calida");
         luz.transform.SetParent(padre, false);
@@ -483,11 +486,27 @@ public static class DioramaBuilder
     {
         Vector3 centro = layout.CentroTile(columna, fila);
 
+        if (FarolDelKit(padre, centro + new Vector3(0.62f, 0f, -0.62f))) return;
+
         CrearCilindro("Poste farol", padre, centro + new Vector3(0.62f, 0.85f, -0.62f),
             0.06f, 1.7f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
 
         CrearCaja("Luz farol", padre, centro + new Vector3(0.62f, 1.8f, -0.62f),
             new Vector3(0.26f, 0.26f, 0.26f), RelevoPalette.MaterialDe(ClaveMaterial.Ambar), false);
+    }
+
+    /// <summary>
+    /// Farol de Fantasy Town (Kenney) en lugar del poste y la caja ámbar. Devuelve false si el kit
+    /// no lo trae, para que el llamador construya el farol de primitivas.
+    /// </summary>
+    static bool FarolDelKit(Transform padre, Vector3 base_)
+    {
+        KitRelevo kit = KitRelevo.Activo;
+        if (kit == null || kit.farol == null) return false;
+
+        GameObject farol = KitRelevo.ColocarCentrado(kit.farol, padre, "Farol", base_, 0f, Vector3.one);
+        if (kit.piedraPueblo != null) KitRelevo.Tenir(farol, n => kit.piedraPueblo);
+        return true;
     }
 
     static bool EsTransitable(LevelLayout layout, int columna, int fila)

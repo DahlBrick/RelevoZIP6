@@ -50,6 +50,11 @@ public class UIManager : MonoBehaviour
     Image capsulaPrompt;
     Text letraPrompt;
     Text textoPrompt;
+    TeclaAnimada teclaPrompt;
+
+    // --- teclas de las leyendas: se hunden cuando el jugador pulsa esa tecla de verdad
+    readonly List<KeyValuePair<UnityEngine.InputSystem.Key, TeclaAnimada>> teclasLeyenda =
+        new List<KeyValuePair<UnityEngine.InputSystem.Key, TeclaAnimada>>();
     bool promptVisible;
 
     // --- diálogo
@@ -159,8 +164,11 @@ public class UIManager : MonoBehaviour
         }
 
         RefrescarFondoPrompt();
+        AnimarTeclasPulsadas();
 
         if (entrada == null) return;
+
+        if (teclaPrompt != null && promptVisible && entrada.Pulsado(entrada.Interactuar)) teclaPrompt.Presionar();
 
         if (completado)
         {
@@ -442,6 +450,14 @@ public class UIManager : MonoBehaviour
             fila.texto.color = seleccionada ? RelevoUI.AmbarSuave : RelevoUI.ConAlfa(RelevoUI.Tinta, 0.82f);
         }
 
+        // La opción con el foco crece un poco, con un rebote suave.
+        if (fila.raiz != null)
+        {
+            ReboteUI rebote = fila.raiz.GetComponent<ReboteUI>();
+            if (rebote == null) rebote = fila.raiz.AddComponent<ReboteUI>();
+            rebote.Objetivo(seleccionada ? 1.035f : 1f);
+        }
+
         if (fila.fondo != null)
         {
             fila.fondo.color = seleccionada
@@ -508,6 +524,7 @@ public class UIManager : MonoBehaviour
         textoPrompt.text = texto;
         textoPrompt.color = color;
         if (capsulaPrompt != null) capsulaPrompt.color = color;
+        if (teclaPrompt != null) teclaPrompt.Tenir(color);
         if (franjaPrompt != null) franjaPrompt.color = color;
         if (letraPrompt != null) letraPrompt.color = RelevoUI.FondoHondo;
     }
@@ -701,7 +718,6 @@ public class UIManager : MonoBehaviour
         tituloNivel = RelevoUI.Texto(panel.transform, "Titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(18f, -12f), new Vector2(452f, 28f), 21, TextAnchor.UpperLeft, RelevoUI.AmbarSuave);
         tituloNivel.text = "LIRIA";
-        tituloNivel.fontStyle = FontStyle.Bold;
 
         RelevoUI.Hexagono(panel.transform, "Conector", new Vector2(1f, 1f), new Vector2(1f, 1f),
             new Vector2(-16f, -14f), new Vector2(24f, 24f), RelevoUI.Ambar, true);
@@ -788,13 +804,25 @@ public class UIManager : MonoBehaviour
         franjaPrompt = RelevoUI.Franja(panelPrompt.transform, "Franja", new Vector2(1f, 1f), new Vector2(0f, 1f),
             Vector2.zero, new Vector2(0f, 3f), RelevoUI.Ambar);
 
-        capsulaPrompt = RelevoUI.Capsula(panelPrompt.transform, "Tecla E", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-            new Vector2(18f, 0f), new Vector2(56f, 40f), RelevoUI.Ambar);
+        // Tecla E de Kenney Input Prompts, animada: se hunde sola de vez en cuando para invitar a
+        // pulsar y se hunde a fondo, con una onda, cuando el jugador la pulsa de verdad.
+        Sprite spriteE = RelevoUI.SpriteTecla("E");
+        if (spriteE != null)
+        {
+            teclaPrompt = TeclaAnimada.Crear(panelPrompt.transform, "Tecla E", spriteE, new Vector2(0f, 0.5f),
+                new Vector2(0f, 0.5f), new Vector2(14f, 5f), 64f, RelevoUI.Ambar, true);
+            teclaPrompt.Reposo(1.5f);
+        }
+        else
+        {
+            capsulaPrompt = RelevoUI.Capsula(panelPrompt.transform, "Tecla E", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                new Vector2(18f, 0f), new Vector2(56f, 40f), RelevoUI.Ambar);
 
-        letraPrompt = RelevoUI.Texto(panelPrompt.transform, "Letra", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-            new Vector2(18f, 0f), new Vector2(56f, 40f), 26, TextAnchor.MiddleCenter, RelevoUI.FondoHondo);
-        letraPrompt.text = "E";
-        letraPrompt.fontStyle = FontStyle.Bold;
+            letraPrompt = RelevoUI.Texto(panelPrompt.transform, "Letra", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                new Vector2(18f, 0f), new Vector2(56f, 40f), 26, TextAnchor.MiddleCenter, RelevoUI.FondoHondo);
+            letraPrompt.text = "E";
+            letraPrompt.fontStyle = FontStyle.Bold;
+        }
 
         RelevoUI.Franja(panelPrompt.transform, "Filete", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
             new Vector2(86f, 0f), new Vector2(2f, 44f), RelevoUI.CobreTenue);
@@ -845,7 +873,6 @@ public class UIManager : MonoBehaviour
 
         textoMensajeTitulo = RelevoUI.Texto(panelDialogo.transform, "Titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(112f, -20f), new Vector2(900f, 30f), 23, TextAnchor.UpperLeft, RelevoUI.AmbarSuave);
-        textoMensajeTitulo.fontStyle = FontStyle.Bold;
 
         textoMensajeCuerpo = RelevoUI.Texto(panelDialogo.transform, "Cuerpo", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(112f, -58f), new Vector2(906f, 132f), 20, TextAnchor.UpperLeft,
@@ -872,7 +899,6 @@ public class UIManager : MonoBehaviour
         textoPausa = RelevoUI.Texto(tarjeta, "Titulo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -30f), new Vector2(800f, 54f), 40, TextAnchor.UpperCenter, RelevoUI.Ambar);
         textoPausa.text = "PAUSA";
-        textoPausa.fontStyle = FontStyle.Bold;
 
         subtituloPausa = RelevoUI.Texto(tarjeta, "Subtitulo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -86f), new Vector2(800f, 26f), 16, TextAnchor.UpperCenter,
@@ -910,7 +936,6 @@ public class UIManager : MonoBehaviour
 
         textoFinal = RelevoUI.Texto(tarjeta, "Titulo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -44f), new Vector2(820f, 60f), 38, TextAnchor.UpperCenter, RelevoUI.Ambar);
-        textoFinal.fontStyle = FontStyle.Bold;
 
         textoFinalMensaje = RelevoUI.Texto(tarjeta, "Mensaje", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -114f), new Vector2(820f, 64f), 21, TextAnchor.UpperCenter,
@@ -982,6 +1007,39 @@ public class UIManager : MonoBehaviour
         return fila;
     }
 
+    /// <summary>Teclas físicas que corresponden a una etiqueta de la leyenda.</summary>
+    static UnityEngine.InputSystem.Key[] TeclasFisicas(string etiqueta)
+    {
+        switch (etiqueta)
+        {
+            case "Esc": return new[] { UnityEngine.InputSystem.Key.Escape };
+            case "Enter": return new[] { UnityEngine.InputSystem.Key.Enter, UnityEngine.InputSystem.Key.NumpadEnter };
+            case "Tab": return new[] { UnityEngine.InputSystem.Key.Tab };
+            case "\u2191\u2193": return new[] { UnityEngine.InputSystem.Key.UpArrow, UnityEngine.InputSystem.Key.DownArrow };
+            case "W": return new[] { UnityEngine.InputSystem.Key.W, UnityEngine.InputSystem.Key.UpArrow };
+            case "A": return new[] { UnityEngine.InputSystem.Key.A, UnityEngine.InputSystem.Key.LeftArrow };
+            case "S": return new[] { UnityEngine.InputSystem.Key.S, UnityEngine.InputSystem.Key.DownArrow };
+            case "D": return new[] { UnityEngine.InputSystem.Key.D, UnityEngine.InputSystem.Key.RightArrow };
+            case "E": return new[] { UnityEngine.InputSystem.Key.E };
+            case "R": return new[] { UnityEngine.InputSystem.Key.R };
+            default: return new UnityEngine.InputSystem.Key[0];
+        }
+    }
+
+    /// <summary>Hunde las teclas de las leyendas visibles que el jugador acaba de pulsar.</summary>
+    void AnimarTeclasPulsadas()
+    {
+        UnityEngine.InputSystem.Keyboard teclado = UnityEngine.InputSystem.Keyboard.current;
+        if (teclado == null) return;
+
+        for (int i = 0; i < teclasLeyenda.Count; i++)
+        {
+            TeclaAnimada icono = teclasLeyenda[i].Value;
+            if (icono == null || !icono.gameObject.activeInHierarchy) continue;
+            if (teclado[teclasLeyenda[i].Key].wasPressedThisFrame) icono.Presionar();
+        }
+    }
+
     /// <summary>Leyenda de controles de un menú, con cada tecla en su cápsula.</summary>
     void Leyenda(Transform tarjeta, float y, int tamano, bool conReiniciar)
     {
@@ -995,10 +1053,38 @@ public class UIManager : MonoBehaviour
         if (conReiniciar) Chip(tarjeta, x, y, "R", "reiniciar", tecla, verbo, tamano);
     }
 
-    /// <summary>Tecla en cápsula más su verbo. Devuelve la X donde continúa la leyenda.</summary>
+    /// <summary>
+    /// Tecla (sprite de Kenney) más su verbo. "WASD" se dibuja como cuatro teclas. Las teclas se
+    /// registran para hundirse cuando el jugador las pulsa. Devuelve la X donde sigue la leyenda.
+    /// Sin el pack de UI vuelve a la tecla en cápsula.
+    /// </summary>
     float Chip(Transform padre, float x, float y, string tecla, string verbo, Color colorTecla, Color colorVerbo, int tamano)
     {
         float alto = tamano * 2f;
+
+        string[] teclas = tecla == "WASD" ? new[] { "W", "A", "S", "D" } : new[] { tecla };
+        if (RelevoUI.SpriteTecla(teclas[0]) != null)
+        {
+            float lado = alto + 8f;
+            float xTecla = x;
+            foreach (string t in teclas)
+            {
+                TeclaAnimada icono = TeclaAnimada.Crear(padre, "Tecla " + t, RelevoUI.SpriteTecla(t),
+                    new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(xTecla, y - 2f), lado, colorTecla, false);
+                icono.Reposo(0f);
+                foreach (UnityEngine.InputSystem.Key k in TeclasFisicas(t))
+                    teclasLeyenda.Add(new KeyValuePair<UnityEngine.InputSystem.Key, TeclaAnimada>(k, icono));
+                xTecla += lado - 6f;
+            }
+
+            if (string.IsNullOrEmpty(verbo)) return xTecla + 12f;
+
+            float anchoVerboIcono = 24f + verbo.Length * tamano * 0.56f;
+            RelevoUI.Texto(padre, "Verbo " + verbo, new Vector2(0f, 0f), new Vector2(0f, 0f),
+                new Vector2(xTecla + 4f, y), new Vector2(anchoVerboIcono, alto), tamano, TextAnchor.MiddleLeft, colorVerbo)
+                .text = verbo;
+            return xTecla + 4f + anchoVerboIcono + 14f;
+        }
         float anchoTecla = Mathf.Max(34f, 18f + tecla.Length * tamano * 0.62f);
 
         RelevoUI.Capsula(padre, "Tecla " + tecla, new Vector2(0f, 0f), new Vector2(0f, 0f),

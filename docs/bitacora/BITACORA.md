@@ -203,3 +203,114 @@ proyecto).
 - Los muelles vecinos del fondo siguen siendo cajas lisas.
 - Replicar todo en el Nivel 2, el Nivel 3 y el Cuaderno.
 
+---
+
+## 2026-10-12 · Entrada 6 — Segunda tanda de assets (HUD y piezas)
+
+Con autorización del equipo se descargaron (todo CC0, salvo las fuentes, que son OFL y también
+libres para uso comercial y académico):
+
+| Pack | Autor | Uso |
+|---|---|---|
+| Input Prompts 1.5 | Kenney | Teclas del teclado (E, Esc, Tab, R, WASD, Enter, flechas) |
+| UI Pack 2.0 | Kenney | Panel redondeado con relieve para todos los paneles del HUD |
+| Fantasy Town Kit 2.0 | Kenney | Pilares, faroles, estandartes y jardinera |
+| Space Kit | Kenney | Máquinas: batería, caja de la palanca, cuerpo y pantalla de Maia |
+| Lilita One | Google Fonts (OFL) | Fuente de títulos |
+| Varela Round | Google Fonts (OFL) | Fuente de textos |
+
+Solo se copiaron al proyecto las piezas que se usan: modelos en `Assets/ThirdParty/Kenney_FantasyTown`
+y `Kenney_Space`, y sprites y fuentes en `Assets/Resources/UI/` (para que el HUD los cargue al
+construirse). Cada carpeta conserva su licencia.
+
+---
+
+## 2026-10-12 · Entrada 7 — Piezas del puzle del Nivel 1
+
+`ActorVestido.cs` (nuevo) viste cada pieza **encima** de la que ya construye `ActorFactory`.
+Lo que los scripts del juego necesitan se conserva intacto: las anclas, los pivotes y los
+renderers que cambian de color para mostrar el estado (anillo de la base, indicador de la
+palanca, umbral de la salida, orbe del recuerdo). Las primitivas que solo eran forma se ocultan.
+
+| Pieza | Antes | Ahora |
+|---|---|---|
+| Batería | Caja ámbar | Celda de máquina (Space Kit) ámbar con franja de carga luminosa |
+| Base de energía | Prisma marrón | Prisma de piedra tallada con pernos de cobre (conserva el conector hexagonal del GDD) |
+| Palanca | Cajas de cobre | Caja de mecanismo de cobre (Space Kit); la barra y su indicador no cambian |
+| Salida | Postes de cobre | Pórtico de pilares de piedra, dintel de madera, estandartes verdes y dos faroles |
+| Recuerdo | Pedestal de cobre | Orbe sobre un pilar corto de piedra |
+| Maia | Torre verde de cajas | Terminal verde con pantalla y ojos sobre una jardinera de piedra con helechos que respiran |
+| Faroles del muelle | Poste y cubo ámbar | Farol de Fantasy Town (con su luz cálida que titila) |
+
+![Piezas del puzle](img/09_piezas_del_puzle.jpg)
+
+*De izquierda a derecha y de arriba abajo: Maia, batería, base de energía, palanca, salida y recuerdo.*
+
+**Problema resuelto:** en los modelos del Space Kit el cuerpo usa el material `metalRed` y las
+franjas usan `metal`, al revés de lo que parecía. El primer intento puso el ámbar emisivo en
+todo el cuerpo de la batería y el brillo la saturó a blanco. Se corrigió el mapeo y se bajó la
+emisión del ámbar.
+
+**Archivos:** `Assets/Scripts/Level/ActorVestido.cs` (nuevo), `ActorFactory.cs` (llama al
+vestido de cada pieza), `DioramaBuilder.cs` (faroles), `KitRelevo.cs` (piezas y materiales
+nuevos, `ColocarCentrado`, `Tenir`), `PrepararKitVisual.cs`.
+
+---
+
+## 2026-10-12 · Entrada 8 — HUD nuevo y tecla animada
+
+El HUD se construye por código desde `RelevoUIEstilo.cs`, así que el cambio de estilo se hizo
+ahí y llega a todas las pantallas a la vez (objetivo, estado, aviso, diálogo, pausa y cierre):
+
+- **Tipografía:** títulos en **Lilita One** y textos en **Varela Round** (antes, la fuente por
+  defecto de Unity). Las dos tienen tildes y eñes.
+- **Paneles:** panel redondeado con relieve de Kenney, teñido con el azul verdoso oscuro de
+  RELEVO, con un contorno redondeado de cobre.
+- **Teclas:** las leyendas de controles usan las teclas dibujadas de Kenney (WASD aparece como
+  cuatro teclas). **Cada tecla de la leyenda se hunde cuando el jugador pulsa esa tecla.**
+- **Menús:** la opción seleccionada crece con un pequeño rebote de muelle (`ReboteUI.cs`).
+
+**Tecla E animada (`TeclaAnimada.cs`).** En el aviso de interacción ("[E] Recoger batería",
+"[E] Hablar con Maia"...) la tecla E está dibujada en dos capas: la tapa y, debajo, la misma
+tecla oscurecida, que hace de canto. Así se ve como una tecla física:
+- En reposo, cada 1,5 s hace una **pulsación suave**, para invitar a presionarla.
+- Cuando el jugador **presiona E de verdad**, la tecla se hunde a fondo, se achata, se oscurece,
+  vuelve con un rebote y suelta una **onda** hexagonal.
+- La tecla toma el color de la acción: ámbar para la batería y la energía, turquesa para los
+  mecanismos, coral para los avisos.
+
+![Tecla E presionándose, fotograma a fotograma](img/13_tecla_e_animada.jpg)
+
+*Ocho fotogramas cada 0,06 s: reposo, hundimiento, fondo y vuelta con rebote.*
+
+![HUD nuevo en juego](img/10_hud_nuevo_en_juego.jpg)
+
+![Diálogo de Maia](img/11_hud_dialogo_maia.jpg)
+
+![Menú de pausa](img/12_hud_menu_pausa.jpg)
+
+**Problema resuelto:** el primer sprite de "contorno" elegido para los marcos no era hueco y
+tapaba los paneles de color cobre, escondiendo las etiquetas. Se reemplazó por un contorno
+redondeado generado por código, del mismo radio que los paneles.
+
+![Primer intento: marcos opacos](img/14_primer_intento_hud_marcos_opacos.jpg)
+
+**Herramientas de la bitácora** (solo editor, no entran en el juego): `SecuenciaCapturas.cs`
+pulsa una tecla simulada y saca capturas cada pocos centésimos de segundo, con la interfaz
+incluida; `CapturaBitacora.HojaDeContactos` compone varias imágenes en una hoja.
+
+**Archivos:** `Assets/Scripts/UI/RelevoUIEstilo.cs`, `UIManager.cs`, `TeclaAnimada.cs` (nuevo),
+`ReboteUI.cs` (nuevo), `Assets/Scripts/Herramientas/SecuenciaCapturas.cs` (nuevo),
+`Assets/Resources/UI/**` (sprites y fuentes).
+
+### Verificación
+
+Se volvió a jugar la solución completa del Nivel 1 (recoger, insertar, palanca, recuperar,
+salir): todo funciona, sin errores en la consola, y la escena sigue con sus 74 colisionadores.
+
+### Pendiente
+
+- Los muelles vecinos del fondo siguen siendo cajas lisas.
+- Llevar el arte, las piezas y el HUD al Nivel 2, el Nivel 3 y el Cuaderno (el HUD nuevo ya
+  aplica a todos los niveles porque se construye por código). El Cuaderno ya toma las fuentes y los paneles nuevos; su leyenda aún usa las teclas en cápsula.
+

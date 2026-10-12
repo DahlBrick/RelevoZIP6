@@ -63,19 +63,70 @@ public static class RelevoUI
     // ------------------------------------------------------------------ tipografía
 
     static Font fuente;
+    static Font fuenteTitulo;
 
     /// <summary>
-    /// Fuente del sistema: el proyecto no incluye ninguna fuente propia. LegacyRuntime.ttf es la
-    /// que trae Unity y cubre el español completo (acentos y eñes).
+    /// Fuente de lectura: Varela Round (Google Fonts, licencia OFL), redondeada y muy legible, con
+    /// tildes y eñes. Si no está en Resources se usa LegacyRuntime.ttf, la que trae Unity.
     /// </summary>
     public static Font Fuente()
     {
         if (fuente != null) return fuente;
 
-        fuente = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        fuente = Resources.Load<Font>("UI/Fuentes/VarelaRound-Regular");
+        if (fuente == null) fuente = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         if (fuente == null) fuente = Resources.GetBuiltinResource<Font>("Arial.ttf");
         if (fuente == null) fuente = Font.CreateDynamicFontFromOSFont("Arial", 16);
         return fuente;
+    }
+
+    /// <summary>
+    /// Fuente de títulos: Lilita One (OFL), gruesa y amable, para nombres de nivel, avisos y menús.
+    /// Ya es una fuente gruesa: no hay que aplicarle negrita sintética.
+    /// </summary>
+    public static Font FuenteTitulo()
+    {
+        if (fuenteTitulo != null) return fuenteTitulo;
+        fuenteTitulo = Resources.Load<Font>("UI/Fuentes/LilitaOne-Regular");
+        if (fuenteTitulo == null) fuenteTitulo = Fuente();
+        return fuenteTitulo;
+    }
+
+    /// <summary>Los textos grandes (títulos, avisos) usan la fuente de títulos.</summary>
+    public const int TamanoTitulo = 21;
+
+    // ------------------------------------------------------------------ sprites del pack de UI
+
+    static readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
+
+    /// <summary>
+    /// Sprite de Resources/UI (Kenney UI Pack e Input Prompts, CC0), o null si no existe: en ese
+    /// caso cada constructor vuelve a su forma generada por código.
+    /// </summary>
+    public static Sprite SpriteUI(string ruta)
+    {
+        Sprite sprite;
+        if (sprites.TryGetValue(ruta, out sprite)) return sprite;
+        sprite = Resources.Load<Sprite>("UI/" + ruta);
+        sprites[ruta] = sprite;
+        return sprite;
+    }
+
+    static Sprite PanelRelieve { get { return SpriteUI("Paneles/panel_relieve"); } }
+    // El marco es un contorno redondeado generado por código: el pack no trae uno hueco con el
+    // mismo radio que sus paneles. Solo se usa cuando hay paneles del pack.
+    static Sprite MarcoContorno { get { return PanelRelieve != null ? Formas.ContornoRedondeado() : null; } }
+
+    /// <summary>Sprite de la tecla del teclado que corresponde a una etiqueta ("E", "Esc", "Tab"...).</summary>
+    public static Sprite SpriteTecla(string tecla)
+    {
+        switch (tecla.ToLowerInvariant())
+        {
+            case "esc": return SpriteUI("Teclas/keyboard_escape");
+            case "enter": return SpriteUI("Teclas/keyboard_enter");
+            case "↑↓": return SpriteUI("Teclas/keyboard_arrows_vertical");
+            default: return SpriteUI("Teclas/keyboard_" + tecla.ToLowerInvariant());
+        }
     }
 
     // ------------------------------------------------------------------ formas
@@ -165,6 +216,32 @@ public static class RelevoUI
             });
         }
 
+        /// <summary>
+        /// Contorno de rectángulo redondeado, hueco, con bordes de 9-slice: el marco de los paneles
+        /// del pack de UI. Radio 18 px y trazo de 3 px a resolución nativa.
+        /// </summary>
+        public static Sprite ContornoRedondeado()
+        {
+            return Cache("contorno_redondeado", delegate
+            {
+                const int lado = 64;
+                const float radio = 18f;
+                const float trazo = 3f;
+                Texture2D t = PintarPixeles(lado, lado, delegate (float x, float y)
+                {
+                    float px = x + 0.5f, py = y + 0.5f;
+                    float cx = Mathf.Clamp(px, radio, lado - radio);
+                    float cy = Mathf.Clamp(py, radio, lado - radio);
+                    float d = Mathf.Sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) - radio;
+                    // Banda entre el borde exterior y 'trazo' hacia dentro.
+                    float fuera = Cobertura(d, 1.2f);
+                    float dentro = Cobertura(d + trazo, 1.2f);
+                    return fuera - dentro;
+                });
+                return ASprite(t, new Vector4(radio + 2f, radio + 2f, radio + 2f, radio + 2f));
+            });
+        }
+
         /// <summary>Distancia con signo a un hexágono regular de radio circunscrito 'r' (punta arriba).</summary>
         static float Hexagono(float u, float v, float r)
         {
@@ -250,6 +327,15 @@ public static class RelevoUI
         imagen.color = color;
         imagen.raycastTarget = false;
 
+        // Paneles con relieve redondeado (Kenney). El velo de los menús (que cubre toda la
+        // pantalla) sigue siendo un color liso.
+        if (PanelRelieve != null && tamano.x < 2000f)
+        {
+            imagen.sprite = PanelRelieve;
+            imagen.type = Image.Type.Sliced;
+            imagen.pixelsPerUnitMultiplier = 2f;
+        }
+
         Anclar(imagen.rectTransform, ancla, pivote, posicion, tamano);
         return go;
     }
@@ -283,6 +369,26 @@ public static class RelevoUI
     /// </summary>
     public static void Marco(Transform padre, Color color, float grosor, List<Image> registro)
     {
+        // Con el pack de UI, el marco es un contorno redondeado que sigue la forma del panel.
+        if (MarcoContorno != null)
+        {
+            GameObject go = new GameObject("Marco");
+            go.transform.SetParent(padre, false);
+            Image contorno = go.AddComponent<Image>();
+            contorno.sprite = MarcoContorno;
+            contorno.type = Image.Type.Sliced;
+            contorno.pixelsPerUnitMultiplier = grosor >= 2f ? 1.8f : 2.2f;
+            contorno.color = color;
+            contorno.raycastTarget = false;
+            RectTransform rt = contorno.rectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            Registra(contorno, registro);
+            return;
+        }
+
         Registra(FranjaBorde(padre, "Marco arriba", new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, grosor), color), registro);
         Registra(FranjaBorde(padre, "Marco abajo", new Vector2(1f, 0f), new Vector2(0f, 0f), new Vector2(0f, grosor), color), registro);
         Registra(FranjaBorde(padre, "Marco izquierda", new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(grosor, 0f), color), registro);
@@ -327,6 +433,9 @@ public static class RelevoUI
     /// <summary>Cuatro esquinas en ángulo: el remate de las tarjetas del cuaderno.</summary>
     public static void Esquinas(Transform padre, float largo, float grosor, Color color)
     {
+        // Los paneles redondeados del pack de UI no llevan esquinas en ángulo.
+        if (PanelRelieve != null) return;
+
         Esquina(padre, "Esquina SO", new Vector2(0f, 1f), new Vector2(0f, 1f), largo, grosor, color);
         Esquina(padre, "Esquina SE", new Vector2(1f, 1f), new Vector2(1f, 1f), largo, grosor, color);
         Esquina(padre, "Esquina NO", new Vector2(0f, 0f), new Vector2(0f, 0f), largo, grosor, color);
@@ -357,7 +466,7 @@ public static class RelevoUI
         go.transform.SetParent(padre, false);
 
         Text texto = go.AddComponent<Text>();
-        texto.font = Fuente();
+        texto.font = tamanoFuente >= TamanoTitulo ? FuenteTitulo() : Fuente();
         texto.fontSize = tamanoFuente;
         texto.alignment = alineacion;
         texto.color = color;

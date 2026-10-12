@@ -65,6 +65,22 @@ MonoBehaviour:
   boya: {fileID: 919132149155446097, guid: 46dc705072bae99459ca1cfc6a329548, type: 3}
   muelle: {fileID: 919132149155446097, guid: b5c5efe1f6db32e4b8f42da187acd578, type: 3}
   poste: {fileID: 919132149155446097, guid: bb33839aa0994af40996285c59fa3248, type: 3}
+  bateria: {fileID: 919132149155446097, guid: cf97948f913c04f4db2ebfb62c118ffa, type: 3}
+  maquina: {fileID: 919132149155446097, guid: b40d4589d27ef6e4ebffebc5651ca6de, type: 3}
+  antenaMaquina: {fileID: 919132149155446097, guid: bfcea3fc862edfd4e9e574f9f7354d56, type: 3}
+  pantalla: {fileID: 919132149155446097, guid: e740c1807cbbab941bd8125dd577ef18, type: 3}
+  pilarPiedra: {fileID: 919132149155446097, guid: 27913deb906a770459ac75c31b89b5d7, type: 3}
+  pilarMadera: {fileID: 919132149155446097, guid: af520dbf9ccccfc4cbef9aca2e501e92, type: 3}
+  farol: {fileID: 919132149155446097, guid: 4ec47a431505b364cae04e92bfdfb747, type: 3}
+  estandarte: {fileID: 919132149155446097, guid: 74761a56c1f02714490953f5055c00c0, type: 3}
+  jardinera: {fileID: 919132149155446097, guid: 39a693c4f7036354780e5b196ba3c27b, type: 3}
+  cobre: {fileID: 2100000, guid: 185f7a963f906f140b7e63da7004b3b1, type: 2}
+  ambarBrillante: {fileID: 2100000, guid: 1c11d1a992107c5409ab83497067c9b8, type: 2}
+  ambarMate: {fileID: 2100000, guid: baba1b82f10da6e499afd255ba2642fe, type: 2}
+  verdeMaia: {fileID: 2100000, guid: b2e752783316a094991ce6fe0d44f7d2, type: 2}
+  pantallaMaia: {fileID: 2100000, guid: 851453732615bef4b8676260c7f3888d, type: 2}
+  oscuro: {fileID: 2100000, guid: 9e42585915d5d2648a504cc70a9658f4, type: 2}
+  piedraPueblo: {fileID: 2100000, guid: ed8485d07cec276488f82c715e19a6e6, type: 2}
   particula: {fileID: 2100000, guid: b8a1bbd0586e7ce409c898578b47183e, type: 2}
   niloModelo: {fileID: 919132149155446097, guid: a335e72a90b26fd459e8a889f79c74ef, type: 3}
   niloAnimador: {fileID: 9100000, guid: 126d893d1dbcea344b298857da2e10c4, type: 2}

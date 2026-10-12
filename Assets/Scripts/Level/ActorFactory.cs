@@ -372,6 +372,8 @@ public static class ActorFactory
             RendererDe(aroAntena)
         }, 2.2f, 0.6f, 0.5f, 1.5f, 0f);
 
+        if (KitRelevo.Activo != null) ActorVestido.Maia(cuerpo, KitRelevo.Activo);
+
         raiz.AddComponent<AnimadorMaia>();
 
         MaiaTerminal maia = raiz.AddComponent<MaiaTerminal>();
@@ -419,6 +421,8 @@ public static class ActorFactory
         List<Renderer> acentosCarga = new List<Renderer> { RendererDe(aroCarga) };
         Sumar(acentosCarga, CrearAspas(carga, 3, 0.07f, 0.2f, 0.045f, ambarBateria, 60f));
         CrearAcento(carga.gameObject, acentosCarga, 1.5f, 0f, 0.4f, 1.9f, 40f);
+
+        if (KitRelevo.Activo != null) ActorVestido.Bateria(cuerpo, KitRelevo.Activo);
 
         BatteryController bateria = raiz.AddComponent<BatteryController>();
         bateria.Inicializar(null, raizActores, anclaAviso);
@@ -500,6 +504,8 @@ public static class ActorFactory
         List<Renderer> acentosBase = new List<Renderer> { RendererDe(aroHalo) };
         Sumar(acentosBase, CrearAspas(halo, 3, 0.2f, 0.52f, 0.06f, ambarBase, 0f));
         CrearAcento(halo.gameObject, acentosBase, 2f, 0f, 0.5f, 2.2f, 26f);
+
+        if (KitRelevo.Activo != null) ActorVestido.Base(cuerpo, KitRelevo.Activo);
 
         EnergySocket baseEnergia = raiz.AddComponent<EnergySocket>();
         baseEnergia.Configurar(identificador, etiqueta, puente, ancla, anclaje,
@@ -700,6 +706,8 @@ public static class ActorFactory
         Sumar(acentosPalanca, CrearAspas(aro, 2, 0.2f, 0.32f, 0.045f, coralAro, 90f));
         CrearAcento(aro.gameObject, acentosPalanca, 1.8f, 0.6f, 0.4f, 1.8f, 18f);
 
+        if (KitRelevo.Activo != null) ActorVestido.Palanca(grupo, KitRelevo.Activo);
+
         LeverInteractable palanca = raiz.AddComponent<LeverInteractable>();
         palanca.Configurar(identificador, destino, pivote, ancla, indicador.GetComponent<Renderer>());
 
@@ -745,6 +753,8 @@ public static class ActorFactory
         Sumar(acentosSalida, CrearAspas(halo, 2, 0.2f, 0.7f, 0.07f, ambarSalida, 90f));
         CrearAcento(halo.gameObject, acentosSalida, 2.8f, 0f, 0.55f, 2f, 14f);
 
+        if (KitRelevo.Activo != null) ActorVestido.Salida(cuerpo, KitRelevo.Activo);
+
         ExitInteractable salida = raiz.AddComponent<ExitInteractable>();
         salida.Configurar(etiqueta, ancla);
 
@@ -775,6 +785,8 @@ public static class ActorFactory
         DioramaBuilder.CrearAro("Halo", raiz.transform, new Vector3(0f, 0.4f, 0f), 0.44f, RelevoPalette.MaterialDe(ClaveMaterial.Turquesa));
 
         CrearAcento(orbe, new List<Renderer> { RendererDe(orbe) }, 3f, 0f, 0.6f, 1.8f, 0f);
+
+        if (KitRelevo.Activo != null) ActorVestido.Recuerdo(raiz.transform, KitRelevo.Activo);
 
         MemoryInteractable recuerdo = raiz.AddComponent<MemoryInteractable>();
         string id = definicion != null ? definicion.recuerdoIdentificador : "nivel1_recuerdo";

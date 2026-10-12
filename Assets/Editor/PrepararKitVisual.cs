@@ -75,6 +75,7 @@ public static class PrepararKitVisual
         Material niloOscuro = Lit("RELEVO_NiloModeloOscuro", Hex("17202E"), null, 0.6f);
 
         ConfigurarTexturasDeFollaje();
+        ConfigurarSpritesUI();
 
         // --- remap de los modelos importados
         int remapeados = 0;
@@ -134,6 +135,28 @@ public static class PrepararKitVisual
         kit.poste = Uno(Pirata, "mast");
 
         kit.particula = particula;
+
+        // --- piezas del puzle (Space Kit y Fantasy Town de Kenney)
+        const string Espacio = Terceros + "/Kenney_Space";
+        const string Pueblo = Terceros + "/Kenney_FantasyTown";
+        kit.bateria = Uno(Espacio, "machine_barrel");
+        kit.maquina = Uno(Espacio, "machine_generator");
+        kit.antenaMaquina = Uno(Espacio, "machine_wireless");
+        kit.pantalla = Uno(Espacio, "desk_computerScreen");
+        kit.pilarPiedra = Uno(Pueblo, "pillar-stone");
+        kit.pilarMadera = Uno(Pueblo, "pillar-wood");
+        kit.farol = Uno(Pueblo, "lantern");
+        kit.estandarte = Uno(Pueblo, "banner-green");
+        kit.jardinera = Uno(Pueblo, "fountain-round");
+
+        kit.cobre = Metal("RELEVO_KitCobre", Hex("B06A3A"), 0.35f, 0.45f);
+        kit.ambarMate = Lit("RELEVO_KitAmbarMate", Hex("E9A23B"), null, 0.4f);
+        kit.ambarBrillante = Emisivo("RELEVO_KitAmbar", Hex("F2B544"), 1.5f);
+        kit.verdeMaia = Lit("RELEVO_KitVerdeMaia", Hex("6FA06A"), null, 0.35f);
+        kit.pantallaMaia = Emisivo("RELEVO_KitPantallaMaia", Hex("163C35"), 0.6f);
+        kit.oscuro = Lit("RELEVO_KitOscuro", Hex("2A3340"), null, 0.4f);
+        kit.piedraPueblo = Lit("RELEVO_PiedraPueblo", Hex("FFF0D8"),
+            AssetDatabase.LoadAssetAtPath<Texture2D>(Pueblo + "/Textures/colormap.png"), 0.15f);
 
         kit.niloModelo = AssetDatabase.LoadAssetAtPath<GameObject>(Robot);
         kit.niloAnimador = animador;
@@ -233,6 +256,22 @@ public static class PrepararKitVisual
         return m;
     }
 
+    static Material Metal(string nombre, Color color, float metalico, float brillo)
+    {
+        Material m = Lit(nombre, color, null, brillo);
+        m.SetFloat("_Metallic", metalico);
+        return m;
+    }
+
+    static Material Emisivo(string nombre, Color color, float intensidad)
+    {
+        Material m = Lit(nombre, color, null, 0.5f);
+        m.EnableKeyword("_EMISSION");
+        m.SetColor("_EmissionColor", color * intensidad);
+        m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+        return m;
+    }
+
     static Material Obtener(string nombre, Shader shader)
     {
         string ruta = CarpetaMateriales + "/" + nombre + ".mat";
@@ -275,6 +314,38 @@ public static class PrepararKitVisual
             importador.alphaIsTransparency = true;
             importador.mipMapsPreserveCoverage = true;
             importador.alphaTestReferenceValue = 0.5f;
+            importador.SaveAndReimport();
+        }
+    }
+
+    /// <summary>
+    /// Sprites del HUD (Kenney UI Pack e Input Prompts) en Resources/UI. Los paneles llevan bordes
+    /// de 9-slice para estirarse sin deformar las esquinas redondeadas; el borde inferior es más
+    /// alto porque ahí está el relieve del botón.
+    /// </summary>
+    static void ConfigurarSpritesUI()
+    {
+        foreach (string guid in AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Resources/UI" }))
+        {
+            string ruta = AssetDatabase.GUIDToAssetPath(guid);
+            TextureImporter importador = AssetImporter.GetAtPath(ruta) as TextureImporter;
+            if (importador == null) continue;
+
+            Vector4 borde = Vector4.zero;
+            if (ruta.Contains("/Paneles/panel_")) borde = new Vector4(24f, 34f, 24f, 24f);
+            else if (ruta.Contains("/Paneles/marco")) borde = new Vector4(24f, 24f, 24f, 24f);
+
+            bool cambia = importador.textureType != TextureImporterType.Sprite
+                || importador.spriteBorder != borde
+                || importador.mipmapEnabled;
+            if (!cambia) continue;
+
+            importador.textureType = TextureImporterType.Sprite;
+            importador.spriteImportMode = SpriteImportMode.Single;
+            importador.spriteBorder = borde;
+            importador.mipmapEnabled = false;
+            importador.alphaIsTransparency = true;
+            importador.textureCompression = TextureImporterCompression.Uncompressed;
             importador.SaveAndReimport();
         }
     }
