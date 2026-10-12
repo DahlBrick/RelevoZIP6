@@ -1,0 +1,371 @@
+#if UNITY_EDITOR
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using UnityEditor.Media;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+
+/// <summary>
+/// Graba los clips del teaser a MP4 (H.264, 1920x1080, 30 fps) en Play, fotograma a fotograma:
+/// Time.captureFramerate fija el paso del tiempo, así que el resultado no depende de lo rápido que
+/// renderice el editor.
+///
+///  - "cinematica": 6 s en cuatro planos con corte seco: primer plano de Nilo, detalle de la
+///    batería, Maia y una grúa que sube desde el agua y descubre el nivel. Sin HUD, con
+///    profundidad de campo y bandas de cine.
+///  - "jugabilidad": 5 s del Nivel 1 con la cámara y el HUD del juego. Un piloto automático pulsa
+///    teclas simuladas: Nilo recoge la batería, la coloca en la base y cruza el puente.
+///
+/// Herramienta de editor: no entra en la build.
+/// </summary>
+public sealed class GrabadorTeaser : MonoBehaviour
+{
+    const int Ancho = 1920, Alto = 1080, Fps = 30;
+
+    string ruta;
+    string modo;
+    public static string Estado = "";
+
+    public static string Iniciar(string modo, string ruta)
+    {
+        GameObject go = new GameObject("Grabador teaser");
+        GrabadorTeaser g = go.AddComponent<GrabadorTeaser>();
+        g.modo = modo;
+        g.ruta = ruta;
+        Estado = "iniciando " + modo;
+        return ruta;
+    }
+
+    void Start()
+    {
+        StartCoroutine(modo == "cinematica" ? Cinematica() : Jugabilidad());
+    }
+
+    // ------------------------------------------------------------------ codificación
+
+    MediaEncoder codificador;
+    RenderTexture lienzo;
+    Texture2D fotograma;
+    bool bandas;
+    int cuenta;
+
+    void Abrir(bool conBandas)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(ruta));
+        if (File.Exists(ruta)) File.Delete(ruta);
+        var atributos = new VideoTrackAttributes
+        {
+            frameRate = new MediaRational(Fps),
+            width = Ancho,
+            height = Alto,
+            includeAlpha = false,
+            bitRateMode = UnityEditor.VideoBitrateMode.High
+        };
+        codificador = new MediaEncoder(ruta, atributos);
+        lienzo = new RenderTexture(Ancho, Alto, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+        lienzo.antiAliasing = 8;
+        fotograma = new Texture2D(Ancho, Alto, TextureFormat.RGBA32, false);
+        bandas = conBandas;
+        cuenta = 0;
+        Time.captureFramerate = Fps;
+    }
+
+    IEnumerator Grabar()
+    {
+        yield return new WaitForEndOfFrame();
+        RenderTexture previa = RenderTexture.active;
+        RenderTexture.active = lienzo;
+        fotograma.ReadPixels(new Rect(0, 0, Ancho, Alto), 0, 0, false);
+        RenderTexture.active = previa;
+
+        if (bandas)
+        {
+            // Bandas 2,39:1.
+            int banda = (Alto - Mathf.RoundToInt(Ancho / 2.39f)) / 2;
+            Color32[] negro = new Color32[Ancho * banda];
+            for (int i = 0; i < negro.Length; i++) negro[i] = new Color32(0, 0, 0, 255);
+            fotograma.SetPixels32(0, 0, Ancho, banda, negro);
+            fotograma.SetPixels32(0, Alto - banda, Ancho, banda, negro);
+        }
+        fotograma.Apply(false);
+        codificador.AddFrame(fotograma);
+
+        // Algunas fotos sueltas para la bitácora.
+        if (cuenta % 15 == 0)
+            File.WriteAllBytes(Path.ChangeExtension(ruta, null) + "_" + cuenta.ToString("000") + ".jpg", fotograma.EncodeToJPG(85));
+        cuenta++;
+    }
+
+    void Cerrar()
+    {
+        if (codificador != null) codificador.Dispose();
+        codificador = null;
+        Time.captureFramerate = 0;
+        if (lienzo != null) { lienzo.Release(); Destroy(lienzo); }
+        Estado = "terminado " + modo + " (" + cuenta + " fotogramas) " + ruta;
+        Destroy(gameObject);
+    }
+
+    static void CerrarDialogo()
+    {
+        DialogoUI d = FindFirstObjectByType<DialogoUI>();
+        if (d != null && d.Abierto) d.Cerrar();
+    }
+
+    // ------------------------------------------------------------------ cinemática
+
+    IEnumerator Cinematica()
+    {
+        CerrarDialogo();
+        yield return null;
+
+        PlayerController nilo = RelevoGame.Jugador;
+        BatteryController bateria = FindFirstObjectByType<BatteryController>();
+        MaiaTerminal maia = FindFirstObjectByType<MaiaTerminal>();
+        Bounds nivel = LevelLayouts.Obtener(1).Limites();
+
+        Canvas[] lienzos = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        foreach (Canvas c in lienzos) c.enabled = false;
+
+        Camera principal = Camera.main;
+        GameObject goCam = new GameObject("Camara cine");
+        Camera cam = goCam.AddComponent<Camera>();
+        cam.CopyFrom(principal);
+        cam.orthographic = false;
+        cam.nearClipPlane = 0.03f;
+        cam.farClipPlane = 200f;
+        cam.depth = principal.depth + 1;
+        // La cámara del juego mira hacia abajo y nunca ve el cielo: aquí el fondo es el color de
+        // la niebla, que funde el horizonte con el agua.
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = RenderSettings.fogColor;
+        var datos = goCam.AddComponent<UniversalAdditionalCameraData>();
+        datos.renderPostProcessing = true;
+        datos.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+        datos.antialiasingQuality = AntialiasingQuality.High;
+        principal.enabled = false;
+
+        // Profundidad de campo propia del plano detalle, sobre el perfil del nivel.
+        GameObject goVol = new GameObject("Volumen cine");
+        Volume volumen = goVol.AddComponent<Volume>();
+        volumen.isGlobal = true;
+        volumen.priority = 100f;
+        VolumeProfile perfil = ScriptableObject.CreateInstance<VolumeProfile>();
+        DepthOfField dof = perfil.Add<DepthOfField>(true);
+        dof.mode.Override(DepthOfFieldMode.Bokeh);
+        dof.aperture.Override(2.2f);
+        dof.focalLength.Override(55f);
+        Vignette vineta = perfil.Add<Vignette>(true);
+        vineta.intensity.Override(0.28f);
+        vineta.smoothness.Override(0.5f);
+        volumen.sharedProfile = perfil;
+
+        Abrir(true);
+        cam.targetTexture = lienzo;
+
+        int porPlano = Fps * 6 / 4;   // 45 fotogramas, 1,5 s
+        for (int plano = 0; plano < 4; plano++)
+        {
+            Estado = "cinematica plano " + (plano + 1);
+            for (int f = 0; f < porPlano; f++)
+            {
+                float t = f / (float)(porPlano - 1);
+                float foco;
+                Encuadrar(plano, t, cam, nilo, bateria, maia, nivel, out foco);
+                dof.active = foco > 0f;
+                if (foco > 0f) dof.focusDistance.Override(foco);
+                yield return Grabar();
+            }
+        }
+
+        cam.targetTexture = null;
+        principal.enabled = true;
+        foreach (Canvas c in lienzos) if (c != null) c.enabled = true;
+        Destroy(goCam);
+        Destroy(goVol);
+        Cerrar();
+    }
+
+    static float EaseInOut(float t) { return t * t * (3f - 2f * t); }
+
+    static Bounds LimitesDe(Transform raiz)
+    {
+        Bounds b = new Bounds(raiz.position, Vector3.zero);
+        bool hay = false;
+        foreach (Renderer r in raiz.GetComponentsInChildren<Renderer>())
+        {
+            if (!r.enabled || r is ParticleSystemRenderer) continue;
+            if (hay) b.Encapsulate(r.bounds); else { b = r.bounds; hay = true; }
+        }
+        return b;
+    }
+
+    static Vector3 Plano(Vector3 v) { v.y = 0f; return v.sqrMagnitude > 1e-4f ? v.normalized : Vector3.forward; }
+
+    static void Encuadrar(int plano, float t, Camera cam, PlayerController nilo, BatteryController bateria,
+        MaiaTerminal maia, Bounds nivel, out float foco)
+    {
+        float s = EaseInOut(t);
+        foco = 0f;
+        switch (plano)
+        {
+            case 0:
+            {
+                // Primer plano de Nilo: dolly lento hacia la cara, desde un poco más abajo (heroico).
+                // Nilo se gira hacia el canal (este): detrás de la cámara no hay postes que tapen.
+                Vector3 haciaCanal = new Vector3(1f, 0f, -0.25f).normalized;
+                if (t == 0f) nilo.transform.rotation = Quaternion.LookRotation(haciaCanal);
+                Bounds b = LimitesDe(nilo.transform);
+                float h = b.max.y - nilo.transform.position.y;
+                Vector3 cara = nilo.transform.position + Vector3.up * h * 0.78f;
+                Vector3 dir = Quaternion.Euler(0f, Mathf.Lerp(-30f, -12f, s), 0f) * haciaCanal;
+                float d = Mathf.Lerp(h * 1.6f, h * 1.15f, s);
+                cam.fieldOfView = 30f;
+                cam.transform.position = cara + dir * d + Vector3.up * (-h * 0.12f);
+                cam.transform.LookAt(cara + Vector3.up * h * 0.03f);
+                foco = d;
+                break;
+            }
+            case 1:
+            {
+                // Detalle de la batería: cámara a ras de suelo que se desliza en arco.
+                Bounds b = LimitesDe(bateria.transform);
+                Vector3 centro = b.center;
+                float r = Mathf.Max(b.size.y, 0.5f);
+                float ang = Mathf.Lerp(200f, 235f, s) * Mathf.Deg2Rad;
+                Vector3 off = new Vector3(Mathf.Sin(ang), 0f, Mathf.Cos(ang)) * r * Mathf.Lerp(2.1f, 1.7f, s);
+                cam.fieldOfView = 34f;
+                cam.transform.position = new Vector3(centro.x + off.x, b.min.y + r * 0.35f, centro.z + off.z);
+                cam.transform.LookAt(centro + Vector3.up * r * 0.1f);
+                foco = Vector3.Distance(cam.transform.position, centro);
+                break;
+            }
+            case 2:
+            {
+                // Maia: arco frente a su pantalla, ligeramente contrapicado.
+                Transform ojoI = null, ojoD = null;
+                foreach (Transform tr in maia.GetComponentsInChildren<Transform>())
+                {
+                    if (tr.name == "Ojo izquierdo") ojoI = tr;
+                    else if (tr.name == "Ojo derecho") ojoD = tr;
+                }
+                Vector3 ojos = ojoI != null && ojoD != null ? (ojoI.position + ojoD.position) * 0.5f
+                    : maia.transform.position + Vector3.up * 1.3f;
+                Vector3 frente = Plano(ojos - new Vector3(maia.transform.position.x, ojos.y, maia.transform.position.z));
+                Vector3 dir = Quaternion.Euler(0f, Mathf.Lerp(28f, 6f, s), 0f) * frente;
+                float d = Mathf.Lerp(2.0f, 1.55f, s);
+                cam.fieldOfView = 32f;
+                cam.transform.position = ojos + dir * d + Vector3.up * Mathf.Lerp(-0.35f, -0.2f, s);
+                cam.transform.LookAt(ojos + Vector3.down * 0.15f);
+                foco = d;
+                break;
+            }
+            default:
+            {
+                // Grúa: sale casi a ras del agua, al sur del malecón, y sube hasta ver el nivel entero.
+                Vector3 c = nivel.center;
+                Vector3 desde = new Vector3(c.x - 3f, 0.7f, nivel.min.z - 6.5f);
+                Vector3 hasta = new Vector3(c.x, 17f, nivel.min.z - 13f);
+                cam.fieldOfView = Mathf.Lerp(44f, 40f, s);
+                cam.transform.position = Vector3.Lerp(desde, hasta, s);
+                Vector3 mira = Vector3.Lerp(new Vector3(c.x - 1f, 0.6f, nivel.min.z + 3f), c, s);
+                cam.transform.LookAt(mira);
+                break;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ jugabilidad
+
+    IEnumerator Jugabilidad()
+    {
+        CerrarDialogo();
+        var ajustes = InputSystem.settings;
+        var previo = ajustes.editorInputBehaviorInPlayMode;
+        ajustes.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+        yield return null;
+
+        LevelLayout mapa = LevelLayouts.Obtener(1);
+        PlayerController nilo = RelevoGame.Jugador;
+        Camera principal = Camera.main;
+
+        // El HUD pasa a dibujarse con la cámara del juego para que entre en la textura.
+        Canvas hud = FindFirstObjectByType<UIManager>().GetComponentInChildren<Canvas>();
+        RenderMode modoPrevio = hud.renderMode;
+        hud.renderMode = RenderMode.ScreenSpaceCamera;
+        hud.worldCamera = principal;
+        hud.planeDistance = principal.nearClipPlane + 0.5f;
+
+        Abrir(false);
+        principal.targetTexture = lienzo;
+
+        // Ruta: batería (Y), base A, y por el puente hacia el este.
+        var pasos = new List<KeyValuePair<Vector3, bool>>
+        {
+            new KeyValuePair<Vector3, bool>(mapa.CentroTile(1, 3), true),
+            new KeyValuePair<Vector3, bool>(mapa.CentroTile(2, 4), true),
+            new KeyValuePair<Vector3, bool>(mapa.CentroTile(4, 4), false),
+            new KeyValuePair<Vector3, bool>(mapa.CentroTile(9, 4), false),
+        };
+
+        int total = Fps * 5;
+        int paso = 0;
+        int esperar = 12;      // un respiro inicial
+        int pulsarE = -1;
+
+        for (int f = 0; f < total; f++)
+        {
+            Estado = "jugabilidad " + f + "/" + total;
+            Keyboard teclado = Keyboard.current;
+            var teclas = new List<Key>();
+
+            DialogoUI d = FindFirstObjectByType<DialogoUI>();
+            if (d != null && d.Abierto) d.Cerrar();
+
+            if (pulsarE >= 0)
+            {
+                if (pulsarE < 3) teclas.Add(Key.E);
+                pulsarE++;
+                if (pulsarE > 10) { pulsarE = -1; paso++; }
+            }
+            else if (esperar > 0) esperar--;
+            else if (paso < pasos.Count)
+            {
+                Vector3 objetivo = pasos[paso].Key;
+                bool interactuar = pasos[paso].Value;
+                Vector3 delta = objetivo - nilo.transform.position;
+                delta.y = 0f;
+                float parar = interactuar ? 1.05f : 0.4f;
+                if (delta.magnitude < parar)
+                {
+                    if (interactuar) pulsarE = 0; else paso++;
+                }
+                else
+                {
+                    Vector3 adelante = Plano(principal.transform.forward);
+                    Vector3 derecha = Plano(principal.transform.right);
+                    Vector2 local = new Vector2(Vector3.Dot(delta, derecha), Vector3.Dot(delta, adelante)).normalized;
+                    if (local.x > 0.38f) teclas.Add(Key.D);
+                    if (local.x < -0.38f) teclas.Add(Key.A);
+                    if (local.y > 0.38f) teclas.Add(Key.W);
+                    if (local.y < -0.38f) teclas.Add(Key.S);
+                }
+            }
+
+            if (teclado != null) InputSystem.QueueStateEvent(teclado, new KeyboardState(teclas.ToArray()));
+            yield return Grabar();
+        }
+
+        Keyboard k = Keyboard.current;
+        if (k != null) InputSystem.QueueStateEvent(k, new KeyboardState());
+        principal.targetTexture = null;
+        hud.renderMode = modoPrevio;
+        ajustes.editorInputBehaviorInPlayMode = previo;
+        Cerrar();
+    }
+}
+#endif

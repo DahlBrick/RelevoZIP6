@@ -397,3 +397,40 @@ movimiento se bloquea con el diálogo abierto y vuelve al cerrarlo. No hay error
 
 **Archivos:** `Assets/Scripts/UI/DialogoUI.cs` (nuevo), `Assets/Scripts/UI/UIManager.cs` (sin la
 caja anterior; el diálogo entra en `BloqueaJuego`).
+
+---
+
+## Entrada 11 — Clips para el teaser
+
+**Pedido:** 6 segundos de cinemática en plano detalle del personaje y del nivel, con cortes
+cinematográficos, y 5 segundos de jugabilidad del Nivel 1.
+
+**Herramienta:** `Assets/Scripts/Herramientas/GrabadorTeaser.cs` (solo editor). Graba en Play,
+fotograma a fotograma, a MP4 H.264 de 1920×1080 a 30 fps, con el `MediaEncoder` del propio Unity:
+no hace falta Unity Recorder ni ffmpeg. `Time.captureFramerate` fija el paso del tiempo, así que el
+clip sale fluido aunque el editor renderice más lento.
+
+**Archivos generados** (fuera del repositorio, en `RelevoZIP6/Teaser/`):
+
+- `01_cinematica.mp4`: 6 s en cuatro planos de 1,5 s con corte seco, bandas de cine 2,39:1,
+  profundidad de campo (bokeh) y viñeta:
+  1. Primer plano de Nilo, con un dolly lento hacia la cara en contrapicado.
+  2. Detalle de la batería a ras de suelo, con una cámara que se desliza en arco.
+  3. Maia: un arco frente a su pantalla con los ojos encendidos.
+  4. Grúa que sale a ras del malecón y sube hasta mostrar el nivel completo.
+- `02_jugabilidad.mp4`: 5 s con la cámara y el HUD reales del juego. Un piloto automático pulsa
+  teclas simuladas: Nilo recoge la batería, la coloca en la base A, el puente se despliega tramo
+  a tramo y Nilo lo cruza.
+
+![Planos de la cinemática](img/19_teaser_cinematica_planos.jpg)
+
+![Jugabilidad](img/20_teaser_jugabilidad.jpg)
+
+**Ajustes durante la grabación:**
+
+- La cámara del juego nunca ve el cielo, así que en los planos cercanos el fondo salía gris
+  pizarra. La cámara de cine usa como fondo el color de la niebla.
+- En el primer plano de Nilo se cruzaban postes. Ahora Nilo se gira hacia el canal antes del plano.
+- La grúa empezaba frente a la pared del zócalo. Ahora arranca por encima del malecón.
+- Para que el HUD salga en el clip de jugabilidad, el lienzo pasa a "Screen Space - Camera"
+  durante la grabación y vuelve a su modo al terminar.
