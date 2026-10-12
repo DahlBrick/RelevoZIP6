@@ -345,3 +345,55 @@ Fantasy Town.
 **Archivos:** `Assets/Scripts/Level/DioramaVestido.cs` (función `Malecon`),
 `Assets/Scripts/Level/DioramaBuilder.cs` (sin muelles vecinos con kit),
 `Assets/Scenes/Nivel1_MuelleDeCobre.unity` (horneada de nuevo).
+
+---
+
+## Entrada 10 — Diálogos con retratos, estilo RPG
+
+**Pedido:** que los diálogos se vean como en la referencia (busto del personaje junto a burbujas de
+texto), que se cierren con un botón y que el movimiento y lo demás se desactiven mientras haya
+diálogo.
+
+**Antes:** una caja ancha con borde de cobre que se cerraba sola a los pocos segundos y no
+detenía el juego (ver la captura de la Entrada 8).
+
+**Cambios:**
+
+- Componente nuevo `DialogoUI`, que reemplaza la caja anterior para todos los mensajes del nivel:
+  Maia, avisos, mecanismos, recuerdos y la introducción.
+- **Retratos en vivo:** no son imágenes fijas. Una cámara encuadra el busto del personaje real y
+  lo dibuja con fondo transparente, así que se ve con sus animaciones. Maia aparece abajo a la
+  izquierda cuando habla, y Nilo abajo a la derecha (atenuado cuando escucha). Los bustos entran
+  deslizándose y "respiran" mientras se escribe su frase.
+- **Burbujas:** una por frase, oscuras y translúcidas, con esquinas achaflanadas, un pico hacia el
+  que habla y un contorno del color del emisor. Aparecen con un pequeño rebote y el texto se
+  escribe letra a letra. El nombre del emisor va encima, en Lilita One y con su color.
+- **Cerrar:** abajo aparece la tecla E animada con "Cerrar" (o "Continuar" si hay más mensajes en
+  cola). E, Enter o un clic completan la frase y, a la siguiente pulsación, cierran o pasan al
+  siguiente mensaje. Esc cierra el diálogo.
+- **Juego detenido:** mientras hay diálogo, Nilo no se mueve, no se puede interactuar, el HUD se
+  atenúa y no responden la pausa, el reinicio ni el cuaderno. La pulsación que cierra el diálogo
+  no llega al juego, así que cerrar con E junto a Maia no la vuelve a abrir.
+- Los mensajes ya no se cierran solos por tiempo, y los que llegan con un diálogo abierto se
+  ponen en cola. Al completar el nivel no se abre diálogo, porque el menú final ya muestra el cierre.
+
+![Narrador](img/17_dialogo_narrador.jpg)
+
+![Maia con retratos](img/18_dialogo_maia_con_retratos.jpg)
+
+**Problemas en el camino:**
+
+- Con las cámaras de retrato encendidas, todo el suelo del nivel salía turquesa. Se arregló
+  haciendo que esas cámaras rendericen antes que la principal (`depth = -50`), sin pedir
+  texturas de profundidad ni de color.
+- Nilo suele estar al lado de Maia, y cada cámara veía a los dos personajes. Ahora cada retrato
+  usa su propia capa (30 y 31) y el personaje vuelve a su capa original al cerrar el diálogo.
+- Maia mira al sur (sus ojos están en -Z), no hacia su eje "adelante". Su cámara se orienta hacia
+  el punto medio de sus dos ojos.
+
+**Verificación (en Play):** se probó con pulsaciones de teclado simuladas. La E cerró el diálogo
+y luego volvió a abrir el de Maia sin rebotes; Enter también lo cerró; Esc lo cerró. El
+movimiento se bloquea con el diálogo abierto y vuelve al cerrarlo. No hay errores en la consola.
+
+**Archivos:** `Assets/Scripts/UI/DialogoUI.cs` (nuevo), `Assets/Scripts/UI/UIManager.cs` (sin la
+caja anterior; el diálogo entra en `BloqueaJuego`).

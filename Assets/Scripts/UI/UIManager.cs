@@ -57,17 +57,9 @@ public class UIManager : MonoBehaviour
         new List<KeyValuePair<UnityEngine.InputSystem.Key, TeclaAnimada>>();
     bool promptVisible;
 
-    // --- diálogo
-    GameObject panelDialogo;
-    Image franjaDialogo;
-    Image anilloDialogo;
-    Image iconoHoja;
-    Image iconoHexagono;
-    Image iconoCapsula;
-    Text textoMensajeTitulo;
-    Text textoMensajeCuerpo;
-    float tiempoMensaje;
-    bool mostrandoMensaje;
+    // --- diálogo (modal, con retratos)
+    DialogoUI dialogo;
+    bool ultimoBloqueo;
 
     // --- pausa
     GameObject panelPausa;
@@ -98,7 +90,7 @@ public class UIManager : MonoBehaviour
     int seleccionConfirmar;
     bool flanco;
 
-    public bool BloqueaJuego { get { return enPausa || completado; } }
+    public bool BloqueaJuego { get { return enPausa || completado || (dialogo != null && dialogo.Bloquea); } }
 
     void Awake()
     {
@@ -153,15 +145,7 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
-        if (mostrandoMensaje && panelDialogo != null && panelDialogo.activeSelf)
-        {
-            tiempoMensaje -= Time.unscaledDeltaTime;
-            if (tiempoMensaje <= 0f)
-            {
-                mostrandoMensaje = false;
-                RelevoUIAnim.Salida(panelDialogo, 0.24f, null);
-            }
-        }
+        if (BloqueaJuego != ultimoBloqueo) AplicarBloqueo();
 
         RefrescarFondoPrompt();
         AnimarTeclasPulsadas();
@@ -169,6 +153,18 @@ public class UIManager : MonoBehaviour
         if (entrada == null) return;
 
         if (teclaPrompt != null && promptVisible && entrada.Pulsado(entrada.Interactuar)) teclaPrompt.Presionar();
+
+        // Con diálogo abierto, la entrada es solo suya: avanzar o cerrar.
+        if (dialogo != null && dialogo.Abierto)
+        {
+            var raton = UnityEngine.InputSystem.Mouse.current;
+            if (entrada.Pulsado(entrada.Interactuar) || entrada.Pulsado(entrada.Confirmar)
+                || (raton != null && raton.leftButton.wasPressedThisFrame))
+                dialogo.Avanzar();
+            else if (entrada.Pulsado(entrada.Cancelar) || entrada.Pulsado(entrada.Pausa))
+                dialogo.Cerrar();
+            return;
+        }
 
         if (completado)
         {
@@ -363,6 +359,7 @@ public class UIManager : MonoBehaviour
 
     void AplicarBloqueo()
     {
+        ultimoBloqueo = BloqueaJuego;
         if (RelevoGame.Jugador != null) RelevoGame.Jugador.PuedeMoverse = !BloqueaJuego;
 
         // Con un menú delante, el HUD se atenúa: la jerarquía se lee de un vistazo.
@@ -531,30 +528,16 @@ public class UIManager : MonoBehaviour
 
     void AlMostrarMensaje(string titulo, string texto)
     {
-        if (panelDialogo == null) return;
+        // Al completar el nivel, el menú final ya presenta el cierre.
+        if (dialogo == null || completado) return;
 
-        Color acento = ColorDeEmisor(titulo);
-
-        if (textoMensajeTitulo != null)
-        {
-            textoMensajeTitulo.text = titulo;
-            textoMensajeTitulo.color = acento;
-        }
-
-        if (textoMensajeCuerpo != null) textoMensajeCuerpo.text = texto;
-
-        if (franjaDialogo != null) franjaDialogo.color = RelevoUI.ConAlfa(acento, 0.9f);
-        if (anilloDialogo != null) anilloDialogo.color = acento;
-
-        IconoDeEmisor(titulo);
-
-        tiempoMensaje = Mathf.Clamp(4.5f + (texto != null ? texto.Length : 0) * 0.03f, 5f, 13f);
-        mostrandoMensaje = true;
-        RelevoUIAnim.Entrada(panelDialogo, 0.24f, -22f, true);
+        dialogo.Encolar(titulo, texto, ColorDeEmisor(titulo));
+        AplicarBloqueo();
     }
 
     void AlCompletarNivel(string nombre)
     {
+        if (dialogo != null) dialogo.Cerrar();
         completado = true;
         enPausa = false;
         confirmandoReinicio = false;
@@ -636,22 +619,6 @@ public class UIManager : MonoBehaviour
         return RelevoUI.AmbarSuave;
     }
 
-    /// <summary>
-    /// Marca visual del emisor: hoja para Maia (la botánica de Liria), cápsula para los recuerdos
-    /// del cuaderno y conector hexagonal para los avisos del sistema.
-    /// </summary>
-    void IconoDeEmisor(string titulo)
-    {
-        string t = titulo != null ? titulo.ToLowerInvariant() : "";
-
-        bool hoja = t.Contains("maia");
-        bool capsula = t.Contains("recuerdo");
-
-        if (iconoHoja != null) iconoHoja.gameObject.SetActive(hoja);
-        if (iconoCapsula != null) iconoCapsula.gameObject.SetActive(capsula);
-        if (iconoHexagono != null) iconoHexagono.gameObject.SetActive(!hoja && !capsula);
-    }
-
     // ------------------------------------------------------------------ animación de menús
 
     void MostrarMenu(GameObject raiz, RectTransform tarjeta)
@@ -701,7 +668,7 @@ public class UIManager : MonoBehaviour
         ConstruirPrompt(grupoHUD.transform);
 
         // --- diálogo: por encima de los menús, para que un mensaje nunca quede tapado
-        ConstruirDialogo(raiz);
+        dialogo = DialogoUI.Crear(raiz);
         ConstruirPausa(raiz);
         ConstruirFinal(raiz);
     }
@@ -832,53 +799,6 @@ public class UIManager : MonoBehaviour
 
         panelPrompt.SetActive(false);
         promptVisible = false;
-    }
-
-    /// <summary>
-    /// Caja de diálogo: identificador del emisor, su nombre y el texto con aire. Es hermana de los
-    /// menús y va la última, para que ningún mensaje quede tapado.
-    /// </summary>
-    void ConstruirDialogo(Transform padre)
-    {
-        panelDialogo = RelevoUI.Panel(padre, "PanelDialogo", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, 236f), new Vector2(1040f, 206f), RelevoUI.ConAlfa(RelevoUI.FondoHondo, 0.94f));
-
-        RelevoUI.Marco(panelDialogo.transform, RelevoUI.Cobre, 2f);
-        RelevoUI.Esquinas(panelDialogo.transform, 18f, 2f, RelevoUI.Cobre);
-
-        // Filo lateral con el color del emisor.
-        franjaDialogo = RelevoUI.Franja(panelDialogo.transform, "Filo", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            Vector2.zero, new Vector2(3f, 0f), RelevoUI.Ambar);
-        RectTransform rtFilo = franjaDialogo.rectTransform;
-        rtFilo.anchorMin = new Vector2(0f, 0f);
-        rtFilo.anchorMax = new Vector2(0f, 1f);
-        rtFilo.sizeDelta = new Vector2(3f, 0f);
-        rtFilo.anchoredPosition = Vector2.zero;
-
-        // Identificador del emisor: anillo hexagonal con el icono dentro.
-        anilloDialogo = RelevoUI.Hexagono(panelDialogo.transform, "Anillo", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-            new Vector2(24f, 0f), new Vector2(56f, 56f), RelevoUI.AmbarSuave, false);
-
-        iconoHoja = RelevoUI.Hoja(panelDialogo.transform, "Icono hoja", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-            new Vector2(38f, 0f), new Vector2(28f, 28f), RelevoUI.Verde);
-
-        iconoHexagono = RelevoUI.Hexagono(panelDialogo.transform, "Icono hexagono", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-            new Vector2(36f, 0f), new Vector2(32f, 32f), RelevoUI.AmbarSuave, true);
-
-        iconoCapsula = RelevoUI.Capsula(panelDialogo.transform, "Icono capsula", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-            new Vector2(39f, 0f), new Vector2(26f, 34f), RelevoUI.AmbarSuave);
-
-        RelevoUI.Franja(panelDialogo.transform, "Filete", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(96f, -18f), new Vector2(2f, 170f), RelevoUI.CobreTenue);
-
-        textoMensajeTitulo = RelevoUI.Texto(panelDialogo.transform, "Titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(112f, -20f), new Vector2(900f, 30f), 23, TextAnchor.UpperLeft, RelevoUI.AmbarSuave);
-
-        textoMensajeCuerpo = RelevoUI.Texto(panelDialogo.transform, "Cuerpo", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(112f, -58f), new Vector2(906f, 132f), 20, TextAnchor.UpperLeft,
-            RelevoUI.ConAlfa(RelevoUI.Tinta, 0.96f));
-
-        panelDialogo.SetActive(false);
     }
 
     // ------------------------------------------------------------------ construcción de menús
