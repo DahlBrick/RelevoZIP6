@@ -703,3 +703,66 @@ nombre de la mecánica y una frase por fase.
 
 **Videos** (fuera del repositorio, en `RelevoZIP6/Teaser/`): `07_maqueta_mareas.mp4` (21,7 s) y
 `08_maqueta_condensadores.mp4` (21,2 s).
+
+---
+
+## Entrada 16 — Nuevos diseños de nivel: la Ciénaga y la Forja (timelapses)
+
+**Pedido:** dos timelapses de creación de niveles con otra ambientación: uno de aguas turbias, más
+sombrío, y otro con lava. También cambian los suelos, los elementos (como los barcos) y la fauna.
+
+**Assets nuevos (CC0), descargados con autorización:**
+
+- Kenney **Graveyard Kit**: lápidas, pinos retorcidos, verjas, farolas, cripta, fantasma y cesta
+  de fuego.
+- Kenney **Castle Kit**: torres, rocas, troncos quemados, estandartes y máquinas de asedio
+  destruidas.
+- Quaternius **Lowpoly Animated Fish**: peces con animación de nado.
+
+Solo se copiaron al proyecto los modelos que se usan, en `Assets/ThirdParty/Kenney_Graveyard`,
+`Kenney_Castle` y `Quaternius_Fish`, cada carpeta con su licencia.
+
+**Escenas** (`Assets/Scenes/Maquetas/`), con el componente
+`Assets/Scripts/Herramientas/MaquetaTematica.cs`:
+
+### La Ciénaga de los Faroles Ahogados
+
+- **Suelos:** piedra con musgo, desaturada y verdosa.
+- **Agua:** turbia, entre verde y marrón, casi opaca y sin destellos.
+- **Ambiente:** niebla densa, luz fría y baja, y luciérnagas verdosas.
+- **Decorado:** pinos retorcidos oscuros, lápidas, verjas rotas, una cripta, un ataúd y velas.
+  Los barcos de Liria se sustituyen por dos naufragios y un barco fantasma que se mece.
+- **Fauna:** un fantasma que flota sobre el canal, cuervos (las gaviotas en negro) y peces que
+  nadan bajo el agua turbia.
+- **Adelanto de mecánica:** la niebla lo cubre todo; Nilo enciende los faroles de la pasarela y,
+  con cada uno, la niebla retrocede.
+
+![Ciénaga](img/34_cienaga_faroles_ahogados.jpg)
+
+### La Forja de Ascuas
+
+- **Suelos:** basalto oscuro.
+- **Lava:** el canal es un río de lava con una textura generada por código, que avanza
+  lentamente y late. El mar que rodea la maqueta es costra de magma casi fría.
+- **Ambiente:** niebla rojiza, luz baja y roja, brasas que suben, y luces que titilan a lo largo
+  de la lava.
+- **Decorado:** torres en ruinas, estandartes, troncos quemados, rocas, una catapulta y una torre
+  de asedio destruidas, y cestas de fuego con su llama.
+- **Fauna:** salamandras de fuego (peces incandescentes) que saltan de la lava, y murciélagos (las
+  gaviotas en negro).
+- **Adelanto de mecánica:** losas de basalto emergen de la lava al rojo, se enfrían a negro, Nilo
+  cruza, y la forja las vuelve a fundir.
+
+![Forja](img/35_forja_de_ascuas.jpg)
+
+**Ajustes durante la grabación:**
+
+- **Pinos de colores chillones:** los pinos comparten textura con las lápidas y el tinte se
+  guardaba solo por material, así que se quedaba con el primero que se aplicaba. Ahora se guarda
+  por material y por tinte.
+- **Pino en medio del plano:** uno tapaba el inicio de la mecánica; se quitó.
+- **Lava demasiado brillante:** el mar entero era lava y la imagen se quemaba en naranja. Ahora
+  la lava viva está solo en el canal, con menos brillo, y el mar es costra oscura.
+
+**Videos** (en `RelevoZIP6/Teaser/`): `09_cienaga_faroles_ahogados.mp4` (22,2 s) y
+`10_forja_de_ascuas.mp4` (22,2 s).
