@@ -660,3 +660,46 @@ acción, así que los cortes caen siempre en el momento justo.
 - **Primera persona:** la cámara se adelantó para no ver las lentes desde dentro.
 
 Los videos están fuera del repositorio, en `RelevoZIP6/Teaser/`.
+
+---
+
+## Entrada 15 — Maquetas de la siguiente versión: timelapses
+
+**Pedido:** timelapses de escenas de muestra con al menos dos diseños de niveles nuevos, donde se
+vean mecánicas nuevas sencillas como adelanto de la siguiente versión de la beta.
+
+**Escenas nuevas** (`Assets/Scenes/Maquetas/`), que funcionan al darles Play:
+
+- **`Maqueta_MareasDeLiria`:** un canal ancho con pasos de piedra. La marea sube y el canal no se
+  puede cruzar; baja y asoman los pasos; Nilo cruza; la marea vuelve y el camino desaparece. La
+  luz acompaña a la marea: dorada con el agua baja y azulada con la alta. Junto a la orilla hay un
+  poste con franjas que marca la marea.
+- **`Maqueta_LosCondensadores`:** una base con un condensador al lado, una torre con ocho barras.
+  La batería despliega el puente y carga el condensador. Al retirarla, el puente aguanta mientras
+  las barras se vacían (la última parpadea); Nilo cruza a tiempo y el puente se repliega.
+
+**Timelapse:** el nivel se construye pieza a pieza (primero el suelo, luego el agua, la
+decoración y por último las piezas del puzle), cada pieza cae con un pequeño rebote mientras pasa
+el día: el sol barre de la mañana a la tarde y el mundo corre a triple velocidad. La cámara orbita
+la maqueta y luego baja a mostrar la mecánica. Los rótulos dicen "Próximamente en la beta", el
+nombre de la mecánica y una frase por fase.
+
+**Componente:** `Assets/Scripts/Herramientas/MaquetaFutura.cs`. Construye el nivel con el mismo
+`DioramaBuilder` y kit visual del juego, y anima la mecánica. Desde el editor graba a MP4
+(`MaquetaFutura.Grabar`); la grabación no entra en la build.
+
+![Mareas](img/32_maqueta_mareas_timelapse.jpg)
+
+![Condensadores](img/33_maqueta_condensadores_timelapse.jpg)
+
+**Ajustes durante la grabación:**
+
+- **Espuma en todo el canal:** al bajar el agua por debajo del nivel de juego, el canal quedaba
+  tan poco hondo que la espuma lo cubría de blanco. Ahora la marea solo sube desde el nivel de
+  juego: con el agua alta los pasos quedan cubiertos y con la normal asoman.
+- **Barras invisibles:** las barras del condensador miraban hacia atrás. Se movió al lado de la
+  base, con las barras hacia la cámara.
+- **Árbol en medio:** un árbol tapaba el final del cruce; se quitó de la maqueta.
+
+**Videos** (fuera del repositorio, en `RelevoZIP6/Teaser/`): `07_maqueta_mareas.mp4` (21,7 s) y
+`08_maqueta_condensadores.mp4` (21,2 s).
