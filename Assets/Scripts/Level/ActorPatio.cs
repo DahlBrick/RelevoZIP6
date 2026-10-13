@@ -32,6 +32,12 @@ public static class ActorPatio
             Vector3 tam = KitRelevo.Tamano(modelo);
             float escala = t * 0.78f / Mathf.Max(0.01f, Mathf.Max(tam.x, tam.z));
             KitRelevo.ColocarCentrado(modelo, visual, "Modelo", Vector3.zero, 0f, Vector3.one * escala);
+            // El modelo de Kenney es un cajón abierto: se tapa con tablones, que de cerca se nota.
+            float alto = tam.y * escala;
+            Material madera = RelevoPalette.MaterialDe(ClaveMaterial.MaderaOscura);
+            for (int i = 0; i < 3; i++)
+                DioramaBuilder.CrearCaja("Tapa", visual, new Vector3(0f, alto - 0.06f, (i - 1) * t * 0.24f),
+                    new Vector3(t * 0.7f, 0.08f, t * 0.22f), madera, false);
         }
         else
         {

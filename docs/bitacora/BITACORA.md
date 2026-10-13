@@ -612,3 +612,51 @@ agua.
 
 **Archivos:** `EnergySocket.cs`, `TemporaryBridge.cs` (`Contiene`), `LeverInteractable.cs`,
 `LevelManager.cs` (`ReinicioPendiente`), `LevelBootstrap.cs` y `TutorialMaia.cs` (`PrimeraVez`).
+
+---
+
+## Entrada 14 — Cinemáticas de las mecánicas: apagado y cajas
+
+**Pedido:** dos cinemáticas profesionales, con cámara de cine (no la del juego), planos detalle y
+planos en primera persona: cómo se descarga y se apaga Nilo, y cómo empuja las cajas.
+
+**Herramienta:** `Assets/Scripts/Herramientas/CinematicaMecanica.cs` (solo editor). Usa una cámara
+de cine propia con profundidad de campo (bokeh), viñeta, grano de película, una leve aberración
+cromática, cámara en mano sutil y bandas 2,39:1. Graba a MP4 de 1920×1080 a 30 fps. La acción
+la hace el propio juego con teclas simuladas, y el director elige el plano según la fase de la
+acción, así que los cortes caen siempre en el momento justo.
+
+**`05_cinematica_apagado.mp4` (11,7 s):**
+
+1. Detalle de la batería en su base; Nilo se aleja desenfocado y el foco lo sigue.
+2. Primera persona cruzando el puente.
+3. Detalle de la antena, que ya parpadea en coral.
+4. Primera persona mirando atrás: la batería lejos, con viñeta roja.
+5. Plano lateral: Nilo camina con la antena en alarma.
+6. Primer plano frontal con empuje lento: destellos rojos, los ojos se apagan y la cabeza cae.
+7. Primera persona mientras cae la cabeza: la vista baja al suelo, pierde el color y se va a negro.
+8. Plano general que sube: Nilo apagado y humo, con fundido final.
+
+**`06_cinematica_cajas.mp4` (8,7 s):**
+
+1. Detalle a ras de suelo desde detrás de la placa: la caja enfocada y Nilo que llega.
+2. Plano lateral bajo: Nilo apoya el peso y la caja se desliza.
+3. Primera persona detrás de la caja, con la placa al fondo.
+4. Macro de la placa en cámara lenta: la caja asienta y la placa se enciende en turquesa.
+5. El cable encendido lleva al puente de la placa, que se despliega.
+6. Grúa: Nilo cruza el puente turquesa, con fundido final.
+
+![Planos del apagado](img/30_cinematica_apagado_planos.jpg)
+
+![Planos de las cajas](img/31_cinematica_cajas_planos.jpg)
+
+**Ajustes durante la grabación:**
+
+- **Cuadros verdes sobre la batería:** las chispas de la base compartían material con otros
+  efectos y se teñían de verde. Ahora usan la partícula suave del kit; se volvieron a hornear los
+  dos niveles.
+- **Caja abierta:** de cerca se veía que el modelo de Kenney es un cajón sin tapa. Ahora lleva una
+  tapa de tablones.
+- **Primera persona:** la cámara se adelantó para no ver las lentes desde dentro.
+
+Los videos están fuera del repositorio, en `RelevoZIP6/Teaser/`.

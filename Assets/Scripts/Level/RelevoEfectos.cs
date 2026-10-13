@@ -10,6 +10,11 @@ public static class RelevoEfectos
 
     static Material MaterialParticula(Color color)
     {
+        // Con kit visual, la partícula suave y redonda del kit; el color lo da cada sistema con
+        // startColor. Así ningún efecto le cambia el color a otro a través del material compartido.
+        KitRelevo kit = KitRelevo.Activo;
+        if (kit != null && kit.particula != null) return kit.particula;
+
         Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
         if (shader == null) shader = Shader.Find("Sprites/Default");
         if (shader == null) return RelevoPalette.MaterialDe(ClaveMaterial.Ambar);

@@ -279,6 +279,12 @@ public sealed class ReservaEnergia : MonoBehaviour
 
     // ------------------------------------------------------------------ reserva
 
+    /// <summary>Cuánto ha caído la cabeza al apagarse (0 a 1). Lo usa la cámara de cine.</summary>
+    public float Caida { get { return caida; } }
+
+    /// <summary>Fija la reserva a mano (herramientas de cine y pruebas).</summary>
+    public void FijarReserva(float casillas) { Actual = Mathf.Clamp(casillas, 0f, Maximo); }
+
     /// <summary>Gasto extra (empujar una caja). No gasta dentro de la zona de recarga.</summary>
     public void Gastar(float casillas)
     {
