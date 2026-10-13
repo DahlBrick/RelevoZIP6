@@ -420,7 +420,7 @@ public sealed class GrabadorTeaser : MonoBehaviour
         Abrir(false);
         principal.targetTexture = lienzo;
 
-        int maximo = patio ? Fps * 90 : (completo ? Fps * 40 : Fps * 5);
+        int maximo = patio ? Fps * 160 : (completo ? Fps * 40 : Fps * 5);
         minimaReserva = float.MaxValue;
         int paso = 0;
         int esperar = completo ? 0 : 12;
@@ -450,6 +450,13 @@ public sealed class GrabadorTeaser : MonoBehaviour
                 // Se deja leer un momento y se cierra con E, como lo haría un jugador.
                 enDialogo++;
                 if (!completo) d.Cerrar();
+                else if (patio)
+                {
+                    // Se deja escribir el mensaje entero y se lee un momento antes de avanzar.
+                    if (!d.TerminoDeEscribir) enDialogo = 0;
+                    else if (enDialogo >= 50 && enDialogo < 53) teclas.Add(Key.E);
+                    else if (enDialogo > 90) { d.Avanzar(); enDialogo = 0; }
+                }
                 else if ((enDialogo >= 30 && enDialogo < 33) || (enDialogo >= 46 && enDialogo < 49)) teclas.Add(Key.E);
                 else if (enDialogo > 75) { d.Avanzar(); enDialogo = 40; }   // respaldo si la pulsación no llegó
             }

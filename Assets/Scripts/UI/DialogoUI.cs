@@ -185,6 +185,9 @@ public sealed class DialogoUI : MonoBehaviour
     }
 
     /// <summary>Verdadero cuando el mensaje en pantalla ya terminó de escribirse y ofrece opciones.</summary>
+    /// <summary>El mensaje en pantalla ya terminó de escribirse.</summary>
+    public bool TerminoDeEscribir { get { return Abierto && burbujaActual >= burbujas.Count; } }
+
     public bool EligiendoOpcion { get { return Abierto && opciones.Count > 0 && burbujaActual >= burbujas.Count; } }
 
     public void MoverSeleccion(int paso)
