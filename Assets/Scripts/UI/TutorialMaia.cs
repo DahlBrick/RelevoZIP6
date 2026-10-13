@@ -5,6 +5,11 @@
 /// </summary>
 public static class TutorialMaia
 {
+    static readonly System.Collections.Generic.HashSet<int> contados = new System.Collections.Generic.HashSet<int>();
+
+    /// <summary>Verdadero la primera vez que se pregunta por un nivel en esta sesión.</summary>
+    public static bool PrimeraVez(int nivel) { return contados.Add(nivel); }
+
     static DialogoUI Dialogo { get { return RelevoGame.UI != null ? RelevoGame.UI.Dialogo : null; } }
 
     static void Decir(string texto, IlustracionTutorial.Tipo ilustracion)

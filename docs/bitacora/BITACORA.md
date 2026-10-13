@@ -575,3 +575,40 @@ compuerta, alerta y apagado), `GrabadorTeaser.cs` (ruta del patio), `PrepararKit
 - El Nivel 3 queda fuera de la beta por ahora.
 - Mareas y condensadores: más adelante.
 - Las pruebas guardaron progreso local (Nivel 2 completado y su recuerdo).
+
+---
+
+## Entrada 13 — Ajustes del Patio de Bombas tras la primera revisión
+
+**Pedido:** borrar el progreso guardado para probar desde cero; que el tutorial de Maia salga una
+sola vez y no cada vez que Nilo revive; quitar el diálogo de la palanca; y corregir un error: al
+retirar la batería estando sobre su puente, el puente se replegaba y Nilo quedaba flotando en el
+agua.
+
+**Cambios:**
+
+- **Progreso borrado:** se eliminó `relevo_save.json`, que solo tenía datos de las pruebas
+  (Niveles 1 y 2 completados y sus dos recuerdos). El juego arranca con todo en cero.
+- **Reintentos sin repetir textos:** al reiniciar (con R o cuando Nilo se apaga) el nivel no
+  repite la introducción ni el tutorial. Además, el tutorial de Maia se cuenta una sola vez por
+  sesión, aunque se vuelva al nivel desde el cuaderno. Hablar con Maia sigue ofreciendo el menú
+  para repasar cada mecánica.
+- **Palanca sin diálogo:** accionarla ya no abre el mensaje "Mecanismo". La pasarela que sube, el
+  sonido y el objetivo del HUD bastan.
+- **Batería desde el puente:** una base no deja retirar su batería si Nilo está sobre el puente
+  que ella alimenta. El aviso contextual lo dice y, al pulsar E, se abre el diálogo: *"No puedes
+  retirar la batería desde el puente: se replegaría bajo tus pies"*. Además de quitar el error,
+  cierra un atajo que hacía el nivel demasiado fácil.
+
+![Aviso desde el puente](img/29_aviso_bateria_desde_el_puente.jpg)
+
+**Verificación (en Play):**
+
+- Con la batería en la base D y Nilo sobre su puente, la base no permite retirarla: la batería
+  sigue en la base y aparece el aviso.
+- La palanca ya no abre ningún diálogo.
+- Tras reiniciar, no hay diálogo abierto, la reserva vuelve a 12 y la batería al suelo.
+- El progreso guardado sigue vacío.
+
+**Archivos:** `EnergySocket.cs`, `TemporaryBridge.cs` (`Contiene`), `LeverInteractable.cs`,
+`LevelManager.cs` (`ReinicioPendiente`), `LevelBootstrap.cs` y `TutorialMaia.cs` (`PrimeraVez`).

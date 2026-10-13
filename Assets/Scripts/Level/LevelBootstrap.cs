@@ -355,8 +355,12 @@ public class LevelBootstrap : MonoBehaviour
 
         // La intro del nivel ya cuenta la presentación, así que Maia pasa directa a la pista.
         if (maia != null) maia.MarcarPresentacion();
-        if (def != null) GameEvents.RaiseMensajeMostrado(def.tituloIntro, def.textoIntro);
-        if (def != null && def.tutorialPatio) TutorialMaia.Presentacion();
+        // Al reintentar (R o Nilo apagado) no se repiten la introducción ni el tutorial de Maia. El
+        // tutorial, además, solo se cuenta una vez por sesión aunque se vuelva al nivel.
+        bool reintento = LevelManager.ReinicioPendiente;
+        LevelManager.ReinicioPendiente = false;
+        if (def != null && !reintento) GameEvents.RaiseMensajeMostrado(def.tituloIntro, def.textoIntro);
+        if (def != null && def.tutorialPatio && !reintento && TutorialMaia.PrimeraVez(indiceNivel)) TutorialMaia.Presentacion();
 
         Debug.Log("RELEVO: " + nivel.NombreNivel
             + (escenaHorneada ? " (escena horneada)" : " (construido en ejecución)")

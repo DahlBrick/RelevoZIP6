@@ -67,6 +67,22 @@ public class TemporaryBridge : MonoBehaviour
         enabled = true;
     }
 
+    /// <summary>Verdadero si el punto (en el plano) está sobre alguno de los tramos del puente.</summary>
+    public bool Contiene(Vector3 punto)
+    {
+        for (int i = 0; i < tramos.Count; i++)
+        {
+            Tramo tramo = tramos[i];
+            if (tramo.plataforma == null) continue;
+            Transform padre = tramo.plataforma.parent;
+            Vector3 centro = padre != null ? padre.TransformPoint(tramo.destino) : tramo.destino;
+            float mx = tramo.escalaDestino.x * 0.5f + 0.3f;
+            float mz = tramo.escalaDestino.z * 0.5f + 0.3f;
+            if (Mathf.Abs(punto.x - centro.x) <= mx && Mathf.Abs(punto.z - centro.z) <= mz) return true;
+        }
+        return false;
+    }
+
     public void Activar(bool activo)
     {
         if (Desplegado == activo) return;

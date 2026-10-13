@@ -85,8 +85,8 @@ public class LeverInteractable : MonoBehaviour, IInteractable
             emision.rateOverTime = 10f;
         }
 
-        GameEvents.RaiseMensajeMostrado("Mecanismo",
-            "La pasarela manual ya está desplegada: ese camino no depende de la energía.");
+        // Sin diálogo: la pasarela que sube, su sonido y el objetivo del HUD ya lo cuentan.
+        if (RelevoGame.Nivel != null) RelevoGame.Nivel.ActualizarObjetivo();
     }
 
     void Update()

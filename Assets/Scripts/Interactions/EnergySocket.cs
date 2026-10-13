@@ -33,7 +33,8 @@ public class EnergySocket : MonoBehaviour, IInteractable
     {
         get
         {
-            if (TieneBateria) return true;
+            // Retirar la batería desde su propio puente lo replegaría bajo los pies de Nilo.
+            if (TieneBateria) return !NiloSobreElPuente();
 
             BatteryController enManos = RelevoGame.Bateria;
             return enManos != null && enManos.EnManos;
@@ -45,7 +46,21 @@ public class EnergySocket : MonoBehaviour, IInteractable
         get { return TieneBateria ? "Retirar batería de " + Etiqueta : "Insertar batería en " + Etiqueta; }
     }
 
-    public string Motivo { get { return "Necesitas llevar la batería"; } }
+    public string Motivo
+    {
+        get
+        {
+            return TieneBateria
+                ? "No puedes retirar la batería desde el puente: se replegaría bajo tus pies"
+                : "Necesitas llevar la batería";
+        }
+    }
+
+    bool NiloSobreElPuente()
+    {
+        PlayerController nilo = RelevoGame.Jugador;
+        return Puente != null && nilo != null && Puente.Contiene(nilo.transform.position);
+    }
 
     void OnEnable() { PlayerInteractor.Registrar(this); }
     void OnDisable() { PlayerInteractor.Desregistrar(this); }

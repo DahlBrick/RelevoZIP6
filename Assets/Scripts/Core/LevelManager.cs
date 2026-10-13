@@ -255,8 +255,15 @@ public class LevelManager : MonoBehaviour
         GameEvents.RaiseMensajeMostrado("Maia", pista);
     }
 
+    /// <summary>
+    /// Lo marca ReiniciarNivel justo antes de recargar la escena: el nivel que arranca sabe que es
+    /// un reintento (R o Nilo apagado) y no repite la introducción ni el tutorial.
+    /// </summary>
+    public static bool ReinicioPendiente;
+
     public void ReiniciarNivel()
     {
+        ReinicioPendiente = true;
         Time.timeScale = 1f;
         GameEvents.Limpiar();
         CargarEscena(SceneManager.GetActiveScene().name);
