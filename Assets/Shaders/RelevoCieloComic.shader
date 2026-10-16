@@ -115,8 +115,8 @@ Shader "RELEVO/CieloComic"
                 // Sol: disco plano y un halo en dos bandas.
                 float3 sol = normalize(_MainLightPosition.xyz);
                 float cerca = dot(dir, sol);
-                float halo = smoothstep(1.0 - _TamanoSol * 6.0, 1.0 - _TamanoSol * 5.6, cerca) * 0.25
-                           + smoothstep(1.0 - _TamanoSol * 2.6, 1.0 - _TamanoSol * 2.3, cerca) * 0.25;
+                float halo = smoothstep(1.0 - _TamanoSol * 2.2, 1.0 - _TamanoSol * 2.0, cerca) * 0.18
+                           + smoothstep(1.0 - _TamanoSol * 1.3, 1.0 - _TamanoSol * 1.15, cerca) * 0.22;
                 color = lerp(color, _ColorSol.rgb, halo);
                 half disco = smoothstep(1.0 - _TamanoSol * 0.55, 1.0 - _TamanoSol * 0.5, cerca);
                 color = lerp(color, _ColorSol.rgb * 1.15, disco);

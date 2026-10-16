@@ -17,6 +17,9 @@ public class PruebaLiria : MonoBehaviour
     [Tooltip("Skybox de cómic (LIRIA_Cielo). Con él la cámara deja de usar fondo de color liso.")]
     [SerializeField] Material cielo;
     [SerializeField] Color colorHorizonte = new Color(0.80f, 0.87f, 0.89f);
+    [Tooltip("Caja que encuadra la cámara de juego. Con tamaño cero se usan los límites pisables.")]
+    [SerializeField] Vector3 centroEncuadre;
+    [SerializeField] Vector3 tamanoEncuadre;
 
     void Awake()
     {
@@ -61,6 +64,7 @@ public class PruebaLiria : MonoBehaviour
     /// </summary>
     Bounds Limites()
     {
+        if (tamanoEncuadre.sqrMagnitude > 0f) return new Bounds(centroEncuadre, tamanoEncuadre);
         Bounds b = new Bounds(transform.position, Vector3.one);
         if (bloque == null) return b;
         foreach (MeshCollider c in bloque.GetComponentsInChildren<MeshCollider>())

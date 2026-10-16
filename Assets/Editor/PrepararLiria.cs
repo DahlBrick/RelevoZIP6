@@ -40,6 +40,11 @@ public static class PrepararLiria
         ("LIRIA_Roca", new Color(0.50f, 0.52f, 0.55f)),
         ("LIRIA_Follaje", new Color(0.55f, 0.58f, 0.24f)),
         ("LIRIA_Montana", new Color(0.44f, 0.52f, 0.48f)),
+        ("LIRIA_FaroRojo", new Color(0.72f, 0.22f, 0.17f)),
+        ("LIRIA_Blanco", new Color(0.92f, 0.90f, 0.84f)),
+        ("LIRIA_Revoque", new Color(0.86f, 0.80f, 0.66f)),
+        ("LIRIA_Piedra", new Color(0.62f, 0.56f, 0.50f)),
+        ("LIRIA_Toldo", new Color(0.27f, 0.52f, 0.58f)),
         ("LIRIA_Varios", new Color(0.66f, 0.60f, 0.52f)),
     };
 
@@ -126,11 +131,13 @@ public static class PrepararLiria
         GameObject modelo = AssetDatabase.LoadAssetAtPath<GameObject>(ruta);
         GameObject raiz = (GameObject)PrefabUtility.InstantiatePrefab(modelo);
         int tris = 0;
-        // El fondo (montañas e islas lejanas) no se pisa: sin colisiones.
-        bool fondo = modelo.name.StartsWith("Fondo");
+        // Nilo solo choca con los límites: rodean el borde de lo pisable y todo lo que hay a la
+        // altura de su cuerpo (paredes, barriles, postes). La geometría de los bloques no lleva
+        // colisión: el relieve de las tablas lo levantaba y, al volver a su altura fija, quedaba
+        // incrustado y sin poder moverse.
         foreach (MeshFilter f in raiz.GetComponentsInChildren<MeshFilter>())
         {
-            if (fondo)
+            if (!f.name.EndsWith("_Limites"))
             {
                 tris += f.sharedMesh.triangles.Length / 3;
                 f.gameObject.isStatic = true;
@@ -138,16 +145,8 @@ public static class PrepararLiria
             }
             MeshCollider c = f.gameObject.AddComponent<MeshCollider>();
             c.sharedMesh = f.sharedMesh;
-            if (f.name.EndsWith("_Limites"))
-            {
-                f.GetComponent<MeshRenderer>().enabled = false;
-                f.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            }
-            else
-            {
-                tris += f.sharedMesh.triangles.Length / 3;
-                f.gameObject.isStatic = true;
-            }
+            f.GetComponent<MeshRenderer>().enabled = false;
+            f.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
         string destino = CarpetaPrefabs + "/" + modelo.name + ".prefab";
         PrefabUtility.SaveAsPrefabAsset(raiz, destino);
@@ -311,6 +310,23 @@ public static class PrepararLiria
         return m;
     }
 
+    /// <summary>Cámara de cinemática apagada, con el renderer de tinta y post-proceso.</summary>
+    static Camera PlanoCine(string nombre, Vector3 posicion, Vector3 mira, float campo, int renderer)
+    {
+        Camera cine = new GameObject(nombre).AddComponent<Camera>();
+        cine.transform.position = posicion;
+        cine.transform.LookAt(mira);
+        cine.fieldOfView = campo;
+        cine.nearClipPlane = 0.3f;
+        cine.farClipPlane = 2500f;
+        cine.clearFlags = CameraClearFlags.Skybox;
+        var datos = cine.GetUniversalAdditionalCameraData();
+        datos.SetRenderer(renderer);
+        datos.renderPostProcessing = true;
+        cine.enabled = false;
+        return cine;
+    }
+
     [MenuItem("RELEVO/Liria/Crear escena de prueba")]
     public static string CrearEscenaPrueba()
     {
@@ -334,10 +350,12 @@ public static class PrepararLiria
         // no cambia.
         Transform liria = new GameObject("Liria").transform;
         liria.rotation = Quaternion.Euler(0f, 180f, 0f);
-        GameObject b01 = (GameObject)PrefabUtility.InstantiatePrefab(
-            AssetDatabase.LoadAssetAtPath<GameObject>(CarpetaPrefabs + "/B01_Muelle.prefab"), liria);
-        PrefabUtility.InstantiatePrefab(
-            AssetDatabase.LoadAssetAtPath<GameObject>(CarpetaPrefabs + "/Fondo_Liria.prefab"), liria);
+        // Un prefab por bloque (B01..B05), el fondo y los límites comunes del pueblo.
+        foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { CarpetaPrefabs }))
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
+            PrefabUtility.InstantiatePrefab(prefab, liria);
+        }
 
         Material cielo = MaterialCielo();
         RenderSettings.skybox = cielo;
@@ -367,7 +385,11 @@ public static class PrepararLiria
         SerializedObject so = new SerializedObject(prueba);
         so.FindProperty("acciones").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/Input/Relevo.inputactions");
-        so.FindProperty("bloque").objectReferenceValue = b01.transform;
+        so.FindProperty("bloque").objectReferenceValue = liria;
+        // La cámara de juego encuadra B01 (pasarela, cabeza y plataforma de las casas), no todo el
+        // pueblo: con la cámara fija, el pueblo entero quedaría diminuto.
+        so.FindProperty("centroEncuadre").vector3Value = new Vector3(0f, 0f, 1f);
+        so.FindProperty("tamanoEncuadre").vector3Value = new Vector3(28f, 2f, 44f);
         // Arranque de la pasarela, junto a las casas.
         so.FindProperty("inicioNilo").vector3Value = new Vector3(0f, 0f, 0f);
         so.FindProperty("indiceRenderer").intValue = renderer;
@@ -377,17 +399,12 @@ public static class PrepararLiria
 
         // Plano de cinemática: desde el mar, a ras de agua, con el pueblo delante y las montañas
         // detrás. Queda apagado; se enciende para grabar o para revisar el fondo.
-        Camera cine = new GameObject("Plano_Frontal").AddComponent<Camera>();
-        cine.transform.position = new Vector3(14f, 5.5f, -46f);
-        cine.transform.LookAt(new Vector3(-2f, 8f, 30f));
-        cine.fieldOfView = 42f;
-        cine.nearClipPlane = 0.3f;
-        cine.farClipPlane = 2500f;
-        cine.clearFlags = CameraClearFlags.Skybox;
-        var datosCine = cine.GetUniversalAdditionalCameraData();
-        datosCine.SetRenderer(renderer);
-        datosCine.renderPostProcessing = true;
-        cine.enabled = false;
+        PlanoCine("Plano_Frontal", new Vector3(6f, 7f, -72f), new Vector3(-2f, 7f, 20f), 40f, renderer);
+        PlanoCine("Plano_General", new Vector3(-75f, 58f, -85f), new Vector3(0f, 0f, 8f), 40f, renderer);
+        PlanoCine("Plano_Canal", new Vector3(28f, 3.5f, -14f), new Vector3(28f, 3f, 20f), 45f, renderer);
+        PlanoCine("Plano_Faro", new Vector3(-6f, 4f, 18f), new Vector3(-38f, 13f, 40f), 34f, renderer);
+        PlanoCine("Plano_Calle", new Vector3(-17f, 2.2f, 34f), new Vector3(16f, 3.5f, 35f), 50f, renderer);
+        PlanoCine("Plano_Mercado", new Vector3(-12f, 3.5f, -5f), new Vector3(-24f, 1.5f, -16f), 50f, renderer);
 
         EditorSceneManager.SaveScene(escena, EscenaPrueba);
         return "Escena guardada en " + EscenaPrueba;

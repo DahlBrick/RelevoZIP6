@@ -7,6 +7,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: LIRIA_Blanco
+    second: {fileID: 2100000, guid: 8bc2a97c00086f14c8964b70b59c4de4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: LIRIA_Chapa
     second: {fileID: 2100000, guid: 9d0210ada70f4d0499a9767872d94d90, type: 2}
   - first:
@@ -14,6 +19,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: LIRIA_Cristal
     second: {fileID: 2100000, guid: e4bb0fe1d2a5bc846b7011d6b1521000, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: LIRIA_FaroRojo
+    second: {fileID: 2100000, guid: a83d3ec606c0e6d439fcd13a08325697, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -32,6 +42,16 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: LIRIA_Piedra
+    second: {fileID: 2100000, guid: a1b2353689244b549a30720448d2400d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: LIRIA_Revoque
+    second: {fileID: 2100000, guid: 22e89dfcc2244f34d8bca5a0b41556c4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: LIRIA_Roca
     second: {fileID: 2100000, guid: 385f2a5b1ae370b4897436e0a40b710a, type: 2}
   - first:
@@ -44,6 +64,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: LIRIA_Tela
     second: {fileID: 2100000, guid: eecbb56b95d990d4184064ef2eff7089, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: LIRIA_Toldo
+    second: {fileID: 2100000, guid: d1ed908bd8b8a0b4f9ef10c208de6ffc, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

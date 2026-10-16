@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LIRIA_Toldo
+  m_Shader: {fileID: 4800000, guid: 5eb3c888cf4870840bab416929b08f7e, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Ambiente: 0.35
+    - _GrosorTrama: 0.3
+    - _LargoPlancha: 2.2
+    - _Medio: 0.55
+    - _Ondulado: 0
+    - _Oxido: 0.45
+    - _PasoOnda: 0.3
+    - _PasoTrama: 6
+    - _RelieveOnda: 0.7
+    - _Suavidad: 0.02
+    - _TintaOnda: 0.35
+    - _Trama: 0.22
+    - _Umbral1: 0
+    - _Umbral2: 0.45
+    m_Colors:
+    - _BaseColor: {r: 0.27, g: 0.52, b: 0.58, a: 1}
+    - _ColorOxido: {r: 0.35999998, g: 0.16999996, b: 0.11999995, a: 1}
+    - _ColorSombra: {r: 0.41999996, g: 0.37999994, b: 0.58, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
