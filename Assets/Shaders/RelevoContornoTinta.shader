@@ -63,6 +63,14 @@ Shader "RELEVO/ContornoTinta"
                 float2 paso = _Grosor * (_ScreenParams.y / 1080.0) / _ScreenParams.xy;
                 float2 desp[4] = { float2(paso.x, 0), float2(-paso.x, 0), float2(0, paso.y), float2(0, -paso.y) };
 
+                // Donde no hay geometría (cielo) no hay nada que entintar: sin esto, sus normales
+                // vacías contaban como arista y el cielo entero quedaba velado de marrón.
+                #if UNITY_REVERSED_Z
+                    if (SampleSceneDepth(uv) <= 0.000001) return color;
+                #else
+                    if (SampleSceneDepth(uv) >= 0.999999) return color;
+                #endif
+
                 float centro = ProfundidadLineal(uv);
                 float3 normalCentro = SampleSceneNormals(uv);
 
@@ -73,13 +81,19 @@ Shader "RELEVO/ContornoTinta"
                     float p = ProfundidadLineal(uv + desp[i]);
                     // Solo cuenta si el vecino está MÁS LEJOS: la línea queda en el objeto de delante.
                     saltoProfundidad = max(saltoProfundidad, p - centro);
+                    // Un vecino sin normal (cielo, o algo que no escribe DepthNormals) no es arista
+                    // interior: ese borde ya lo marca el salto de profundidad.
                     float3 n = SampleSceneNormals(uv + desp[i]);
-                    saltoNormal = max(saltoNormal, 1.0 - dot(normalCentro, n));
+                    if (dot(n, n) > 0.25) saltoNormal = max(saltoNormal, 1.0 - dot(normalCentro, n));
                 }
 
                 // El umbral de profundidad crece con la distancia para no ensuciar suelos en rasante.
                 float umbral = _UmbralProfundidad * (1.0 + centro * 0.02);
                 half linea = max(step(umbral, saltoProfundidad), step(_UmbralNormal, saltoNormal));
+
+                // La tinta se apaga con la distancia, como la perspectiva aérea: las montañas del
+                // fondo quedan casi sin trazo y se leen lejos.
+                linea *= 1.0 - smoothstep(120.0, 450.0, centro) * 0.85;
 
                 color.rgb = lerp(color.rgb, _ColorTinta.rgb, linea * _Opacidad);
                 return color;

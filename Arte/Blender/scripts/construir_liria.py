@@ -25,9 +25,11 @@ Colecciones:
 """
 import math
 import os
+import random
 
+import bmesh
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Vector, noise
 
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 FUENTES = os.path.join(RAIZ, "Arte", "Fuentes")
@@ -98,6 +100,8 @@ COLOR_CATEGORIA = {
     "LIRIA_Tela": (0.75, 0.68, 0.55, 1),
     "LIRIA_Cristal": (0.4, 0.55, 0.6, 1),
     "LIRIA_Roca": (0.5, 0.5, 0.48, 1),
+    "LIRIA_Follaje": (0.52, 0.56, 0.24, 1),
+    "LIRIA_Montana": (0.42, 0.48, 0.44, 1),
     "LIRIA_Varios": (0.6, 0.6, 0.55, 1),
 }
 # Piezas cuyo material se fija por origen y no por nombre.
@@ -378,6 +382,7 @@ def bloque_muelle(col):
     poner(col, "D_Rope_Coil.001", px - 0.5, -3.0, z_abajo=0, tipo="prop")
 
     entorno_rocoso(col)
+    islotes_cercanos(col)
 
     # Agua provisional.
     bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -4, AGUA_Z))
@@ -389,6 +394,135 @@ def bloque_muelle(col):
     mat_agua.diffuse_color = COLOR["agua"]
     agua.data.materials.append(mat_agua)
     mover_a(agua, col)
+
+
+# ---------------------------------------------------------------- vegetación e islotes
+
+def malla_suelta(col, nombre, bm, material):
+    """Convierte un bmesh en objeto con un único material de categoría."""
+    malla = bpy.data.meshes.new(nombre)
+    bm.to_mesh(malla)
+    bm.free()
+    for p in malla.polygons:
+        p.use_smooth = False
+    malla.materials.append(bpy.data.materials[material])
+    o = bpy.data.objects.new(nombre, malla)
+    col.objects.link(o)
+    return o
+
+
+def arbol(col, x, y, z, alto, semilla):
+    """Árbol de copa redonda como los de la hoja: tronco de 6 caras algo torcido y una copa de
+    bolas facetadas. Sin texturas ni hojas recortadas: así el sombreado en bandas y la tinta lo
+    dibujan como el resto del escenario."""
+    azar = random.Random(semilla)
+    bm = bmesh.new()
+    inclina = Vector((azar.uniform(-0.25, 0.25), azar.uniform(-0.25, 0.25), 1)).normalized()
+    largo = alto * 0.55
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=6, radius1=alto * 0.05, radius2=alto * 0.03,
+                          depth=largo, matrix=Matrix.Translation(inclina * largo / 2)
+                          @ inclina.to_track_quat("Z", "Y").to_matrix().to_4x4())
+    tronco = malla_suelta(col, "Arbol_Tronco", bm, "LIRIA_Madera")
+    tronco.location = (x, y, z - 0.3)
+
+    bm = bmesh.new()
+    centro = inclina * largo
+    radio = alto * 0.26
+    for i in range(azar.randint(4, 6)):
+        d = Vector((azar.uniform(-1, 1), azar.uniform(-1, 1), azar.uniform(-0.2, 0.8))) * radio * 0.9
+        r = radio * azar.uniform(0.6, 1.0)
+        res = bmesh.ops.create_icosphere(bm, subdivisions=2, radius=r,
+                                         matrix=Matrix.Translation(centro + d))
+        for v in res["verts"]:
+            v.co += Vector((azar.uniform(-1, 1) for _ in range(3))) * r * 0.12
+    copa = malla_suelta(col, "Arbol_Copa", bm, "LIRIA_Follaje")
+    copa.location = (x, y, z - 0.3)
+    return copa
+
+
+def cima(obj, x, y):
+    """Altura de la superficie de un objeto en (x, y), o None si no está debajo."""
+    inv = obj.matrix_world.inverted()
+    origen = inv @ Vector((x, y, 500))
+    destino = inv @ Vector((x, y, -500))
+    ok, punto, _, _ = obj.ray_cast(origen, (destino - origen).normalized())
+    return (obj.matrix_world @ punto).z if ok else None
+
+
+def islote(col, x, y, escala, semilla, arboles=3, rocas=("R_B_Rocks2_00", "R_B_Rocks2_03", "R_B_Rocks2_04")):
+    """Islote de roca con árboles en lo alto, como los que rodean el pueblo en la vista cenital."""
+    azar = random.Random(semilla)
+    base = poner(col, azar.choice(rocas), x, y, z_abajo=AGUA_Z - 2.0 * escala,
+                 giro=azar.uniform(0, 360), tipo="roca")
+    base.scale = (escala, escala, escala * azar.uniform(0.9, 1.3))
+    bpy.context.view_layer.update()
+    puestos = 0
+    for _ in range(arboles * 6):
+        if puestos >= arboles:
+            break
+        ax = x + azar.uniform(-3, 3) * escala
+        ay = y + azar.uniform(-2.5, 2.5) * escala
+        z = cima(base, ax, ay)
+        if z is None or z < 0.3:
+            continue
+        arbol(col, ax, ay, z, azar.uniform(5, 8) * min(1.6, 0.6 + escala * 0.4), azar.random())
+        puestos += 1
+    return base
+
+
+def islotes_cercanos(col):
+    """Islotes alrededor de B01: rodean el muelle sin tocar lo pisable."""
+    islote(col, -22.0, 20.0, 1.4, 11, arboles=4)
+    islote(col, 24.0, 22.0, 1.6, 12, arboles=4)
+    islote(col, -26.0, -6.0, 1.1, 13, arboles=2)
+    islote(col, 22.0, -22.0, 1.0, 14, arboles=2)
+    islote(col, -14.0, -28.0, 0.8, 15, arboles=1)
+
+
+# ---------------------------------------------------------------- fondo: montañas e islas lejanas
+
+def montanas(col):
+    """Cordillera en anillo detrás del pueblo, entre 330 y 820 m. Es lo que se ve a lo lejos en las
+    cinemáticas. Deja abierto el frente (-Y, hacia donde sale el muelle) para que se vea el horizonte
+    del mar con algunas islas. Facetada a propósito: con el sombreado en bandas se lee como las
+    montañas dibujadas de la hoja."""
+    bm = bmesh.new()
+    a0, a1 = math.radians(-50), math.radians(230)   # ángulo desde +X; +Y queda detrás del pueblo
+    na, nr = 160, 26
+    r0, r1 = 330.0, 820.0
+    filas = []
+    for i in range(na + 1):
+        t = i / na
+        a = a0 + (a1 - a0) * t
+        extremo = math.sin(math.pi * t) ** 0.35          # baja hacia los dos extremos del arco
+        fila = []
+        for j in range(nr + 1):
+            u = j / nr
+            r = r0 + (r1 - r0) * u
+            sobre = math.sin(math.pi * u) ** 1.6            # sube poco a poco hacia el centro del anillo
+            p = Vector((math.cos(a) * r, math.sin(a) * r, 0))
+            q = p * 0.75   # el ruido conserva la escala de antes: misma silueta, más lejos
+            n = noise.fractal(q * 0.008, 0.55, 2.1, 5)
+            cresta = 1.0 - abs(noise.noise(q * 0.004 + Vector((7, 3, 0))))
+            h = (25 + 160 * max(0.0, 0.5 + 0.7 * n) * cresta) * sobre * extremo
+            fila.append(bm.verts.new((p.x, p.y, AGUA_Z - 6 + h)))
+        filas.append(fila)
+    for i in range(na):
+        for j in range(nr):
+            bm.faces.new((filas[i][j], filas[i + 1][j], filas[i + 1][j + 1], filas[i][j + 1]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    o = malla_suelta(col, "Montanas", bm, "LIRIA_Montana")
+    if sum(p.normal.z for p in o.data.polygons) < 0:
+        o.data.flip_normals()
+    return o
+
+
+def islas_lejanas(col):
+    """Islas sueltas en el frente abierto, entre 90 y 200 m, para que el horizonte no quede vacío."""
+    for k, (ang, r, esc) in enumerate(((235, 120, 3.5), (255, 190, 5.0), (285, 150, 4.0),
+                                       (305, 95, 2.6), (320, 210, 6.0), (205, 160, 4.5))):
+        a = math.radians(ang)
+        islote(col, math.cos(a) * r, math.sin(a) * r, esc, 100 + k, arboles=3)
 
 
 # ---------------------------------------------------------------- unificación y exportación
@@ -572,11 +706,14 @@ def main():
     bloques = coleccion("20_BLOQUES")
     coleccion("90_EXPORT")
     b01 = coleccion("B01_Muelle", bloques)
+    fondo = coleccion("30_FONDO")
 
     importar_kits()
     materiales_neutros()
     referencias(ref, x=1.6, y=-1.5)
     bloque_muelle(b01)
+    montanas(fondo)
+    islas_lejanas(fondo)
 
     # El kit queda en el archivo, pero fuera de la vista y del render.
     bpy.context.view_layer.layer_collection.children["10_KIT"].exclude = True
@@ -593,6 +730,13 @@ def main():
     for o in (geo, lim):
         o.hide_set(True)
         o.hide_render = True
+
+    # El fondo se exporta aparte, sin límites: no se pisa y en Unity no lleva colisiones.
+    bpy.context.view_layer.layer_collection.children["30_FONDO"].exclude = False
+    geo_fondo = unificar(fondo, "Fondo_Liria")
+    exportar([geo_fondo], "Fondo_Liria")
+    geo_fondo.hide_set(True)
+    geo_fondo.hide_render = True
 
     vista_previa()
     os.makedirs(os.path.dirname(SALIDA), exist_ok=True)

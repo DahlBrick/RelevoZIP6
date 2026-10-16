@@ -14,6 +14,9 @@ public class PruebaLiria : MonoBehaviour
     [SerializeField] Vector3 inicioNilo = new Vector3(0f, 0f, 0f);
     [Tooltip("Índice de Liria_Renderer en el pipeline (contorno de tinta). -1 usa el de por defecto.")]
     [SerializeField] int indiceRenderer = -1;
+    [Tooltip("Skybox de cómic (LIRIA_Cielo). Con él la cámara deja de usar fondo de color liso.")]
+    [SerializeField] Material cielo;
+    [SerializeField] Color colorHorizonte = new Color(0.80f, 0.87f, 0.89f);
 
     void Awake()
     {
@@ -21,6 +24,17 @@ public class PruebaLiria : MonoBehaviour
         GameEvents.Limpiar();
         RelevoGame.Limpiar();
         ActorFactory.ConfigurarEntorno();
+        if (cielo != null)
+        {
+            // Niebla lineal del color del horizonte: el pueblo queda limpio y las montañas lejanas
+            // se aclaran hasta fundirse con el cielo, como en las vistas generales de la hoja.
+            RenderSettings.skybox = cielo;
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = colorHorizonte;
+            RenderSettings.fogStartDistance = 70f;
+            RenderSettings.fogEndDistance = 1100f;
+        }
 
         RelevoInput entrada = new RelevoInput(acciones);
         RelevoGame.Input = entrada;
@@ -31,6 +45,7 @@ public class PruebaLiria : MonoBehaviour
         {
             camara.Configurar(Limites());
             if (indiceRenderer >= 0) camara.Camara.GetUniversalAdditionalCameraData().SetRenderer(indiceRenderer);
+            if (cielo != null) camara.Camara.clearFlags = CameraClearFlags.Skybox;
         }
 
         PlayerController nilo = FindFirstObjectByType<PlayerController>();

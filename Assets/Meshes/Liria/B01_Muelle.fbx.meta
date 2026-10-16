@@ -17,8 +17,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: LIRIA_Follaje
+    second: {fileID: 2100000, guid: 35bcfbb886d307a43becefce1ef61091, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: LIRIA_Madera
     second: {fileID: 2100000, guid: 07d43cb19e16da646905944a156656d2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: LIRIA_Montana
+    second: {fileID: 2100000, guid: cba53e37b1bee6846b9652a24c88dab7, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

@@ -38,10 +38,15 @@ public static class PrepararLiria
         ("LIRIA_Tela", new Color(0.88f, 0.80f, 0.62f)),
         ("LIRIA_Cristal", new Color(0.25f, 0.35f, 0.40f)),
         ("LIRIA_Roca", new Color(0.50f, 0.52f, 0.55f)),
+        ("LIRIA_Follaje", new Color(0.55f, 0.58f, 0.24f)),
+        ("LIRIA_Montana", new Color(0.44f, 0.52f, 0.48f)),
         ("LIRIA_Varios", new Color(0.66f, 0.60f, 0.52f)),
     };
 
     static readonly Color Sol = new Color(1.0f, 0.86f, 0.68f);
+
+    /// <summary>Color del horizonte del cielo: la niebla usa el mismo para fundir mar, montañas y cielo.</summary>
+    public static readonly Color Horizonte = new Color(0.80f, 0.87f, 0.89f);
 
     [MenuItem("RELEVO/Liria/Importar bloques")]
     public static string ImportarBloques()
@@ -78,6 +83,14 @@ public static class PrepararLiria
         bool ondulado = nombre == "LIRIA_Tejado" || nombre == "LIRIA_Chapa";
         m.SetFloat("_Ondulado", ondulado ? 1f : 0f);
         if (ondulado) m.EnableKeyword("_ONDULADO"); else m.DisableKeyword("_ONDULADO");
+        // Montañas: poco contraste y casi sin trama, para que se lean como fondo lejano.
+        if (nombre == "LIRIA_Montana")
+        {
+            m.SetColor("_ColorSombra", new Color(0.66f, 0.70f, 0.82f));
+            m.SetFloat("_Trama", 0.04f);
+            m.SetFloat("_Ambiente", 0.45f);
+            m.SetFloat("_Medio", 0.7f);
+        }
         if (nombre == "LIRIA_Chapa")
         {
             m.SetFloat("_RelieveOnda", 0.45f);
@@ -113,8 +126,16 @@ public static class PrepararLiria
         GameObject modelo = AssetDatabase.LoadAssetAtPath<GameObject>(ruta);
         GameObject raiz = (GameObject)PrefabUtility.InstantiatePrefab(modelo);
         int tris = 0;
+        // El fondo (montañas e islas lejanas) no se pisa: sin colisiones.
+        bool fondo = modelo.name.StartsWith("Fondo");
         foreach (MeshFilter f in raiz.GetComponentsInChildren<MeshFilter>())
         {
+            if (fondo)
+            {
+                tris += f.sharedMesh.triangles.Length / 3;
+                f.gameObject.isStatic = true;
+                continue;
+            }
             MeshCollider c = f.gameObject.AddComponent<MeshCollider>();
             c.sharedMesh = f.sharedMesh;
             if (f.name.EndsWith("_Limites"))
@@ -232,6 +253,64 @@ public static class PrepararLiria
         return m;
     }
 
+    static VolumeProfile PerfilLiria()
+    {
+        const string ruta = "Assets/Settings/PerfilLiria.asset";
+        VolumeProfile perfil = AssetDatabase.LoadAssetAtPath<VolumeProfile>(ruta);
+        if (perfil == null)
+        {
+            perfil = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(perfil, ruta);
+        }
+        T Ajuste<T>() where T : VolumeComponent
+        {
+            if (!perfil.TryGet(out T c))
+            {
+                c = perfil.Add<T>(true);
+                c.name = typeof(T).Name;
+                AssetDatabase.AddObjectToAsset(c, perfil);
+            }
+            return c;
+        }
+        Ajuste<Tonemapping>().mode.Override(TonemappingMode.None);
+        ColorAdjustments color = Ajuste<ColorAdjustments>();
+        color.postExposure.Override(0f);
+        color.contrast.Override(6f);
+        color.saturation.Override(10f);
+        color.colorFilter.Override(Color.white);
+        Bloom bloom = Ajuste<Bloom>();
+        bloom.intensity.Override(0.3f);
+        bloom.threshold.Override(1.1f);
+        Vignette vineta = Ajuste<Vignette>();
+        vineta.intensity.Override(0.16f);
+        vineta.smoothness.Override(0.5f);
+        EditorUtility.SetDirty(perfil);
+        AssetDatabase.SaveAssets();
+        return perfil;
+    }
+
+    /// <summary>Cielo de cómic (RELEVO/CieloComic) con los tonos de la hoja de Liria.</summary>
+    static Material MaterialCielo()
+    {
+        string ruta = CarpetaMateriales + "/LIRIA_Cielo.mat";
+        Material m = AssetDatabase.LoadAssetAtPath<Material>(ruta);
+        if (m == null)
+        {
+            m = new Material(Shader.Find("RELEVO/CieloComic"));
+            AssetDatabase.CreateAsset(m, ruta);
+        }
+        m.SetColor("_ColorHorizonte", Horizonte);
+        m.SetColor("_ColorMedio", new Color(0.58f, 0.77f, 0.90f));
+        m.SetColor("_ColorCenit", new Color(0.33f, 0.58f, 0.85f));
+        m.SetColor("_ColorNube", new Color(1.0f, 0.99f, 0.95f));
+        m.SetColor("_ColorNubeSombra", new Color(0.74f, 0.76f, 0.90f));
+        m.SetFloat("_Escala", 2.0f);
+        m.SetFloat("_Cobertura", 0.4f);
+        m.SetFloat("_GrosorTinta", 0.007f);
+        EditorUtility.SetDirty(m);
+        return m;
+    }
+
     [MenuItem("RELEVO/Liria/Crear escena de prueba")]
     public static string CrearEscenaPrueba()
     {
@@ -249,18 +328,32 @@ public static class PrepararLiria
         sol.transform.rotation = Quaternion.Euler(38f, 65f, 0f);
         sol.shadows = LightShadows.Hard;
 
+        // Todo lo que sale de liria_master.blend cuelga de "Liria". En Blender el mar queda hacia -Y,
+        // que en Unity es +Z, lejos de la cámara: girado, el muelle queda delante y las casas detrás.
+        // El giro es sobre el origen, que es donde arranca la pasarela, así que el inicio de Nilo
+        // no cambia.
+        Transform liria = new GameObject("Liria").transform;
+        liria.rotation = Quaternion.Euler(0f, 180f, 0f);
         GameObject b01 = (GameObject)PrefabUtility.InstantiatePrefab(
-            AssetDatabase.LoadAssetAtPath<GameObject>(CarpetaPrefabs + "/B01_Muelle.prefab"));
-        // En Blender el mar queda hacia -Y, que en Unity es +Z, lejos de la cámara. Girado, el
-        // muelle queda delante y las casas detrás. El giro es sobre el origen, que es donde
-        // arranca la pasarela, así que el inicio de Nilo no cambia.
-        b01.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            AssetDatabase.LoadAssetAtPath<GameObject>(CarpetaPrefabs + "/B01_Muelle.prefab"), liria);
+        PrefabUtility.InstantiatePrefab(
+            AssetDatabase.LoadAssetAtPath<GameObject>(CarpetaPrefabs + "/Fondo_Liria.prefab"), liria);
+
+        Material cielo = MaterialCielo();
+        RenderSettings.skybox = cielo;
+
+        // Post-proceso propio de Liria, por encima del de los niveles (prioridad 1): sin mapeo
+        // tonal, que comprimía los blancos y dejaba nubes y cielo grises, y con algo más de color.
+        Volume volumen = new GameObject("Volumen Liria").AddComponent<Volume>();
+        volumen.isGlobal = true;
+        volumen.priority = 5f;
+        volumen.sharedProfile = PerfilLiria();
 
         GameObject agua = GameObject.CreatePrimitive(PrimitiveType.Plane);
         agua.name = "Agua_provisional";
         Object.DestroyImmediate(agua.GetComponent<Collider>());
         agua.transform.position = new Vector3(0f, -1.5f, 0f);
-        agua.transform.localScale = Vector3.one * 8f;
+        agua.transform.localScale = Vector3.one * 140f;   // 1,4 km: llega al horizonte en las cinemáticas
         agua.GetComponent<MeshRenderer>().sharedMaterial = MaterialAgua();
 
         // Cámara menos cenital que la de los niveles (55°): a 40° se leen las fachadas y los pilotes.
@@ -278,7 +371,23 @@ public static class PrepararLiria
         // Arranque de la pasarela, junto a las casas.
         so.FindProperty("inicioNilo").vector3Value = new Vector3(0f, 0f, 0f);
         so.FindProperty("indiceRenderer").intValue = renderer;
+        so.FindProperty("cielo").objectReferenceValue = cielo;
+        so.FindProperty("colorHorizonte").colorValue = Horizonte;
         so.ApplyModifiedPropertiesWithoutUndo();
+
+        // Plano de cinemática: desde el mar, a ras de agua, con el pueblo delante y las montañas
+        // detrás. Queda apagado; se enciende para grabar o para revisar el fondo.
+        Camera cine = new GameObject("Plano_Frontal").AddComponent<Camera>();
+        cine.transform.position = new Vector3(14f, 5.5f, -46f);
+        cine.transform.LookAt(new Vector3(-2f, 8f, 30f));
+        cine.fieldOfView = 42f;
+        cine.nearClipPlane = 0.3f;
+        cine.farClipPlane = 2500f;
+        cine.clearFlags = CameraClearFlags.Skybox;
+        var datosCine = cine.GetUniversalAdditionalCameraData();
+        datosCine.SetRenderer(renderer);
+        datosCine.renderPostProcessing = true;
+        cine.enabled = false;
 
         EditorSceneManager.SaveScene(escena, EscenaPrueba);
         return "Escena guardada en " + EscenaPrueba;

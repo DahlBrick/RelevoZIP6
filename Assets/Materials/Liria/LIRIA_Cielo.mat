@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LIRIA_Cielo
+  m_Shader: {fileID: 4800000, guid: 8858162301386954bbb144abff25c7fd, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _Cobertura: 0.4
+    - _Escala: 2
+    - _GrosorTinta: 0.007
+    - _PasoTrama: 6
+    - _TamanoSol: 0.035
+    - _Trama: 0.18
+    m_Colors:
+    - _ColorCenit: {r: 0.33, g: 0.58, b: 0.85, a: 1}
+    - _ColorHorizonte: {r: 0.8, g: 0.87, b: 0.89, a: 1}
+    - _ColorMedio: {r: 0.58, g: 0.77, b: 0.9, a: 1}
+    - _ColorNube: {r: 1, g: 0.99, b: 0.95, a: 1}
+    - _ColorNubeSombra: {r: 0.74, g: 0.76, b: 0.9, a: 1}
+    - _ColorSol: {r: 1, g: 0.92, b: 0.7, a: 1}
+    - _ColorTinta: {r: 0.23999995, g: 0.14999998, b: 0.12999997, a: 1}
+    - _Velocidad: {r: 0.006, g: 0.002, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
