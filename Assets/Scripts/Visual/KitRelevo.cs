@@ -69,6 +69,8 @@ public sealed class KitRelevo : ScriptableObject
     public GameObject farol;            // Fantasy Town: lantern
     public GameObject estandarte;       // Fantasy Town: banner-green
     public GameObject jardinera;        // Fantasy Town: fountain-round (sin agua, con helechos)
+    [Tooltip("Maia: una radio portátil (laleksic, CC0) en colores planos. Maia nunca tuvo vida.")]
+    public GameObject radio;
 
     [Header("Materiales de las piezas")]
     public Material cobre;

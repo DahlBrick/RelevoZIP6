@@ -74,6 +74,7 @@ MonoBehaviour:
   farol: {fileID: 919132149155446097, guid: 4ec47a431505b364cae04e92bfdfb747, type: 3}
   estandarte: {fileID: 919132149155446097, guid: 74761a56c1f02714490953f5055c00c0, type: 3}
   jardinera: {fileID: 919132149155446097, guid: 39a693c4f7036354780e5b196ba3c27b, type: 3}
+  radio: {fileID: 919132149155446097, guid: c3663585340ae1b469f122162149332e, type: 3}
   cobre: {fileID: 2100000, guid: 185f7a963f906f140b7e63da7004b3b1, type: 2}
   ambarBrillante: {fileID: 2100000, guid: 1c11d1a992107c5409ab83497067c9b8, type: 2}
   ambarMate: {fileID: 2100000, guid: baba1b82f10da6e499afd255ba2642fe, type: 2}

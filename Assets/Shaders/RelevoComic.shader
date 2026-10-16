@@ -19,6 +19,7 @@ Shader "RELEVO/Comic"
     {
         _BaseColor ("Color", Color) = (1, 1, 1, 1)
         _BaseMap ("Textura (opcional)", 2D) = "white" {}
+        [HDR] _EmissionColor ("Emisión (ventanas, faroles)", Color) = (0, 0, 0, 1)
         _ColorSombra ("Color de sombra", Color) = (0.42, 0.38, 0.58, 1)
         _Medio ("Intensidad del medio tono", Range(0, 1)) = 0.55
         _Umbral1 ("Corte sombra / medio tono", Range(-1, 1)) = 0.0
@@ -51,6 +52,7 @@ Shader "RELEVO/Comic"
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST;
             half4 _BaseColor;
+            half4 _EmissionColor;
             half4 _ColorSombra;
             half _Medio;
             half _Umbral1;
@@ -176,6 +178,8 @@ Shader "RELEVO/Comic"
                 half raya = step(frac((pixel.x + pixel.y) / _PasoTrama), _GrosorTrama);
                 color *= 1.0 - raya * _Trama * (1.0 - luz);
                 color *= 1.0 - tintaChapa;
+                // La emisión no recibe sombra ni trama: es luz propia (ventanas, faroles, antena).
+                color += _EmissionColor.rgb;
 
                 color = MixFog(color, entrada.fog);
                 return half4(color, 1);

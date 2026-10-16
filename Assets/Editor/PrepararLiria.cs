@@ -140,7 +140,8 @@ public static class PrepararLiria
             if (!f.name.EndsWith("_Limites"))
             {
                 tris += f.sharedMesh.triangles.Length / 3;
-                f.gameObject.isStatic = true;
+                // Los faroles se colocan a mano en la escena: no son estáticos.
+                f.gameObject.isStatic = !modelo.name.Contains("Faroles");
                 continue;
             }
             MeshCollider c = f.gameObject.AddComponent<MeshCollider>();
@@ -149,6 +150,13 @@ public static class PrepararLiria
             f.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
         string destino = CarpetaPrefabs + "/" + modelo.name + ".prefab";
+        // Los faroles se colocan a mano en Unity: si su prefab ya existe no se rehace, para no perder
+        // esas posiciones (la apertura las lee de ahí). Para volver a las de Blender, borrar el prefab.
+        if (modelo.name.Contains("Faroles") && AssetDatabase.LoadAssetAtPath<GameObject>(destino) != null)
+        {
+            Object.DestroyImmediate(raiz);
+            return modelo.name + ": prefab colocado a mano, se conserva";
+        }
         PrefabUtility.SaveAsPrefabAsset(raiz, destino);
         Bounds b = raiz.GetComponentInChildren<MeshRenderer>().bounds;
         Object.DestroyImmediate(raiz);

@@ -788,11 +788,23 @@ def muelle_piedra(col, x0, y0, x1, y1):
 
 
 def farol(col, x, y, tipo="pasarela"):
-    """Farol de calle: el de Kenney Fantasy Town en pasarelas y el de Graveyard en la piedra."""
+    """Farol de calle: el de Kenney Fantasy Town en pasarelas y el de Graveyard en la piedra.
+
+    Los faroles no se funden con su bloque: van a la colección 21_FAROLES, cada uno bajo un vacío
+    con el origen en su base, y se exportan juntos en Liria_Faroles.fbx. En Unity cada farol es un
+    hijo que se puede mover suelto, y la apertura lee de ahí dónde encender sus luces."""
+    destino = bpy.data.collections.get("21_FAROLES") or coleccion("21_FAROLES")
+    n = len([o for o in destino.objects if o.type == "EMPTY"]) + 1
+    raiz = bpy.data.objects.new(f"Farol_{tipo.capitalize()}_{n:02d}", None)
+    raiz.location = (x, y, 0.0)
+    destino.objects.link(raiz)
     if tipo == "pasarela":
-        poner(col, "KF_lantern", x, y, z_abajo=0.0, escala=1.7, tipo="prop")
+        pieza = poner(destino, "KF_lantern", x, y, z_abajo=0.0, escala=1.7, tipo="prop")
     else:
-        poner(col, "KG_lightpost-single", x, y, z_abajo=0.0, escala=2.1, tipo="prop")
+        pieza = poner(destino, "KG_lightpost-single", x, y, z_abajo=0.0, escala=2.1, tipo="prop")
+    pieza.name = raiz.name + "_Malla"
+    pieza.parent = raiz
+    pieza.matrix_parent_inverse = raiz.matrix_world.inverted()
 
 
 def tendedero(col, a, b, alto, semilla):
@@ -946,7 +958,7 @@ def bloque_palafitos(col):
     plataforma(col, -26.0, -18.0, 3, 2)                 # plaza x -26..-14, y -18..-10
     for k, (x, y, g) in enumerate(((-23.0, -15.5, 0), (-18.5, -15.5, 0), (-23.0, -11.8, 180))):
         puesto(col, x, y, g, 70 + k)
-    farol(col, -14.6, -10.6)
+    farol(col, -14.8, -10.8)
     farol(col, -25.4, -17.4)
     grupo_casas(col, CASA_GRANDE, destino=(-33.6, -14.0), giro=90)
     pasarela(col, (-20.0, -18.2), (-20.0, -19.6))
@@ -973,9 +985,9 @@ def barcos_y_detalles(col):
     for x, y in ((8.0, -40.0), (20.0, -42.0), (-14.0, -44.0), (50.0, -8.0)):
         poner(col, "KW_buoy", x, y, z_abajo=AGUA_Z - 0.6, escala=1.2, tipo="prop")
     # Faroles a lo largo de las pasarelas y en las cabezas de muelle.
-    for x, y in ((1.2, -4.0), (1.2, -9.0), (-2.6, -14.0), (-12.0, 11.2), (-19.0, 11.2),
-                 (11.0, 11.2), (6.0, -11.4), (12.0, -10.6), (30.4, -10.6), (30.4, -25.4),
-                 (24.4, 3.0), (31.6, 3.0), (1.2, 20.0)):
+    for x, y in ((0.7, -4.0), (0.7, -9.0), (-2.6, -14.0), (-12.0, 10.7), (-19.0, 10.7),
+                 (11.0, 10.7), (6.0, -11.8), (12.0, -10.8), (30.4, -10.8), (30.4, -25.4),
+                 (23.6, 3.0), (32.4, 3.0), (0.7, 20.0)):
         farol(col, x, y)
     poner(col, "KP_flag-high", 12.0, -25.0, z_abajo=0.0, escala=1.3, tipo="prop")
     poner(col, "KP_flag-high-pennant", -24.0, -10.6, z_abajo=0.0, escala=1.1, tipo="prop")
@@ -1259,11 +1271,11 @@ def exportar(objetos, nombre):
         o.select_set(True)
     ruta = os.path.join(EXPORTAR, nombre + ".fbx")
     bpy.ops.export_scene.fbx(
-        filepath=ruta, use_selection=True, object_types={"MESH"},
+        filepath=ruta, use_selection=True, object_types={"MESH", "EMPTY"},
         apply_scale_options="FBX_SCALE_UNITS", axis_forward="-Z", axis_up="Y",
         bake_space_transform=True, mesh_smooth_type="FACE", use_tspace=False,
         add_leaf_bones=False, bake_anim=False, path_mode="STRIP", embed_textures=False)
-    tris = sum(len(p.vertices) - 2 for o in objetos for p in o.data.polygons)
+    tris = sum(len(p.vertices) - 2 for o in objetos if o.type == "MESH" for p in o.data.polygons)
     print("EXPORTADO", ruta, "| triángulos:", tris)
 
 
@@ -1342,6 +1354,8 @@ def main():
     for nombre, geo in geos.items():
         exportar([geo], nombre)
     exportar([lim], "Liria_Limites")
+    faroles = bpy.data.collections["21_FAROLES"]
+    exportar(list(faroles.objects), "Liria_Faroles")
     # En la vista previa se ven los bloques editables; las versiones unificadas quedan ocultas.
     for o in list(geos.values()) + [lim]:
         o.hide_set(True)
