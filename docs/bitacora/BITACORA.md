@@ -766,3 +766,72 @@ Solo se copiaron al proyecto los modelos que se usan, en `Assets/ThirdParty/Kenn
 
 **Videos** (en `RelevoZIP6/Teaser/`): `09_cienaga_faroles_ahogados.mp4` (22,2 s) y
 `10_forja_de_ascuas.mp4` (22,2 s).
+
+---
+
+## Entrada 17 — Cinemática de apertura: la ciudad que se apaga y el Despertar
+
+**Pedido:** la cinemática con la que empieza el juego según la nueva narrativa
+(`docs/narrativa/acto_1_el_viaje_del_heroe.md`, prólogo), bien construida y con dirección
+cinematográfica. Decisiones confirmadas antes de construir: ciudad + Despertar (unos 90 s), dentro
+del juego y que se pueda saltar, música provisional generada por código y la voz de Maia en las
+burbujas de diálogo que ya existen.
+
+**Escena nueva:** `Assets/Scenes/Apertura.unity`, primera en Build Settings: es lo primero que se ve
+al abrir el juego. Al terminar carga el Nivel 1 (que se adaptará a la nueva historia en el
+siguiente paso). Se salta manteniendo Esc; E completa la frase de Maia que se está escribiendo. La
+crea el menú **Relevo/Preparar escena de apertura** (`Assets/Editor/PrepararApertura.cs`).
+
+**Guion (98 s):**
+
+| T | Plano | Qué pasa |
+|---|---|---|
+| 0–3,5 | Negro | Estática y la canción, lejana, como una radio |
+| 3,5–13,5 | Panorámica | La cámara baja sobre Liria encendida; rótulo "Liria" |
+| 13,5–17 | Farol | Llama y bokeh de la otra orilla |
+| 17–20,5 | Bomba | La rueda gira a ras del agua |
+| 20,5–24 | Barca | Una vela en la proa; alguien sentado de espaldas |
+| 24–27,5 | Ventana | Sombras de habitantes contra la luz |
+| 27,5–38,5 | El apagón | Plano general: las luces caen en cadena de lejos a cerca, al pulso de la canción, que se frena como una cinta; la luna queda sola y el agua sube |
+| 38,5–41,5 | El último farol | Chisporrotea y muere. Negro |
+| 41,5–47,5 | Título | RELEVO, con un golpe grave |
+| 47,5–55,5 | Terminal | `Unidad de memoria: 0 bytes · Último acceso: FORJA` (pista) |
+| 55,5–61 | Primera persona | Los párpados se abren a trompicones; el haz de luna, luego la radio |
+| 61–64,5 | La mano | Dedos en el agua, ondas; los ojos se encienden |
+| 64,5–71 | Se levanta | Rígido, como una máquina que arranca; resbala y se recompone |
+| 71–74 | El panel | El foco pasa por la quemadura en forma de mano y se va a Nilo (pista) |
+| 74–79 | Sobre el hombro | La radio se enciende sola antes de que Nilo llegue (pista) |
+| 79–92 | La radio | Estática, la canción que se cuela y Maia: "¿Hola? ¿Hay alguien en la red? ...¡Nilo!" |
+| 92–98 | Final | Nilo inclina la cabeza; la cámara sube a la vista del juego y las bandas se retiran |
+
+**Componentes** (`Assets/Scripts/Cinematica/`):
+
+- `Apertura.cs`: el director. Cámara de cine propia (profundidad de campo, cámara en mano, bloom,
+  grano, aberración, bandas 2,39:1) con la interfaz en una cámara superpuesta sin posproceso. Toda
+  la puesta en escena es función del tiempo T, así que se puede revisar desde cualquier segundo
+  (`Revisar`). Graba a MP4 desde el editor (`Apertura.Grabar`), como las maquetas.
+- `LiriaNocturna.cs`: el canal, casas modulares con ventanas propias que se encienden y apagan,
+  manzanas de fondo, faroles, puentes, barcas, la rueda de la bomba, sombras, luna, estrellas y la
+  antena de Maia (lo único que no se apaga).
+- `SubestacionEscena.cs`: el cuarto inundado, el haz de luna con polvo, generadores, la radio y el
+  panel con la quemadura (textura generada por código).
+- `SonidosApertura.cs`: la canción provisional (caja de música en La menor, 3/4) y los sonidos:
+  estática, agua y goteo, zumbido de la ciudad, relé, golpe del título, arranque de Nilo y pitidos
+  de terminal. Todo generado; la canción definitiva se asigna en el campo `cancion`.
+
+**Assets:** se copiaron 24 piezas más del Fantasy Town de Kenney (CC0, ya descargado en
+`Downloads/RelevoAssets_src/town`): paredes, tejados, chimenea, rueda y otras. El cielo es
+`Assets/Materials/CieloNocturno.mat` (skybox procedural de Unity). `ReservaEnergia.BuscarLentes`
+pasó a ser público para encender los ojos de Nilo en la cinemática.
+
+**Ajustes durante la revisión:**
+
+- **La caída de Nilo:** el clip `Robot_Death` del robot le suelta la cabeza. Se cambió por un
+  incorporarse procedural, rígido, girando sobre los talones.
+- **El apagón no se veía avanzar:** en perspectiva, la mitad lejana de la ciudad ocupa poco. Ahora
+  lo lejano cae en el primer cuarto y lo que llena el plano, despacio, en el resto.
+- **Plano del agua:** quedaba casi negro; se fundió con el plano general del apagón.
+- **Terminal pegada:** el texto con color enriquecido seguía visible en los planos siguientes; ahora
+  se desactiva fuera de su plano.
+- **Diálogo bloqueado:** la cinemática esperaba a Maia, pero su reloj de lectura dependía del tiempo
+  de la cinemática, que estaba detenido. Ahora usa el tiempo real.

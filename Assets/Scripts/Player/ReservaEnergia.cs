@@ -118,7 +118,7 @@ public sealed class ReservaEnergia : MonoBehaviour
         PintarOjos(Turquesa, 2.5f);
 
         Vector3[] centros;
-        if (!BuscarLentes(out centros)) return;
+        if (!BuscarLentes(transform, cabeza, out centros)) return;
 
         for (int i = 0; i < centros.Length; i++)
         {
@@ -139,8 +139,12 @@ public sealed class ReservaEnergia : MonoBehaviour
 
     const float OjoTamano = 0.11f;
 
-    /// <summary>Centro del frente de cada lente, en coordenadas de mundo.</summary>
-    bool BuscarLentes(out Vector3[] centros)
+    /// <summary>
+    /// Centro del frente de cada lente, en coordenadas de mundo. 'raiz' es el objeto de Nilo (su
+    /// eje z marca el frente) y 'cabeza', el hueso de la cabeza. Lo usa también la cinemática de
+    /// apertura, que enciende los ojos de Nilo al despertar.
+    /// </summary>
+    public static bool BuscarLentes(Transform raiz, Transform cabeza, out Vector3[] centros)
     {
         centros = null;
         // La malla de la cabeza cuelga del hueso 'Head' y se llama igual.
@@ -167,7 +171,7 @@ public sealed class ReservaEnergia : MonoBehaviour
         foreach (int k in tri)
         {
             if (!vistos.Add(k)) continue;
-            Vector3 l = transform.InverseTransformPoint(pieza.TransformPoint(v[k]));
+            Vector3 l = raiz.InverseTransformPoint(pieza.TransformPoint(v[k]));
             locales.Add(l);
             if (l.z > maxZ) maxZ = l.z;
         }
@@ -185,7 +189,17 @@ public sealed class ReservaEnergia : MonoBehaviour
         izq /= ni;
         der /= nd;
         izq.z = der.z = maxZ + 0.005f;
-        centros = new[] { transform.TransformPoint(izq), transform.TransformPoint(der) };
+
+        // Simetría en el espacio de la malla (su eje x cruza las dos lentes): si la cabeza está algo
+        // girada en la pose del momento, cada lado coge vértices distintos y un ojo queda más alto o
+        // descentrado. Se igualan altura y profundidad y se reparte la separación a partes iguales.
+        Vector3 mi = pieza.InverseTransformPoint(raiz.TransformPoint(izq));
+        Vector3 md = pieza.InverseTransformPoint(raiz.TransformPoint(der));
+        float separacion = (Mathf.Abs(mi.x) + Mathf.Abs(md.x)) * 0.5f;
+        float y = (mi.y + md.y) * 0.5f, z = (mi.z + md.z) * 0.5f;
+        mi = new Vector3(Mathf.Sign(mi.x) * separacion, y, z);
+        md = new Vector3(Mathf.Sign(md.x) * separacion, y, z);
+        centros = new[] { pieza.TransformPoint(mi), pieza.TransformPoint(md) };
         return true;
     }
 

@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Crea la escena de la cinemática de apertura (Assets/Scenes/Apertura.unity) y la pone la primera
+/// Crea la escena de la cinemática de apertura (Assets/Scenes/Juego/Apertura.unity) y la pone la primera
 /// en Build Settings, para que sea lo primero que se ve al abrir el juego.
 ///
 /// La escena solo guarda un objeto con el componente Apertura y sus referencias (entrada, modelos
@@ -15,7 +15,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public static class PrepararApertura
 {
-    const string RutaEscena = "Assets/Scenes/Apertura.unity";
+    const string RutaEscena = "Assets/Scenes/Juego/Apertura.unity";
     const string RutaEntrada = "Assets/Input/Relevo.inputactions";
 
     static readonly string[] Modelos =

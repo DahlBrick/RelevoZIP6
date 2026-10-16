@@ -22,7 +22,7 @@ public static class PrepararLiria
     const string CarpetaMallas = "Assets/Meshes/Liria";
     const string CarpetaMateriales = "Assets/Materials/Liria";
     const string CarpetaPrefabs = "Assets/Prefabs/Liria";
-    const string EscenaPrueba = "Assets/Scenes/Liria_Prueba.unity";
+    const string EscenaPrueba = "Assets/Scenes/Pruebas/Liria_Prueba.unity";
 
     const string RendererBase = "Assets/Settings/PC_Renderer.asset";
     const string RendererLiria = "Assets/Settings/Liria_Renderer.asset";
@@ -140,8 +140,8 @@ public static class PrepararLiria
             if (!f.name.EndsWith("_Limites"))
             {
                 tris += f.sharedMesh.triangles.Length / 3;
-                // Los faroles se colocan a mano en la escena: no son estáticos.
-                f.gameObject.isStatic = !modelo.name.Contains("Faroles");
+                // Faroles y rocas se colocan a mano en la escena: no son estáticos.
+                f.gameObject.isStatic = !(modelo.name.Contains("Faroles") || modelo.name.Contains("Rocas"));
                 continue;
             }
             MeshCollider c = f.gameObject.AddComponent<MeshCollider>();
@@ -150,9 +150,9 @@ public static class PrepararLiria
             f.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
         string destino = CarpetaPrefabs + "/" + modelo.name + ".prefab";
-        // Los faroles se colocan a mano en Unity: si su prefab ya existe no se rehace, para no perder
+        // Faroles y rocas se colocan a mano en Unity: si su prefab ya existe no se rehace, para no perder
         // esas posiciones (la apertura las lee de ahí). Para volver a las de Blender, borrar el prefab.
-        if (modelo.name.Contains("Faroles") && AssetDatabase.LoadAssetAtPath<GameObject>(destino) != null)
+        if ((modelo.name.Contains("Faroles") || modelo.name.Contains("Rocas")) && AssetDatabase.LoadAssetAtPath<GameObject>(destino) != null)
         {
             Object.DestroyImmediate(raiz);
             return modelo.name + ": prefab colocado a mano, se conserva";

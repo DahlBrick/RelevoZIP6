@@ -122,56 +122,50 @@ public static class ActorVestido
     // ------------------------------------------------------------------ Maia
 
     /// <summary>
-    /// Maia (GDD: terminal fijo con carcasa verde y rostro de hoja): una jardinera de piedra con
-    /// helechos, un cuerpo de máquina con antena y una pantalla encima, todo en el verde de Maia.
-    /// Los ojos, la antena, los brazos y el halo son los de siempre (los anima AnimadorMaia) y solo
-    /// se recolocan para que la cara mire a la cámara.
+    /// Maia es una radio (decisión narrativa: nunca tuvo vida; Nilo la confundió con alguien). Se
+    /// ocultan todas las piezas del terminal antiguo —ojos, brazos, antena, carcasa— y en su sitio
+    /// queda una radio portátil sobre una peana de piedra, con el dial encendido. Solo se conserva
+    /// el halo del suelo, que marca dónde se habla con ella.
+    ///
+    /// Los "ojos" siguen existiendo como anclas invisibles a la altura del dial: el retrato del
+    /// diálogo los usa para encuadrar.
     /// </summary>
     public static void Maia(Transform cuerpo, KitRelevo kit)
     {
-        if (kit.antenaMaquina == null || kit.pantalla == null) return;
+        if (kit.radio == null) return;
 
-        Ocultar(cuerpo, "Pedestal", "Torre", "Pantalla", "Basamento", "Cuello", "Cornisa",
-            "Banda izquierda", "Banda derecha", "Vegetacion A", "Vegetacion B");
+        Transform halo = cuerpo.Find("Halo");
+        foreach (Renderer r in cuerpo.GetComponentsInChildren<Renderer>(true))
+            if (halo == null || !r.transform.IsChildOf(halo)) r.enabled = false;
 
-        if (kit.jardinera != null)
+        float alturaPeana = 0.8f;
+        if (kit.pilarPiedra != null)
         {
-            GameObject jardinera = KitRelevo.ColocarCentrado(kit.jardinera, cuerpo, "Jardinera",
-                Vector3.zero, 0f, new Vector3(0.62f, 0.9f, 0.62f));
-            KitRelevo.Tenir(jardinera, n => n.StartsWith("Water") ? kit.verdeMaia : kit.piedraPueblo);
+            GameObject peana = KitRelevo.ColocarCentrado(kit.pilarPiedra, cuerpo, "Peana",
+                Vector3.zero, 0f, new Vector3(2.6f, 1f, 2.6f) * (alturaPeana / Alto(kit.pilarPiedra)));
+            KitRelevo.Tenir(peana, n => kit.piedraPueblo);
         }
 
-        GameObject maquina = KitRelevo.ColocarCentrado(kit.antenaMaquina, cuerpo, "Cuerpo Maia",
-            new Vector3(0f, 0.2f, 0.05f), 180f, Vector3.one * (0.66f / Alto(kit.antenaMaquina)));
-        TenirMaquina(maquina, kit, kit.verdeMaia, kit.cobre, kit.oscuro);
+        // Ancha y legible desde la cámara del nivel: unos 0,8 m de frente. El frente del modelo
+        // mira a +Z y la cámara del juego mira desde el sur, así que se gira media vuelta.
+        Bounds b = KitRelevo.Limites(kit.radio);
+        float escala = 0.8f / Mathf.Max(0.01f, b.size.x);
+        GameObject radio = KitRelevo.ColocarCentrado(kit.radio, cuerpo, "Radio", new Vector3(0f, alturaPeana, 0f), 180f, Vector3.one * escala);
 
-        GameObject cara = KitRelevo.ColocarCentrado(kit.pantalla, cuerpo, "Cara Maia",
-            new Vector3(0f, 0.78f, 0.02f), 180f, Vector3.one * (0.98f / Alto(kit.pantalla)));
-        KitRelevo.Tenir(cara, n => n == "dark" ? kit.pantallaMaia : (n == "metalDark" ? kit.cobre : kit.verdeMaia));
+        // El dial, encendido: una luz cálida delante del frente.
+        GameObject luz = new GameObject("Luz del dial");
+        luz.transform.SetParent(cuerpo, false);
+        luz.transform.localPosition = new Vector3(0f, alturaPeana + 0.3f, -0.45f);
+        Light l = luz.AddComponent<Light>();
+        l.type = LightType.Point;
+        l.color = new Color(1f, 0.65f, 0.3f);
+        l.range = 1.6f;
+        l.intensity = 1.2f;
+        l.shadows = LightShadows.None;
 
-        // Ojos sobre la pantalla, hacia la cámara (que mira desde el sur, -Z).
-        Mover(cuerpo, "Ojo izquierdo", new Vector3(-0.13f, 1.33f, -0.14f));
-        Mover(cuerpo, "Ojo derecho", new Vector3(0.13f, 1.33f, -0.14f));
-        Mover(cuerpo, "Antena base", new Vector3(0.28f, 1.74f, 0.08f));
-        Mover(cuerpo, "Hombro izquierdo", new Vector3(-0.5f, 0.8f, 0f));
-        Mover(cuerpo, "Hombro derecho", new Vector3(0.5f, 0.8f, 0f));
-
-        // Helechos en la jardinera: cuelgan de 'Vegetacion A/B', que AnimadorMaia hace respirar.
-        Helecho(cuerpo, "Vegetacion A", new Vector3(0.36f, 0.16f, -0.3f), kit, 0);
-        Helecho(cuerpo, "Vegetacion B", new Vector3(-0.38f, 0.16f, -0.26f), kit, 1);
-    }
-
-    static void Helecho(Transform cuerpo, string nombre, Vector3 posicion, KitRelevo kit, int indice)
-    {
-        Transform ancla = cuerpo.Find(nombre);
-        if (ancla == null || kit.arbustos == null || kit.arbustos.Length == 0) return;
-
-        ancla.localPosition = posicion;
-        GameObject planta = kit.arbustos[(kit.arbustos.Length - 1 - indice) % kit.arbustos.Length];
-
-        // El ancla es una esfera escalada: el helecho compensa esa escala para medir lo pedido.
-        float escalaAncla = Mathf.Max(0.01f, ancla.localScale.x);
-        KitRelevo.Colocar(planta, ancla, Vector3.zero, indice * 140f, 0.2f / escalaAncla);
+        float alturaDial = alturaPeana + b.size.y * escala * 0.25f;
+        Mover(cuerpo, "Ojo izquierdo", new Vector3(-0.15f, alturaDial, -0.1f));
+        Mover(cuerpo, "Ojo derecho", new Vector3(0.15f, alturaDial, -0.1f));
     }
 
     // ------------------------------------------------------------------ utilidades

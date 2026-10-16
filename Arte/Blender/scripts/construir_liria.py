@@ -444,34 +444,57 @@ def roca(col, nombre, x, y, giro=0, hundida=0.6):
     return poner(col, nombre, x, y, z_abajo=AGUA_Z - hundida, giro=giro, tipo="roca")
 
 
+_contador_sueltos = {}
+
+
+def suelto(nombre, x, y, crear):
+    """Crea con 'crear(col)' una roca o un islote como grupo suelto: un vacío en la colección
+    22_ROCAS con el origen en (x, y, agua) y todo lo creado colgando de él. Se exporta aparte en
+    Liria_Rocas.fbx para moverlo y rotarlo en Unity sin tocar los bloques."""
+    destino = bpy.data.collections.get("22_ROCAS") or coleccion("22_ROCAS")
+    n = _contador_sueltos[nombre] = _contador_sueltos.get(nombre, 0) + 1
+    raiz = bpy.data.objects.new(f"{nombre}_{n:02d}", None)
+    raiz.location = (x, y, AGUA_Z)
+    destino.objects.link(raiz)
+    antes = set(bpy.data.objects)
+    crear(destino)
+    for o in set(bpy.data.objects) - antes:
+        if o.parent is None and o.users_collection and o.users_collection[0] == destino:
+            o.parent = raiz
+            o.matrix_parent_inverse = raiz.matrix_world.inverted()
+    return raiz
+
+
 def entorno_rocoso(col):
     """Orillas de roca alrededor de B01, fuera de lo pisable, y el depósito de agua sobre un
     peñasco al este de las casas, como en la «Vista general» de la hoja de referencia."""
     # Peñasco del depósito, al noreste, entre el barrio de piedra y el canal.
-    base = roca(col, "R_B_Rocks2_03", 22.0, 34.0, giro=20, hundida=1.2)
-    cima = max((base.matrix_world @ v.co).z for v in base.data.vertices)
-    # Zócalo de piedra bajo las patas: la roca es irregular y sin él alguna pata quedaba al aire.
-    bm = bmesh.new()
-    caja(bm, (22.0, 34.5, (AGUA_Z - 1.0 + cima - 0.5) / 2), (5.2, 5.2, cima - 0.5 - (AGUA_Z - 1.0)))
-    zocalo = malla_suelta(col, "Zocalo_Deposito", bm, "LIRIA_Piedra")
-    zocalo.rotation_euler.z = math.radians(15)
-    poner(col, "T_Water_Tower", 22.0, 34.5, z_abajo=cima - 0.6, giro=15, tipo="chapa")
-    roca(col, "R_B_Rocks2_00", 27.0, 40.0, giro=-30, hundida=1.5)
-    roca(col, "R_S_Rock2_03", 11.0, 1.0, giro=60)
-    roca(col, "R_S_Rock2_09", 12.0, 21.0, giro=10)
+    def _deposito(col):
+        base = roca(col, "R_B_Rocks2_03", 22.0, 34.0, giro=20, hundida=1.2)
+        cima = max((base.matrix_world @ v.co).z for v in base.data.vertices)
+        # Zócalo de piedra bajo las patas: la roca es irregular y sin él alguna pata quedaba al aire.
+        bm = bmesh.new()
+        caja(bm, (22.0, 34.5, (AGUA_Z - 1.0 + cima - 0.5) / 2), (5.2, 5.2, cima - 0.5 - (AGUA_Z - 1.0)))
+        zocalo = malla_suelta(col, "Zocalo_Deposito", bm, "LIRIA_Piedra")
+        zocalo.rotation_euler.z = math.radians(15)
+        poner(col, "T_Water_Tower", 22.0, 34.5, z_abajo=cima - 0.6, giro=15, tipo="chapa")
+    suelto("Penasco_Deposito", 22.0, 34.0, _deposito)
+    suelto("Roca", 27.0, 40.0, lambda c: roca(c, "R_B_Rocks2_00", 27.0, 40.0, giro=-30, hundida=1.5))
+    suelto("Roca", 11.0, 1.0, lambda c: roca(c, "R_S_Rock2_03", 11.0, 1.0, giro=60))
+    suelto("Roca", 12.0, 21.0, lambda c: roca(c, "R_S_Rock2_09", 12.0, 21.0, giro=10))
 
     # Entre B01 y el barrio residencial, al norte y al sur de la pasarela.
-    roca(col, "R_B_Rocks2_04", -15.0, 16.0, giro=110, hundida=1.3)
-    roca(col, "R_B_Rocks2_01", -10.0, -4.0, giro=200, hundida=0.8)
-    roca(col, "R_S_Rock2_13", -11.0, 2.0, giro=30)
-    roca(col, "R_S_Rock2_05", -19.0, 21.0, giro=-20)
+    suelto("Roca", -15.0, 16.0, lambda c: roca(c, "R_B_Rocks2_04", -15.0, 16.0, giro=110, hundida=1.3))
+    suelto("Roca", -10.0, -4.0, lambda c: roca(c, "R_B_Rocks2_01", -10.0, -4.0, giro=200, hundida=0.8))
+    suelto("Roca", -11.0, 2.0, lambda c: roca(c, "R_S_Rock2_13", -11.0, 2.0, giro=30))
+    suelto("Roca", -19.0, 21.0, lambda c: roca(c, "R_S_Rock2_05", -19.0, 21.0, giro=-20))
 
     # Escollera al sur de la cabeza del muelle y piedras sueltas entre pilotes.
-    roca(col, "R_B_Rocks2_02", -6.0, -27.0, giro=-60, hundida=1.6)
-    roca(col, "R_S_Rock2_08", 7.0, -7.0, giro=45)
-    roca(col, "R_S_Rock2_01", -6.5, -17.5, giro=80)
-    roca(col, "R_S_Rock2_15", -4.5, -6.0, giro=0, hundida=0.9)
-    roca(col, "R_S_Rock2_04", 3.0, -4.0, giro=130, hundida=0.5)
+    suelto("Roca", -6.0, -27.0, lambda c: roca(c, "R_B_Rocks2_02", -6.0, -27.0, giro=-60, hundida=1.6))
+    suelto("Roca", 7.0, -7.0, lambda c: roca(c, "R_S_Rock2_08", 7.0, -7.0, giro=45))
+    suelto("Roca", -6.5, -17.5, lambda c: roca(c, "R_S_Rock2_01", -6.5, -17.5, giro=80))
+    suelto("Roca", -4.5, -6.0, lambda c: roca(c, "R_S_Rock2_15", -4.5, -6.0, giro=0, hundida=0.9))
+    suelto("Roca", 3.0, -4.0, lambda c: roca(c, "R_S_Rock2_04", 3.0, -4.0, giro=130, hundida=0.5))
 
 
 def bloque_muelle(col):
@@ -1070,13 +1093,13 @@ def islote(col, x, y, escala, semilla, arboles=3, rocas=("R_B_Rocks2_00", "R_B_R
 
 def islotes_cercanos(col):
     """Islotes alrededor de B01: rodean el muelle sin tocar lo pisable."""
-    islote(col, 36.0, 50.0, 1.4, 11, arboles=4)
-    islote(col, -2.0, 54.0, 1.6, 12, arboles=4)
-    islote(col, -58.0, -14.0, 1.1, 13, arboles=2)
-    islote(col, 42.0, -32.0, 1.2, 14, arboles=3)
-    islote(col, -4.0, -42.0, 0.8, 15, arboles=1)
-    islote(col, 52.0, 8.0, 1.3, 16, arboles=3)
-    islote(col, -56.0, 28.0, 1.5, 17, arboles=4)
+    suelto("Islote", 36.0, 50.0, lambda c: islote(c, 36.0, 50.0, 1.4, 11, arboles=4))
+    suelto("Islote", -2.0, 54.0, lambda c: islote(c, -2.0, 54.0, 1.6, 12, arboles=4))
+    suelto("Islote", -58.0, -14.0, lambda c: islote(c, -58.0, -14.0, 1.1, 13, arboles=2))
+    suelto("Islote", 42.0, -32.0, lambda c: islote(c, 42.0, -32.0, 1.2, 14, arboles=3))
+    suelto("Islote", -4.0, -42.0, lambda c: islote(c, -4.0, -42.0, 0.8, 15, arboles=1))
+    suelto("Islote", 52.0, 8.0, lambda c: islote(c, 52.0, 8.0, 1.3, 16, arboles=3))
+    suelto("Islote", -56.0, 28.0, lambda c: islote(c, -56.0, 28.0, 1.5, 17, arboles=4))
 
 
 # ---------------------------------------------------------------- fondo: montañas e islas lejanas
@@ -1356,6 +1379,7 @@ def main():
     exportar([lim], "Liria_Limites")
     faroles = bpy.data.collections["21_FAROLES"]
     exportar(list(faroles.objects), "Liria_Faroles")
+    exportar(list(bpy.data.collections["22_ROCAS"].objects), "Liria_Rocas")
     # En la vista previa se ven los bloques editables; las versiones unificadas quedan ocultas.
     for o in list(geos.values()) + [lim]:
         o.hide_set(True)

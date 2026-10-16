@@ -58,18 +58,28 @@ Lo que debe sentir el jugador al final: tristeza, confusión y la pregunta
   sí mismo.
 
 ### Maia
-- Es **una especie de robot radio AM/FM**, adulta joven.
-- **El recuerdo más feliz de Nilo:** Maia se conectaba a una señal y reproducía una canción que
-  quedó grabada en el código de Nilo. **Esa canción es el tema musical del juego.**
-- **Nunca supo** lo que hizo Nilo. Si lo hubiera sabido, **jamás lo habría aprobado**: no quería
-  ser salvada a ese precio.
-- **Intentó detenerlo.** El plan **fracasó**.
-- **La Maia que guía al jugador no es la real**, y el jugador no lo sabe hasta el final. Es la
-  mentira que Nilo se cuenta: una señal que él mismo emite con lo que recuerda de ella.
-- No se da cuenta de que se desvanece y le pide a Nilo que siga.
-- **Nilo quería salvarla de apagarse.** **[propuesta]** Maia se estaba quedando sin energía y
-  solo la energía de toda Liria podía mantenerla encendida.
-- **[abierto]** Qué quería ella de su vida.
+
+**Decisión del 2026-10-16: Maia nunca tuvo vida.** Era solo una radio que reproducía canciones y
+programas. Nilo, solo durante mucho tiempo, la confundió con alguien.
+
+- **Lo que era:** una radio vieja de Liria. Pasaba música, boletines de las mareas, turnos de las
+  bombas y programas de la noche. Nadie hablaba *con* Nilo: Nilo escuchaba.
+- **Lo que Nilo creyó:** que Maia le hablaba a él, que lo esperaba, que era su compañía. Todo lo
+  que "ella le dijo" son frases de canciones y de programas que él tomó como suyas.
+- **La Maia que guía al jugador** es un recuerdo confuso de Nilo, no una señal real. Nilo cree que
+  está viva y la sigue. Ese recuerdo se va perdiendo a medida que Nilo recupera la memoria real.
+- **El recuerdo más feliz de Nilo:** la radio sonando con la canción que quedó grabada en su
+  código. **Esa canción es el tema musical del juego.**
+- **Por qué apagó la ciudad:** la radio se estaba apagando, y Nilo desvió toda la energía de
+  Liria para mantener encendida a quien creía viva. Salvó un aparato y condenó a una ciudad.
+- **La frase** *"Apagarse también es parte de la canción"* es un verso de una canción que pasaba la
+  radio. Nilo la recordaba como algo que Maia le dijo.
+
+**Lo que cambia respecto a lo anterior:** Maia ya no "intentó detenerlo" ni "no quería ser
+salvada": una radio no quiere nada. **[abierto]** Si alguien intentó detener a Nilo, tuvo que ser
+otra persona (¿una voz de la radio, un boletín de emergencia que Nilo ignoró?).
+
+**En pantalla:** Maia es una radio en todo el juego, no un robot.
 
 ### Los habitantes
 - Solo se ven como **siluetas o sombras**.
@@ -147,10 +157,10 @@ Los recuerdos opcionales cambian el final. **[propuesta]**:
 
 1. **¿Por qué se estaba apagando Maia?** ¿Por vieja, por una avería, o porque la ciudad iba a
    cortarle la energía?
-2. **¿Qué quería Maia de su vida?**
+2. ~~¿Qué quería Maia de su vida?~~ Ya no aplica: Maia era una radio.
 3. ~~La frase que Maia le dijo a Nilo~~ **Decidida:** *"Apagarse también es parte de la
    canción."* Maia aceptaba apagarse; Nilo no pudo.
-4. **El aprendiz de bombas:** ¿era Maia? Encaja si Maia era la radio que anunciaba las mareas y
+4. **El aprendiz de bombas:** ya no puede ser Maia. ¿Era quien presentaba el programa de la radio? Encaja si la radio anunciaba las mareas y
    los turnos de las bombas.
 5. **¿Qué ve Nilo cuando se apaga?**
 6. **¿A qué lugar real se parece Liria?**

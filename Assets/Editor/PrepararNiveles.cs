@@ -20,7 +20,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public static class PrepararNiveles
 {
-    const string CarpetaEscenas = "Assets/Scenes";
+    const string CarpetaEscenas = "Assets/Scenes/Juego";
     const string RutaEntrada = "Assets/Input/Relevo.inputactions";
 
     const string Escena2 = "Nivel2_PatioDeBombas";

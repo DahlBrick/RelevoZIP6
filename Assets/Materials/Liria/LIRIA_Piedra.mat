@@ -47,5 +47,6 @@ Material:
     - _BaseColor: {r: 0.62, g: 0.56, b: 0.5, a: 1}
     - _ColorOxido: {r: 0.35999998, g: 0.16999996, b: 0.11999995, a: 1}
     - _ColorSombra: {r: 0.41999996, g: 0.37999994, b: 0.58, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

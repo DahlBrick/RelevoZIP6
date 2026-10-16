@@ -23,6 +23,8 @@ public static class PrepararKitVisual
     const string Pirata = Terceros + "/Kenney_Pirate";
     const string Barcos = Terceros + "/Kenney_Watercraft";
     const string Robot = Terceros + "/Quaternius_Robot/Robot.fbx";
+    const string Aldea = Terceros + "/Quaternius_Village";
+    const string Radio = Terceros + "/Radio_laleksic/radio.obj";
 
     const string CarpetaMateriales = "Assets/Materials/Kit";
     const string CarpetaAnimacion = "Assets/Animation";
@@ -99,6 +101,34 @@ public static class PrepararKitVisual
             { "Black", niloOscuro },
         });
 
+        // Casas de Liria (Medieval Village MegaKit): sin sus texturas realistas, en colores planos de
+        // la paleta, para que lean low-poly como el resto del juego. El cristal se queda liso y
+        // brillante; VentanasCasa le añade la luz de dentro.
+        Dictionary<string, Material> aldea = new Dictionary<string, Material>
+        {
+            { "MI_Plaster", Lit("RELEVO_AldeaRevoque", Hex("E9DFCB"), null, 0.12f) },
+            { "MI_WoodTrim", Lit("RELEVO_AldeaMadera", Hex("6B4A33"), null, 0.15f) },
+            { "MI_WoodTrim_Wear", Lit("RELEVO_AldeaMaderaGastada", Hex("7C5A3F"), null, 0.15f) },
+            { "MI_Brick", Lit("RELEVO_AldeaPiedra", Hex("B8AA92"), null, 0.08f) },
+            { "MI_UnevenBrick", Lit("RELEVO_AldeaPiedraBaja", Hex("A39580"), null, 0.08f) },
+            { "MI_RedBrick", Lit("RELEVO_AldeaLadrillo", Hex("B5735A"), null, 0.08f) },
+            { "MI_RockTrim", Lit("RELEVO_AldeaSillar", Hex("CFC3AC"), null, 0.08f) },
+            { "MI_RoundTiles", Lit("RELEVO_AldeaTeja", Hex("C0603F"), null, 0.2f) },
+            { "MI_MetalOrnaments", Lit("RELEVO_AldeaHierro", Hex("2F343B"), null, 0.35f) },
+            { "MI_Vine", Lit("RELEVO_AldeaHiedra", Hex("6E8F4E"), null, 0.1f) },
+            { "MI_WindowGlass", Lit("RELEVO_AldeaCristal", Hex("3D5260"), null, 0.85f) },
+        };
+        foreach (string ruta in Modelos(Aldea))
+        {
+            remapeados += Remapear(ruta, aldea);
+        }
+
+        // Maia es una radio: la del pack de laleksic, con una textura de colores planos pintada para
+        // RELEVO (madera, panel oscuro, rejilla, dial crema) en lugar de la foto original.
+        Material radio = Lit("RELEVO_Radio", Color.white,
+            AssetDatabase.LoadAssetAtPath<Texture2D>(Terceros + "/Radio_laleksic/radio_plana.png"), 0.25f);
+        remapeados += Remapear(Radio, new Dictionary<string, Material> { { "radio", radio } });
+
         ConfigurarAnimacionesRobot();
         AnimatorController animador = CrearAnimadorNilo();
 
@@ -148,6 +178,7 @@ public static class PrepararKitVisual
         kit.farol = Uno(Pueblo, "lantern");
         kit.estandarte = Uno(Pueblo, "banner-green");
         kit.jardinera = Uno(Pueblo, "fountain-round");
+        kit.radio = AssetDatabase.LoadAssetAtPath<GameObject>(Radio);
 
         kit.cobre = Metal("RELEVO_KitCobre", Hex("B06A3A"), 0.35f, 0.45f);
         kit.ambarMate = Lit("RELEVO_KitAmbarMate", Hex("E9A23B"), null, 0.4f);

@@ -52,7 +52,7 @@ public static class HornearNivel
         if (bootstrap == null)
         {
             Aviso("La escena '" + escena.name + "' no contiene ningún LevelBootstrap.\n\n"
-                + "Abre 'Assets/Scenes/Nivel1_MuelleDeCobre.unity' (o la escena del nivel que "
+                + "Abre 'Assets/Scenes/Juego/Nivel1_MuelleDeCobre.unity' (o la escena del nivel que "
                 + "quieras hornear) y vuelve a ejecutar la herramienta.");
             return;
         }
