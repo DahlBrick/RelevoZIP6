@@ -8,17 +8,17 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: LIRIA_Chapa
-  m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
+  m_Shader: {fileID: 4800000, guid: 5eb3c888cf4870840bab416929b08f7e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _ONDULADO
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap:
-    RenderType: Opaque
+  stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
   m_LockedProperties: 
@@ -86,6 +86,7 @@ Material:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
+    - _Ambiente: 0.35
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -101,23 +102,38 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _GrosorTrama: 0.3
+    - _LargoPlancha: 2.2
+    - _Medio: 0.55
     - _Metallic: 0
     - _OcclusionStrength: 1
+    - _Ondulado: 1
+    - _Oxido: 0.35
     - _Parallax: 0.005
+    - _PasoOnda: 0.3
+    - _PasoTrama: 6
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _RelieveOnda: 0.45
     - _Smoothness: 0.15
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
+    - _Suavidad: 0.02
     - _Surface: 0
+    - _TintaOnda: 0.22
+    - _Trama: 0.22
+    - _Umbral1: 0
+    - _Umbral2: 0.45
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.55, g: 0.57, b: 0.6, a: 1}
+    - _BaseColor: {r: 0.48, g: 0.58, b: 0.58, a: 1}
     - _Color: {r: 0.54999995, g: 0.56999993, b: 0.6, a: 1}
+    - _ColorOxido: {r: 0.35999998, g: 0.16999996, b: 0.11999995, a: 1}
+    - _ColorSombra: {r: 0.41999996, g: 0.37999994, b: 0.58, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []

@@ -121,6 +121,10 @@ def materiales_neutros():
         neutros[cat] = m
     for nombre, o in KIT.items():
         fija = CATEGORIA_FIJA.get(nombre[:2])
+        # Las casas usan los mismos materiales de chapa en paredes y tejados; los tejados (piezas
+        # "Roofing" por encima de 2 m) pasan a óxido, como en la hoja de referencia.
+        if nombre.startswith("H_Roofing") and caja_local(o.data)[0].z > 2.0:
+            fija = "LIRIA_Tejado"
         if fija and not o.material_slots:
             o.data.materials.append(neutros[fija])
         for slot in o.material_slots:
