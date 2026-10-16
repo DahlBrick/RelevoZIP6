@@ -58,3 +58,13 @@ Thumbs.db
 
 # Capturas temporales de la CLI de Unity (carpeta oculta para Unity)
 Assets/.capturas/
+
+# Arte/Fuentes: solo la geometría de los packs. Las texturas originales quedan en local como
+# referencia (se rehacen) y no se redistribuyen.
+/Arte/Fuentes/**/*.png
+/Arte/Fuentes/**/*.jpg
+/Arte/Fuentes/**/*.jpeg
+/Arte/Fuentes/**/*.exr
+/Arte/Fuentes/**/*.7z
+/Arte/Fuentes/woodendock_fbxgltftextures/FbxUnreal/
+*.blend1
