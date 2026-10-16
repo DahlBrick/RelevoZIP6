@@ -33,6 +33,9 @@ RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")
 FUENTES = os.path.join(RAIZ, "Arte", "Fuentes")
 MUELLE_GLB = os.path.join(FUENTES, "woodendock_fbxgltftextures", "Glb", "WoodenDockSet.glb")
 CASAS_FBX = os.path.join(FUENTES, "Houses_on_the_water", "Houses_on_the_water", "Models", "houses_on_the_water.fbx")
+ROCAS_FBX = os.path.join(FUENTES, "oga_rocks_set02", "extraido", "FBX")
+DEPOSITO_BLEND = os.path.join(FUENTES, "oga_water_tower", "Low Poly Water Tower.blend")
+ESCALA_ROCAS = 0.1  # el pack viene en decímetros: así las grandes miden unos 9 m
 SALIDA = os.path.join(RAIZ, "Arte", "Blender", "liria_master.blend")
 
 AGUA_Z = -1.5
@@ -48,6 +51,8 @@ COLOR = {
     "casa": (0.55, 0.57, 0.6, 1),
     "barca": (0.7, 0.42, 0.3, 1),
     "prop": (0.75, 0.62, 0.42, 1),
+    "roca": (0.5, 0.5, 0.48, 1),
+    "chapa": (0.55, 0.57, 0.6, 1),
     "agua": (0.15, 0.32, 0.42, 1),
     "nilo": (1.0, 0.45, 0.1, 1),
 }
@@ -92,8 +97,11 @@ COLOR_CATEGORIA = {
     "LIRIA_Tejado": (0.5, 0.36, 0.3, 1),
     "LIRIA_Tela": (0.75, 0.68, 0.55, 1),
     "LIRIA_Cristal": (0.4, 0.55, 0.6, 1),
+    "LIRIA_Roca": (0.5, 0.5, 0.48, 1),
     "LIRIA_Varios": (0.6, 0.6, 0.55, 1),
 }
+# Piezas cuyo material se fija por origen y no por nombre.
+CATEGORIA_FIJA = {"R_": "LIRIA_Roca", "T_": "LIRIA_Chapa"}
 
 
 def categoria(nombre_material):
@@ -111,9 +119,14 @@ def materiales_neutros():
         m = bpy.data.materials.new(cat)
         m.diffuse_color = color
         neutros[cat] = m
-    for o in KIT.values():
+    for nombre, o in KIT.items():
+        fija = CATEGORIA_FIJA.get(nombre[:2])
+        if fija and not o.material_slots:
+            o.data.materials.append(neutros[fija])
         for slot in o.material_slots:
-            if slot.material is not None and slot.material.name not in neutros:
+            if fija:
+                slot.material = neutros[fija]
+            elif slot.material is not None and slot.material.name not in neutros:
                 slot.material = neutros[categoria(slot.material.name)]
     for m in [m for m in bpy.data.materials if m.name not in neutros]:
         bpy.data.materials.remove(m)
@@ -154,6 +167,44 @@ def importar_kits():
         mover_a(o, kit)
         KIT["H_" + o.name] = o
         o.name = "KIT_H_" + o.name
+
+    # Rocas (OpenGameArt, CC0): una pieza por archivo, ya a escala.
+    for archivo in sorted(os.listdir(ROCAS_FBX)):
+        if not archivo.endswith(".fbx") or "_all" in archivo:
+            continue
+        antes = set(bpy.data.objects)
+        bpy.ops.import_scene.fbx(filepath=os.path.join(ROCAS_FBX, archivo))
+        nuevos = set(bpy.data.objects) - antes
+        mallas = [o for o in nuevos if o.type == "MESH"]
+        for o in mallas:
+            o.data = o.data.copy()
+            o.data.transform(Matrix.Scale(ESCALA_ROCAS, 4) @ o.matrix_world)
+            o.matrix_world = Matrix()
+            o.parent = None
+        for o in nuevos - set(mallas):
+            bpy.data.objects.remove(o)
+        bpy.ops.object.select_all(action="DESELECT")
+        for o in mallas:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = mallas[0]
+        if len(mallas) > 1:
+            bpy.ops.object.join()
+        o = bpy.context.view_layer.objects.active
+        mover_a(o, kit)
+        clave = "R_" + archivo[3:-4].replace("-", "_")   # LP_B-Rocks2_00.fbx -> R_B_Rocks2_00
+        KIT[clave] = o
+        o.name = "KIT_" + clave
+
+    # Depósito de agua (OpenGameArt, CC0).
+    with bpy.data.libraries.load(DEPOSITO_BLEND) as (origen, destino):
+        destino.objects = [n for n in origen.objects if n == "Water_Tower"]
+    o = destino.objects[0]
+    o.data = o.data.copy()
+    o.data.transform(o.matrix_world)
+    o.matrix_world = Matrix()
+    kit.objects.link(o)
+    KIT["T_Water_Tower"] = o
+    o.name = "KIT_T_Water_Tower"
 
 
 def poner(col, nombre, x, y, z_arriba=None, z_abajo=None, giro=0, tipo="muelle"):
@@ -245,6 +296,36 @@ def pilotes(col, x, y):
             poner(col, "D_Support_Post_Half", x + ex, y + ey, z_arriba=-2.05)
 
 
+def roca(col, nombre, x, y, giro=0, hundida=0.6):
+    """Roca apoyada en el fondo: su base queda 'hundida' metros bajo el agua."""
+    return poner(col, nombre, x, y, z_abajo=AGUA_Z - hundida, giro=giro, tipo="roca")
+
+
+def entorno_rocoso(col):
+    """Orillas de roca alrededor de B01, fuera de lo pisable, y el depósito de agua sobre un
+    peñasco al este de las casas, como en la «Vista general» de la hoja de referencia."""
+    # Peñasco del depósito, al este de las casas.
+    base = roca(col, "R_B_Rocks2_03", 13.0, 8.0, giro=20, hundida=1.2)
+    cima = max((base.matrix_world @ v.co).z for v in base.data.vertices)
+    poner(col, "T_Water_Tower", 13.0, 8.5, z_abajo=cima - 0.6, giro=15, tipo="chapa")
+    roca(col, "R_B_Rocks2_00", 17.0, 13.0, giro=-30, hundida=1.5)
+    roca(col, "R_S_Rock2_03", 9.5, 3.0, giro=60)
+    roca(col, "R_S_Rock2_09", 15.5, 3.5, giro=10)
+
+    # Orilla oeste, detrás de la casa grande.
+    roca(col, "R_B_Rocks2_04", -14.0, 12.0, giro=110, hundida=1.3)
+    roca(col, "R_B_Rocks2_01", -15.5, 3.5, giro=200, hundida=0.8)
+    roca(col, "R_S_Rock2_13", -11.0, 0.5, giro=30)
+    roca(col, "R_S_Rock2_05", -12.5, 17.0, giro=-20)
+
+    # Escollera junto a la cabeza del muelle y piedras sueltas entre pilotes.
+    roca(col, "R_B_Rocks2_02", 10.0, -14.0, giro=-60, hundida=1.6)
+    roca(col, "R_S_Rock2_08", 6.0, -10.0, giro=45)
+    roca(col, "R_S_Rock2_01", -6.5, -13.5, giro=80)
+    roca(col, "R_S_Rock2_15", -4.5, -6.0, giro=0, hundida=0.9)
+    roca(col, "R_S_Rock2_04", 3.0, -4.0, giro=130, hundida=0.5)
+
+
 def bloque_muelle(col):
     """B01, el «Detalle de muelle» de la hoja de referencia: una plataforma con dos casas de chapa
     sobre pilotes y una pasarela de tablas que entra en el agua, con barcas amarradas."""
@@ -292,12 +373,17 @@ def bloque_muelle(col):
     poner(col, "D_Props_Crate", px - 1.8, yt + 1.1, z_abajo=0, tipo="prop")
     poner(col, "D_Rope_Coil.001", px - 0.5, -3.0, z_abajo=0, tipo="prop")
 
+    entorno_rocoso(col)
+
     # Agua provisional.
     bpy.ops.mesh.primitive_plane_add(size=1, location=(0, -4, AGUA_Z))
     agua = bpy.context.object
     agua.scale = (60, 60, 1)
     agua.name = "Agua_provisional"
     agua.color = COLOR["agua"]
+    mat_agua = bpy.data.materials.new("Agua_provisional")
+    mat_agua.diffuse_color = COLOR["agua"]
+    agua.data.materials.append(mat_agua)
     mover_a(agua, col)
 
 
@@ -307,6 +393,7 @@ EXPORTAR = os.path.join(RAIZ, "Assets", "Meshes", "Liria")
 CELDA = 0.25          # resolución del mapa de paso
 ALTO_LIMITE = 2.5     # altura de las paredes invisibles
 GROSOR_LIMITE = 0.2   # y su grosor
+INICIO_NILO = (0.0, 0.0)  # en planta de Blender: arranque de la pasarela, junto a las casas
 
 
 def unificar(bloque, nombre):
@@ -381,7 +468,19 @@ def limites(geo, nombre):
         ok, punto, normal, _, obj, _ = escena.ray_cast(deps, p, Vector((0, 0, -1)), distance=1.6)
         return ok and obj.name == geo.name and normal.z > 0.7 and abs(punto.z) < 0.3
 
-    mapa = [[pisable(i, j) for j in range(ny)] for i in range(nx)]
+    crudo = [[pisable(i, j) for j in range(ny)] for i in range(nx)]
+
+    # Solo cuenta lo que está conectado con el arranque de la pasarela: así una roca plana a
+    # ras de agua no se convierte en una isla con paredes propias.
+    mapa = [[False] * ny for _ in range(nx)]
+    inicio = (int((INICIO_NILO[0] - x0) / CELDA), int((INICIO_NILO[1] - y0) / CELDA))
+    pendientes = [inicio] if crudo[inicio[0]][inicio[1]] else []
+    while pendientes:
+        i, j = pendientes.pop()
+        if not (0 <= i < nx and 0 <= j < ny) or mapa[i][j] or not crudo[i][j]:
+            continue
+        mapa[i][j] = True
+        pendientes += [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
 
     def celda(i, j):
         return 0 <= i < nx and 0 <= j < ny and mapa[i][j]
@@ -448,9 +547,9 @@ def vista_previa():
     ref = bpy.data.collections["00_REF"]
     cam = bpy.data.objects.new("CAM_Previa", bpy.data.cameras.new("CAM_Previa"))
     ref.objects.link(cam)
-    cam.location = (-17.0, -27.0, 14.0)
+    cam.location = (-24.0, -36.0, 20.0)
     objetivo = bpy.data.objects.new("CAM_Objetivo", None)
-    objetivo.location = (1.0, -2.0, 0.5)
+    objetivo.location = (1.0, 0.0, 0.5)
     ref.objects.link(objetivo)
     c = cam.constraints.new("TRACK_TO")
     c.target = objetivo

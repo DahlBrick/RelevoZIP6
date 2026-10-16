@@ -27,6 +27,7 @@ public static class PrepararLiria
         ("LIRIA_Tejado", new Color(0.5f, 0.36f, 0.3f)),
         ("LIRIA_Tela", new Color(0.75f, 0.68f, 0.55f)),
         ("LIRIA_Cristal", new Color(0.4f, 0.55f, 0.6f)),
+        ("LIRIA_Roca", new Color(0.5f, 0.5f, 0.48f)),
         ("LIRIA_Varios", new Color(0.6f, 0.6f, 0.55f)),
     };
 
@@ -123,6 +124,10 @@ public static class PrepararLiria
 
         GameObject b01 = (GameObject)PrefabUtility.InstantiatePrefab(
             AssetDatabase.LoadAssetAtPath<GameObject>(CarpetaPrefabs + "/B01_Muelle.prefab"));
+        // En Blender el mar queda hacia -Y, que en Unity es +Z, lejos de la cámara. Girado, el
+        // muelle queda delante y las casas detrás. El giro es sobre el origen, que es donde
+        // arranca la pasarela, así que el inicio de Nilo no cambia.
+        b01.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
         GameObject agua = GameObject.CreatePrimitive(PrimitiveType.Plane);
         agua.name = "Agua_provisional";

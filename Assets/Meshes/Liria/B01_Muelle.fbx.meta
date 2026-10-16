@@ -22,6 +22,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: LIRIA_Roca
+    second: {fileID: 2100000, guid: 385f2a5b1ae370b4897436e0a40b710a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: LIRIA_Tejado
     second: {fileID: 2100000, guid: 320deaacfe8f8e14aaf3e50744ada912, type: 2}
   - first:
