@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Juego/Apertura.unity
+    path: Assets/Scenes/Juego/Cinematica_Liria.unity
     guid: 8421774c389b52b4bacc3035077c3e22
   - enabled: 1
     path: Assets/Scenes/Juego/Nivel1_MuelleDeCobre.unity

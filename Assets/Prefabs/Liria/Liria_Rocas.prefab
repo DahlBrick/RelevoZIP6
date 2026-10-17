@@ -48,9 +48,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5360014136105386709, guid: 4f8777386e02e9d4ca79a8d279f9d0d4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 5.63
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4f8777386e02e9d4ca79a8d279f9d0d4, type: 3}
       propertyPath: m_Name
       value: Liria_Rocas
+      objectReference: {fileID: 0}
+    - target: {fileID: 2139502726117820923, guid: 4f8777386e02e9d4ca79a8d279f9d0d4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13.14
+      objectReference: {fileID: 0}
+    - target: {fileID: 2139502726117820923, guid: 4f8777386e02e9d4ca79a8d279f9d0d4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.19
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -22,6 +22,14 @@ public class LevelBootstrap : MonoBehaviour
     [Tooltip("Assets/Input/Relevo.inputactions")]
     [SerializeField] InputActionAsset acciones;
 
+    [Header("Estilo y apertura del nivel")]
+    [Tooltip("Pasa el nivel al estilo cómic de Liria (RELEVO/Comic, tinta, cielo y post de Liria).")]
+    [SerializeField] bool estiloComic;
+    [SerializeField] Material cieloComic;
+    [SerializeField] UnityEngine.Rendering.VolumeProfile perfilComic;
+    [Tooltip("El nivel empieza con el despertar de Nilo (DespertarNivel) antes de la intro y el tutorial.")]
+    [SerializeField] bool despertar;
+
     [Header("Escena")]
     [Tooltip("Lo marca la herramienta de horneado: el nivel ya está guardado en la escena.")]
     [SerializeField] bool escenaHorneada;
@@ -47,6 +55,33 @@ public class LevelBootstrap : MonoBehaviour
         if (!escenaHorneada) Construir(layout, def);
 
         Enlazar(layout, def);
+    }
+
+    /// <summary>Estilo cómic de Liria en todo el nivel: materiales, tinta, cielo, bruma y post.</summary>
+    void AplicarEstiloComic(Camera camara)
+    {
+        foreach (GameObject raiz in gameObject.scene.GetRootGameObjects()) EstiloComic.Aplicar(raiz.transform);
+        if (camara != null)
+        {
+            EstiloComic.RendererTinta(camara);
+            if (cieloComic != null) camara.clearFlags = CameraClearFlags.Skybox;
+        }
+        if (cieloComic != null)
+        {
+            RenderSettings.skybox = cieloComic;
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = new Color(0.80f, 0.87f, 0.89f);
+            RenderSettings.fogStartDistance = 70f;
+            RenderSettings.fogEndDistance = 1100f;
+        }
+        if (perfilComic != null)
+        {
+            var v = new GameObject("Volumen cómic").AddComponent<UnityEngine.Rendering.Volume>();
+            v.isGlobal = true;
+            v.priority = 5f;
+            v.sharedProfile = perfilComic;
+        }
     }
 
     LevelDefinition DefinicionActiva()
@@ -359,8 +394,17 @@ public class LevelBootstrap : MonoBehaviour
         // tutorial, además, solo se cuenta una vez por sesión aunque se vuelva al nivel.
         bool reintento = LevelManager.ReinicioPendiente;
         LevelManager.ReinicioPendiente = false;
-        if (def != null && !reintento) GameEvents.RaiseMensajeMostrado(def.tituloIntro, def.textoIntro);
-        if (def != null && def.tutorialPatio && !reintento && TutorialMaia.PrimeraVez(indiceNivel)) TutorialMaia.Presentacion();
+
+        if (estiloComic) AplicarEstiloComic(camara != null ? camara.Camara : null);
+
+        System.Action intro = () =>
+        {
+            if (def != null && !reintento) GameEvents.RaiseMensajeMostrado(def.tituloIntro, def.textoIntro);
+            if (def != null && def.tutorialPatio && !reintento && TutorialMaia.PrimeraVez(indiceNivel)) TutorialMaia.Presentacion();
+        };
+        // Primera vez en el nivel: antes de la intro, Nilo despierta. Al reintentar no se repite.
+        if (despertar && !reintento && nilo != null) DespertarNivel.Empezar(nilo, camara != null ? camara.Camara : null, intro);
+        else intro();
 
         Debug.Log("RELEVO: " + nivel.NombreNivel
             + (escenaHorneada ? " (escena horneada)" : " (construido en ejecución)")

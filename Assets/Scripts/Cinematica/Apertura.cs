@@ -61,14 +61,18 @@ public sealed class Apertura : MonoBehaviour
     // ------------------------------------------------------------------ línea de tiempo
 
     // Parte A
-    const float A_Negro = 0f, A_Panoramica = 3.5f, A_Farol = 13.5f, A_Bomba = 17f, A_Barca = 20.5f,
-        A_Ventana = 24f, A_Apagon = 27.5f, A_Agua = 35f, A_Ultimo = 38.5f, A_Titulo = 41.5f;
+    // Versión de 56 s sobre la Liria nueva: mismos planos, más apretados.
+    // Solo la noche de Liria y su apagón; el despertar se hará en otra escena. Al terminar el
+    // título se carga el primer nivel.
+    const float A_Negro = 0f, A_Panoramica = 2.5f, A_Farol = 10f, A_Bomba = 12.5f, A_Barca = 15f,
+        A_Ventana = 17.5f, A_Apagon = 20f, A_Agua = 24.5f, A_Ultimo = 26.5f, A_Titulo = 29f;
     // Parte B
-    const float B_Terminal = 47.5f, B_Ojos = 55.5f, B_Mano = 61f, B_Levantarse = 64.5f, B_Panel = 71f,
-        B_Hombro = 74f, B_Radio = 79f, B_Final = 92f, Fin = 98f;
+    const float B_Terminal = 132f, B_Ojos = 135.5f, B_Mano = 139f, B_Levantarse = 141f, B_Panel = 144.5f,
+        B_Hombro = 146f, B_Radio = 149f, B_Final = 153f;   // fuera de la cinemática por ahora
+    const float Fin = A_Titulo + 5f;
 
-    const float CorteInicio = 28.2f, CorteFin = 34.6f;   // la cadena de apagones
-    const float CorteUltimo = 40.2f;
+    const float CorteInicio = 20.7f, CorteFin = 25.5f;   // la cadena de apagones
+    const float CorteUltimo = 28.2f;
 
     float T;
     bool listo;
@@ -138,7 +142,7 @@ public sealed class Apertura : MonoBehaviour
         // Mismo estilo que Liria en todo: escenarios, Nilo y la radio pasan a RELEVO/Comic, y la
         // cámara de cine dibuja el contorno de tinta. La parte A (noche) tiñe las sombras de un
         // azul más frío; la B (día) usa el violeta de Liria.
-        EstiloComic.Aplicar(liria.Raiz, new Color(0.22f, 0.24f, 0.42f));
+        EstiloComic.Aplicar(liria.Raiz, new Color(0.36f, 0.4f, 0.62f));
         EstiloComic.Aplicar(transform);
         EstiloComic.RendererTinta(cam);
 
@@ -157,9 +161,9 @@ public sealed class Apertura : MonoBehaviour
     void Ambiente()
     {
         RenderSettings.ambientMode = AmbientMode.Trilight;
-        RenderSettings.ambientSkyColor = new Color(0.17f, 0.21f, 0.34f);
-        RenderSettings.ambientEquatorColor = new Color(0.1f, 0.11f, 0.17f);
-        RenderSettings.ambientGroundColor = new Color(0.04f, 0.04f, 0.05f);
+        RenderSettings.ambientSkyColor = new Color(0.34f, 0.4f, 0.62f);
+        RenderSettings.ambientEquatorColor = new Color(0.22f, 0.24f, 0.36f);
+        RenderSettings.ambientGroundColor = new Color(0.1f, 0.1f, 0.13f);
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.Linear;
         RenderSettings.fogColor = new Color(0.06f, 0.08f, 0.15f);
@@ -174,7 +178,7 @@ public sealed class Apertura : MonoBehaviour
         luna.transform.rotation = Quaternion.Euler(28f, 200f, 0f);
         luna.type = LightType.Directional;
         luna.color = new Color(0.55f, 0.65f, 0.95f);
-        luna.intensity = 0.5f;
+        luna.intensity = 1.1f;
         this.luna = luna;
         luna.shadows = LightShadows.Soft;
         luna.shadowStrength = 0.6f;
@@ -448,7 +452,7 @@ public sealed class Apertura : MonoBehaviour
         float dt = Time.deltaTime;
 
         // El diálogo con Maia retiene la cinemática hasta que termina.
-        if (T >= B_Final - 0.5f && T < B_Final && dialogo != null && (dialogo.Abierto || mensajes < 2)) dt = 0f;
+        if (T >= B_Final - 0.5f && T < B_Final && dialogo != null && (dialogo.Abierto || mensajes < 1)) dt = 0f;
         T += dt;
         Evaluar(previo, T, dt);
         Estado = "T " + T.ToString("F1");
@@ -583,9 +587,9 @@ public sealed class Apertura : MonoBehaviour
     {
         if (ambienteDia == dia) return;
         ambienteDia = dia;
-        RenderSettings.ambientSkyColor = dia ? new Color(0.62f, 0.66f, 0.72f) : new Color(0.17f, 0.21f, 0.34f);
-        RenderSettings.ambientEquatorColor = dia ? new Color(0.46f, 0.44f, 0.4f) : new Color(0.1f, 0.11f, 0.17f);
-        RenderSettings.ambientGroundColor = dia ? new Color(0.24f, 0.21f, 0.18f) : new Color(0.04f, 0.04f, 0.05f);
+        RenderSettings.ambientSkyColor = dia ? new Color(0.8f, 0.82f, 0.86f) : new Color(0.34f, 0.4f, 0.62f);
+        RenderSettings.ambientEquatorColor = dia ? new Color(0.62f, 0.58f, 0.52f) : new Color(0.22f, 0.24f, 0.36f);
+        RenderSettings.ambientGroundColor = dia ? new Color(0.34f, 0.3f, 0.26f) : new Color(0.1f, 0.1f, 0.13f);
         DynamicGI.UpdateEnvironment();
     }
 
@@ -657,7 +661,7 @@ public sealed class Apertura : MonoBehaviour
             // P3 · La rueda de la bomba, girando a ras de agua.
             float s = S(Tramo(t, A_Bomba, A_Barca));
             Vector3 r = liria.Rueda.position;
-            Colocar(Vector3.Lerp(r + new Vector3(4.6f, 0.15f, -5.2f), r + new Vector3(4.0f, 0.3f, -4.2f), s), r + new Vector3(-0.6f, 0.6f, 0f), 40f, 0.6f);
+            Colocar(Vector3.Lerp(r + new Vector3(3.6f, 1.3f, -3.4f), r + new Vector3(2.9f, 1.1f, -2.5f), s), r + new Vector3(0f, 0.5f, 0f), 42f, 0.6f);
             dof.aperture.Override(2f);
         }
         else if (t < A_Ventana)
@@ -758,18 +762,18 @@ public sealed class Apertura : MonoBehaviour
         float radio = S(Tramo(t, B_Hombro + 2.2f, B_Hombro + 2.9f));
         sub.EncenderRadio(radio);
         if (Cruza(previo, t, B_Hombro + 2.2f)) { sub.Altavoz.Play(); }
-        sub.Altavoz.volume = 0.45f * radio * (1f - 0.6f * Tramo(t, B_Radio + 4.5f, B_Radio + 5f));
+        sub.Altavoz.volume = 0.45f * radio * (1f - 0.6f * Tramo(t, B_Radio + 0.9f, B_Radio + 1.3f));
         if (Cruza(previo, t, B_Hombro + 3.2f) && animNilo != null) animNilo.SetTrigger("No");
 
         // --- Maia
-        if (Cruza(previo, t, B_Radio + 4.6f))
+        if (Cruza(previo, t, B_Radio + 1.0f))
         {
             mensajes = 0;
             dialogo.Encolar("Maia", "¿Hola? ¿Hay alguien en la red? ...¡Nilo! Sabía que ibas a despertar.", RelevoUI.Verde);
             relojMensaje = 0f;
         }
         // Mientras la cinemática espera al diálogo, T no avanza: el reloj de lectura usa el tiempo real.
-        if (t >= B_Radio + 4.6f && dialogo != null) GestionarDialogo(Mathf.Max(t - previo, Time.deltaTime));
+        if (t >= B_Radio + 1.0f && dialogo != null) GestionarDialogo(Mathf.Max(t - previo, Time.deltaTime));
 
         // --- ondas en el agua
         if (mano != null && (Cruza(previo, t, B_Mano + 0.6f) || Cruza(previo, t, B_Mano + 1.5f) || Cruza(previo, t, B_Mano + 2.7f)))
@@ -863,7 +867,7 @@ public sealed class Apertura : MonoBehaviour
             Vector3 frente = sub.FrenteRadio;
             Colocar(r + frente * Mathf.Lerp(1.25f, 0.95f, s) + Vector3.right * 0.35f + Vector3.up * 0.05f, r + Vector3.right * 0.05f, 30f, 0.35f);
             dof.aperture.Override(1.8f);
-            if (mensajes >= 1) inclinacion = Mathf.Sin(Mathf.PI * Tramo(t, B_Radio + 6f, B_Radio + 8f)) * 14f;
+            if (mensajes >= 1) inclinacion = Mathf.Sin(Mathf.PI * Tramo(t, B_Radio + 2.2f, B_Radio + 3.6f)) * 14f;
         }
         else
         {
@@ -892,14 +896,12 @@ public sealed class Apertura : MonoBehaviour
         relojMensaje = 0f;
         mensajes++;
         dialogo.Avanzar();
-        if (mensajes == 1)
-            dialogo.Encolar("Maia", "Llevas... déjame ver... mucho rato dormido. No te digo cuánto, porque te vas a sentir mal.", RelevoUI.Verde);
     }
 
     float InicioLinea(int i)
     {
         float t = 0f;
-        for (int k = 0; k < i; k++) t += Lineas[k].Length / 34f + 0.45f;
+        for (int k = 0; k < i; k++) t += Lineas[k].Length / 70f + 0.45f;
         return t;
     }
 

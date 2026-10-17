@@ -60,7 +60,12 @@ public sealed partial class LiriaNocturna
         foreach (Transform t in liria.GetComponentsInChildren<Transform>())
         {
             if (!t.name.StartsWith("Farol_") || t.name.EndsWith("_Malla")) continue;
-            Vector3 llama = t.position + Vector3.up * (t.name.StartsWith("Farol_Piedra") ? 2.45f : 2.35f);
+            // La llama va donde está la malla del farol (su parte alta), no donde está el vacío:
+            // así sigue al farol aunque se haya movido a mano la malla o el grupo entero.
+            Renderer malla = t.GetComponentInChildren<Renderer>();
+            if (malla == null) continue;
+            Bounds b = malla.bounds;
+            Vector3 llama = new Vector3(b.center.x, b.max.y - (t.name.StartsWith("Farol_Piedra") ? 0.35f : 0.3f), b.center.z);
             Luz l = FarolNuevo(llama);
             if (detalle == null || Cerca(llama, new Vector3(0.7f, 0f, -4f), detalle.posicion)) detalle = l;
             if (UltimoFarol == null || Cerca(llama, new Vector3(-2.6f, 0f, -14f), UltimoFarol.posicion)) UltimoFarol = l;
