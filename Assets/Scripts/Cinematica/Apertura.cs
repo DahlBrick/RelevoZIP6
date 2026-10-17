@@ -627,78 +627,83 @@ public sealed class Apertura : MonoBehaviour
         luna.color = Color.Lerp(new Color(0.55f, 0.65f, 0.95f), new Color(0.45f, 0.58f, 1f), progreso);
         liria.SubirAgua(S(Tramo(t, A_Apagon + 1f, A_Agua + 2.2f)));
 
+        // Coordenadas de la Liria nueva en el mundo = las de Blender (x, y de Blender -> x, z): el mar
+        // abierto está hacia -z, la cabeza del muelle B01 en z = -14,5 y las casas de B01 entre z = 1 y 17;
+        // la calle del barrio de piedra corre en x a z = 35, el canal (B03) entre x = 24 y 32 (z 2..14) y
+        // el faro está en su peñasco hacia (-38, 40).
+        const float A_Faro = 6.5f;
         if (t < A_Panoramica)
         {
             Fundido(1f);
-            Colocar(new Vector3(0f, 34f, -52f), new Vector3(0f, 0f, 30f), 40f, 0.2f);
+            Colocar(new Vector3(-16f, 24f, -50f), new Vector3(0f, 2f, 18f), 40f, 0.2f);
+        }
+        else if (t < A_Faro)
+        {
+            // P1 · Panorámica desde el mar: la cámara baja despacio hacia el pueblo encendido.
+            float s = S(Tramo(t, A_Panoramica, A_Faro));
+            Colocar(Vector3.Lerp(new Vector3(-16f, 24f, -50f), new Vector3(-8f, 11f, -36f), s),
+                Vector3.Lerp(new Vector3(0f, 2f, 18f), new Vector3(2f, 4f, 22f), s), Mathf.Lerp(40f, 44f, s), 0.25f);
+            dof.focusDistance.Override(55f);
+            dof.aperture.Override(8f);
+            Fundido(1f - S(Tramo(t, A_Panoramica, A_Panoramica + 2.2f)));
+            float r = Tramo(t, A_Panoramica + 1.2f, A_Panoramica + 2.0f) * (1f - Tramo(t, A_Faro - 0.9f, A_Faro - 0.2f));
+            rotulo.color = new Color(rotulo.color.r, rotulo.color.g, rotulo.color.b, r);
         }
         else if (t < A_Farol)
         {
-            // P1 · Panorámica: la cámara baja despacio sobre el canal encendido.
-            float s = S(Tramo(t, A_Panoramica, A_Farol));
-            Colocar(Vector3.Lerp(new Vector3(-9f, 24f, -50f), new Vector3(-3f, 11f, -36f), s),
-                Vector3.Lerp(new Vector3(0f, 0f, 30f), new Vector3(0f, 2.5f, 20f), s), Mathf.Lerp(42f, 46f, s), 0.25f);
-            dof.focusDistance.Override(60f);
-            dof.aperture.Override(8f);
-            Fundido(1f - S(Tramo(t, A_Panoramica, A_Panoramica + 2.2f)));
-            float r = Tramo(t, A_Panoramica + 3.5f, A_Panoramica + 4.5f) * (1f - Tramo(t, A_Farol - 2.5f, A_Farol - 1.2f));
-            rotulo.color = new Color(rotulo.color.r, rotulo.color.g, rotulo.color.b, r);
-        }
-        else if (t < A_Bomba)
-        {
-            // P2 · Un farol: llama y bokeh de la ciudad detrás.
-            float s = S(Tramo(t, A_Farol, A_Bomba));
-            Vector3 f = liria.FarolDetalle;
-            // Desde el canal y un poco por debajo: la llama asoma bajo el sombrerete del farol y
-            // detrás, desenfocadas, las ventanas de la otra orilla.
-            // Entre el farol y la fachada, a la altura de la llama: detrás, desenfocada, la otra orilla.
-            Vector3 desde = f + new Vector3(-0.7f, -0.15f, -2.9f), hasta = f + new Vector3(-0.55f, -0.1f, -2.1f);
-            Colocar(Vector3.Lerp(desde, hasta, s), f + new Vector3(0.35f, -0.25f, 0f), 36f, 0.5f);
-            dof.aperture.Override(1.6f);
+            // P2 · El faro encendido sobre su peñasco, visto desde el agua en contrapicado.
+            float s = S(Tramo(t, A_Faro, A_Farol));
+            Colocar(Vector3.Lerp(new Vector3(-20f, 2.5f, 20f), new Vector3(-24f, 3.5f, 24f), s),
+                new Vector3(-38f, Mathf.Lerp(9f, 13f, s), 40f), 40f, 0.3f);
+            dof.focusDistance.Override(24f);
+            dof.aperture.Override(4f);
+            rotulo.color = new Color(rotulo.color.r, rotulo.color.g, rotulo.color.b, 0f);
         }
         else if (t < A_Barca)
         {
-            // P3 · La rueda de la bomba, girando a ras de agua.
-            float s = S(Tramo(t, A_Bomba, A_Barca));
-            Vector3 r = liria.Rueda.position;
-            Colocar(Vector3.Lerp(r + new Vector3(3.6f, 1.3f, -3.4f), r + new Vector3(2.9f, 1.1f, -2.5f), s), r + new Vector3(0f, 0.5f, 0f), 42f, 0.6f);
-            dof.aperture.Override(2f);
+            // P3 · Travelling por la calle del barrio de piedra: fachadas con ventanas encendidas a
+            // los dos lados, faroles, ropa tendida. Ni una persona: la vida está en las luces.
+            float s = S(Tramo(t, A_Farol, A_Barca));
+            Colocar(Vector3.Lerp(new Vector3(-16f, 2.3f, 34.5f), new Vector3(-7f, 2.6f, 35.5f), s),
+                Vector3.Lerp(new Vector3(4f, 3.6f, 37f), new Vector3(16f, 4.2f, 36f), s), 50f, 0.3f);
+            dof.focusDistance.Override(12f);
+            dof.aperture.Override(4f);
         }
         else if (t < A_Ventana)
         {
-            // P4 · Una barca con su vela; alguien sentado, de espaldas.
+            // P4 · Por el canal, desde el agua: la rueda de la bomba girando y la barca con su vela.
             float s = S(Tramo(t, A_Barca, A_Ventana));
-            Vector3 b = liria.Barca.position;
-            Colocar(Vector3.Lerp(b + new Vector3(5.6f, 1.4f, -5.2f), b + new Vector3(4.8f, 1.3f, -4.2f), s), b + new Vector3(0f, 0.7f, 0f), 34f, 0.55f);
-            dof.aperture.Override(1.8f);
+            Colocar(Vector3.Lerp(new Vector3(27.5f, 1.3f, -4f), new Vector3(27.5f, 1.5f, 1f), s),
+                new Vector3(26.5f, 1.4f, 14f), 46f, 0.4f);
+            dof.focusDistance.Override(9f);
+            dof.aperture.Override(3f);
         }
         else if (t < A_Apagon)
         {
-            // P5 · Un balcón entre ventanas encendidas, visto desde el otro lado del canal. No se ve a
-            // nadie: la vida de la ciudad se adivina en la luz.
+            // P5 · Una fachada con balcón entre ventanas encendidas, sin nadie a la vista.
             float s = S(Tramo(t, A_Ventana, A_Apagon));
-            Vector3 v = liria.Balcon;
-            float lado = -Mathf.Sign(v.x);
-            Vector3 desde = new Vector3(lado * 3.2f, v.y + 0.4f, v.z - 3.4f), hasta = new Vector3(lado * 2.6f, v.y + 0.25f, v.z - 2.2f);
-            Colocar(Vector3.Lerp(desde, hasta, s), v, 32f, 0.45f);
-            dof.aperture.Override(2f);
+            Vector3 fachada = liria.Balcon;
+            Colocar(Vector3.Lerp(new Vector3(2f, 2.4f, 31.5f), new Vector3(0.5f, 2.8f, 32.5f), s), fachada, 36f, 0.4f);
+            dof.focusDistance.Override(7f);
+            dof.aperture.Override(2.2f);
         }
         else if (t < A_Ultimo)
         {
-            // P6 · El apagón: plano general por el eje del canal. Las luces caen de lejos a cerca y,
-            // ya a oscuras, el agua sube por el canal bajo la luna.
+            // P6 · El apagón: plano general desde el mar por el eje del muelle. Las luces caen de
+            // lejos (el barrio de piedra) a cerca (la cabeza del muelle); el agua sube bajo la luna.
             float s = S(Tramo(t, A_Apagon, A_Ultimo));
-            Colocar(Vector3.Lerp(new Vector3(0.6f, 6.6f, -25f), new Vector3(0.3f, 5.6f, -21f), s), new Vector3(0f, 1.6f, 40f), 42f, 0.35f);
-            dof.focusDistance.Override(40f);
+            Colocar(Vector3.Lerp(new Vector3(-2f, 6.5f, -32f), new Vector3(-1.5f, 5f, -26f), s), new Vector3(1f, 3f, 30f), 46f, 0.35f);
+            dof.focusDistance.Override(35f);
             dof.aperture.Override(7f);
-            color.postExposure.Override(-0.6f * progreso);
+            color.postExposure.Override(-0.5f * progreso);
         }
         else if (t < A_Titulo)
         {
-            // P8 · El último farol: primer plano, chisporrotea y muere. Negro.
+            // P6 · El último farol: primer plano, chisporrotea y muere. Negro.
             float s = S(Tramo(t, A_Ultimo, CorteUltimo + 0.6f));
             Vector3 f = liria.UltimoFarol.posicion;
-            Colocar(f + Vector3.Lerp(new Vector3(-1.0f, -0.35f, 2.6f), new Vector3(-0.75f, -0.3f, 1.8f), s), f + Vector3.down * 0.2f, 32f, 0.4f);
+            Colocar(f + Vector3.Lerp(new Vector3(-1.3f, -0.15f, 2.3f), new Vector3(-0.9f, -0.1f, 1.6f), s), f, 34f, 0.4f);
+            dof.focusDistance.Override(1.8f);
             dof.aperture.Override(1.6f);
             Fundido(Tramo(t, CorteUltimo + 0.25f, CorteUltimo + 0.45f));
         }
