@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3420aacd20efec408a1f736c7bfa607, type: 3}
+  m_Name: NivelPrototipoCircuitos
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  indice: 2
+  nombre: Prototipo - Circuitos (no oficial)
+  tituloIntro: Prototipo de circuitos
+  textoIntro: 'Gira cada tramo un cuarto de vuelta hasta unir la fuente con el receptor. La energia solo recorre los tramos que quedan conectados.'
+  pistaMaia: 'Cada tramo gira un cuarto de vuelta con E. Turquesa es la energia del panel; dorada, la de la base con bateria. Si un tramo queda en contra, el camino se corta y el puente se repliega.'
+  textoCierre: 'Circuito cerrado: la energia ya llega al otro lado.'
+  recuerdoIdentificador: prototipo_circuitos
+  recuerdoTitulo: Prototipo de circuitos
+  recuerdoTexto: 
+  reservaCasillas: 0
+  tutorialPatio: 0
+  salidaEsFaro: 0
