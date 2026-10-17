@@ -73,13 +73,13 @@ public sealed partial class LiriaNocturna
         if (detalle != null) FarolDetalle = detalle.posicion;
 
         RuedaEnElCanal(new Vector3(24.7f, -0.9f, 6f));
-        BarcaConVela(new Vector3(28f, -1.45f, 14f));
-        Balcon = new Vector3(-1.5f, 3.8f, 38f);
+        BarcaConVela(new Vector3(29.2f, -1.45f, 9f));
+        Balcon = new Vector3(-1.5f, 4.6f, 38.4f);
         AntenaEn(new Vector3(6f, -1.5f, 60f));
         Cielo();
         Chispas();
 
-        // Orden de corte: de lo más lejano (norte, +z) a lo más cercano a la cámara del apagón (sur).
+        // Orden de corte: de lo más lejano (barrio de piedra, +z) a lo más cercano a la cámara del apagón, que está en el mar (-z).
         foreach (Luz l in Luces) l.orden = Mathf.InverseLerp(50f, -30f, l.posicion.z);
         Luces.Sort((a, b) => a.orden.CompareTo(b.orden));
     }
