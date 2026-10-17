@@ -12,8 +12,9 @@ using UnityEngine.UI;
 /// dibujada con el mismo lenguaje visual que las tarjetas del Patio de Bombas (panel oscuro
 /// redondeado, borde de acento, titulo, diagrama y leyenda).
 ///
-/// La tarjeta se ancla abajo al centro y sube sola si la pila de burbujas de Maia crece: nunca
-/// tapa los dialogos inferiores ni el retrato de Nilo.
+/// La tarjeta se ancla abajo a la izquierda, en la misma columna que las burbujas de Maia y
+/// justo por encima de ellas: nunca tapa los dialogos inferiores ni el retrato de Nilo. Asi deja
+/// libre el centro del tablero, donde estan los tramos que hay que girar.
 ///
 /// Se cuenta una sola vez por sesion, aunque se reinicie el nivel con R.
 /// </summary>
@@ -24,9 +25,12 @@ public class PruebaTutorialCircuitos : MonoBehaviour
     const float Ancho = 640f, Alto = 380f;
 
     // Reposo de la tarjeta y margen que se deja siempre por encima de los dialogos.
-    const float ReposoY = 410f;
+    const float ReposoY = 300f;
     const float MargenDialogos = 26f;
     const float TechoPantalla = 1080f;
+
+    // Columna izquierda: la tarjeta se alinea con el borde izquierdo de las burbujas de Maia.
+    const float MargenIzquierdo = 176f;
 
     static readonly Color Turquesa = new Color(0.30f, 0.86f, 0.80f);
     static readonly Color Ambar = new Color(1.00f, 0.71f, 0.27f);
@@ -91,6 +95,9 @@ public class PruebaTutorialCircuitos : MonoBehaviour
 
     readonly List<Flujo> flujos = new List<Flujo>();
 
+    // Reutilizado en Colocar() para no reservar memoria en cada fotograma.
+    readonly Vector3[] esquinas = new Vector3[4];
+
     /// <summary>Cuenta de veces que se ha mostrado; sirve para comprobar que solo sale una vez.</summary>
     public int VecesMostrado { get; private set; }
 
@@ -138,11 +145,12 @@ public class PruebaTutorialCircuitos : MonoBehaviour
         tarjeta.transform.SetParent(lienzo, false);
 
         raiz = tarjeta.AddComponent<RectTransform>();
-        // Anclada abajo y centrada: crece hacia arriba, nunca hacia los dialogos.
-        raiz.anchorMin = raiz.anchorMax = new Vector2(0.5f, 0f);
-        raiz.pivot = new Vector2(0.5f, 0f);
+        // Anclada abajo a la izquierda: crece hacia arriba y hacia la derecha, nunca hacia los
+        // dialogos ni hacia el centro del tablero.
+        raiz.anchorMin = raiz.anchorMax = new Vector2(0f, 0f);
+        raiz.pivot = new Vector2(0f, 0f);
         raiz.sizeDelta = new Vector2(Ancho, Alto);
-        raiz.anchoredPosition = new Vector2(0f, ReposoY);
+        raiz.anchoredPosition = new Vector2(MargenIzquierdo, ReposoY);
 
         CanvasGroup grupo = tarjeta.AddComponent<CanvasGroup>();
         grupo.blocksRaycasts = false;
@@ -241,7 +249,7 @@ public class PruebaTutorialCircuitos : MonoBehaviour
         if (tarjeta != null && tarjeta.activeSelf) tarjeta.SetActive(false);
     }
 
-    /// <summary>Sube la tarjeta lo justo para no rozar la pila de burbujas de Maia.</summary>
+    /// <summary>Sube la tarjeta lo justo para no rozar la pila de burbujas de Maia y la alinea con su columna.</summary>
     void Colocar()
     {
         if (raiz == null) return;
@@ -258,7 +266,18 @@ public class PruebaTutorialCircuitos : MonoBehaviour
         // Nunca por encima del borde superior de la pantalla de referencia.
         y = Mathf.Min(y, TechoPantalla - Alto - 18f);
 
-        raiz.anchoredPosition = new Vector2(0f, y);
+        // X: el borde izquierdo de la tarjeta coincide con el de las burbujas, para que ambas
+        // formen una sola columna. Si aun no hay pila, se usa el margen de reposo.
+        float x = MargenIzquierdo;
+
+        if (pilaDialogo != null && lienzo != null)
+        {
+            pilaDialogo.GetWorldCorners(esquinas);
+            float izquierda = lienzo.InverseTransformPoint(esquinas[0]).x - lienzo.rect.xMin;
+            if (izquierda > 0f) x = izquierda;
+        }
+
+        raiz.anchoredPosition = new Vector2(x, y);
     }
 
     // ------------------------------------------------------------------ diagramas
