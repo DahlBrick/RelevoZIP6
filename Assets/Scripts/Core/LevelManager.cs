@@ -270,11 +270,16 @@ public class LevelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Nivel desde el que se abrió el cuaderno: es a donde vuelve al cerrarse. El cuaderno no
-    /// pertenece a ningún nivel, así que la escena de origen no se puede deducir desde allí.
+    /// Nivel desde el que se abrió el cuaderno. Se conserva aunque ahora la escena se cargue de
+    /// forma aditiva: sigue sirviendo para saber desde dónde se abrió y para el modo edición.
     /// </summary>
     public static string EscenaOrigen;
 
+    /// <summary>
+    /// Abre el cuaderno ENCIMA del nivel, sin descargarlo ni recargarlo. El nivel se queda cargado
+    /// y con el tiempo detenido, así que Nilo, la batería, los puentes, las compuertas y los
+    /// contadores siguen exactamente donde estaban: no hace falta guardar ni restaurar nada.
+    /// </summary>
     public void IrAlCuaderno()
     {
         if (!Application.CanStreamedLevelBeLoaded(NombreEscenaCuaderno))
@@ -284,11 +289,14 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        // Se abre desde la pausa, así que hay que devolver el tiempo antes de cambiar de escena.
-        Time.timeScale = 1f;
+        // Ya está abierto: abrir dos veces duplicaría la escena y su lienzo.
+        if (SceneManager.GetSceneByName(NombreEscenaCuaderno).isLoaded) return;
+
         EscenaOrigen = SceneManager.GetActiveScene().name;
-        GameEvents.Limpiar();
-        CargarEscena(NombreEscenaCuaderno);
+
+        // El nivel no se descarga, así que GameEvents y RelevoGame se conservan intactos.
+        Time.timeScale = 0f;
+        SceneManager.LoadScene(NombreEscenaCuaderno, LoadSceneMode.Additive);
     }
 
     public void IrASiguienteNivel()
@@ -319,7 +327,7 @@ public class LevelManager : MonoBehaviour
             "La escena '" + nombre + "' todavía no está en Build Settings.");
     }
 
-    public const string NombreEscenaCuaderno = "Cuaderno";
+    public const string NombreEscenaCuaderno = "cuadernoRelevo";
 
     public static string NombreEscenaNivel(int indice)
     {

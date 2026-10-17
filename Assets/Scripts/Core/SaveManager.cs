@@ -9,6 +9,11 @@ public class SaveData
     public int version = 1;
     public List<string> nivelesCompletados = new List<string>();
     public List<string> recuerdos = new List<string>();
+
+    // Recuerdos ya leídos en el cuaderno. Se separa de 'recuerdos' (descubiertos) para poder
+    // distinguir los tres estados: bloqueado, descubierto y leído. Campo nuevo y aditivo: los
+    // archivos antiguos se leen igual porque Cargar() lo deja en lista vacía si falta.
+    public List<string> recuerdosLeidos = new List<string>();
 }
 
 /// <summary>Progreso local en JSON (Application.persistentDataPath/relevo_save.json).</summary>
@@ -54,6 +59,7 @@ public static class SaveManager
 
         if (datos.nivelesCompletados == null) datos.nivelesCompletados = new List<string>();
         if (datos.recuerdos == null) datos.recuerdos = new List<string>();
+        if (datos.recuerdosLeidos == null) datos.recuerdosLeidos = new List<string>();
     }
 
     public static void Guardar()
@@ -102,6 +108,23 @@ public static class SaveManager
     public static bool TieneRecuerdo(string identificador)
     {
         return !string.IsNullOrEmpty(identificador) && Datos.recuerdos.Contains(identificador);
+    }
+
+    /// <summary>
+    /// El recuerdo ya se ha abierto en el cuaderno. Solo tiene sentido si antes se descubrió, así
+    /// que la comprobación de descubierto se deja en manos de quien pregunta (TieneRecuerdo).
+    /// </summary>
+    public static bool RecuerdoLeido(string identificador)
+    {
+        return !string.IsNullOrEmpty(identificador) && Datos.recuerdosLeidos.Contains(identificador);
+    }
+
+    /// <summary>Marca el recuerdo como leído. No guarda: el guardado lo decide quien llama.</summary>
+    public static void MarcarRecuerdoLeido(string identificador)
+    {
+        if (string.IsNullOrEmpty(identificador)) return;
+        if (Datos.recuerdosLeidos.Contains(identificador)) return;
+        Datos.recuerdosLeidos.Add(identificador);
     }
 
     public static int RecuerdosDelNivel(int indice)
