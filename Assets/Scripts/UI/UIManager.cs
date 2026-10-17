@@ -18,7 +18,15 @@ using UnityEngine.UI;
 /// </summary>
 public class UIManager : MonoBehaviour
 {
-    static readonly string[] OpcionesPausa = { "Reanudar", "Pedir pista a Maia", "Reiniciar nivel", "Cuaderno de viaje", "Salir al menú" };
+    static readonly string[] OpcionesPausa =
+    {
+        "Reanudar",
+        "Pedir pista a Maia",
+        "Reiniciar nivel",
+        "Cuaderno de viaje",
+        "Opciones",
+        "Volver al menú principal"
+    };
     static readonly string[] OpcionesFinal = { "Siguiente nivel", "Reiniciar nivel", "Cuaderno de viaje" };
     static readonly string[] OpcionesConfirmar = { "Sí, reiniciar", "No, continuar" };
 
@@ -79,6 +87,11 @@ public class UIManager : MonoBehaviour
     Fila[] filasPausa;
     Fila[] filasConfirmar;
 
+    // --- consola de radio del panel de pausa: identidad técnica, solo visual
+    Image[] barrasConsola;
+    Text textoConsola;
+    Image senalConsola;
+
     // --- final
     GameObject panelFinal;
     RectTransform tarjetaFinal;
@@ -97,14 +110,25 @@ public class UIManager : MonoBehaviour
     int seleccionConfirmar;
     bool flanco;
 
+    // --- exploración (Tab) y opciones: subpaneles del MISMO lienzo, sin Canvas propio
+    MenuExploracionUI exploracion;
+    OpcionesUI opciones;
+    bool enExploracion;
+    bool enOpciones;
+    bool cuadernoAbierto;
+
     public bool BloqueaJuego
     {
         get
         {
-            return enPausa || completado || (dialogo != null && dialogo.Bloquea)
+            return enPausa || enOpciones || enExploracion || cuadernoAbierto || completado
+                || (dialogo != null && dialogo.Bloquea)
                 || (RelevoGame.Reserva != null && RelevoGame.Reserva.Apagado);
         }
     }
+
+    /// <summary>El objetivo que el HUD tiene en pantalla. Lo lee la pestaña ESTADO del cuaderno.</summary>
+    public string ObjetivoActual { get { return textoObjetivo != null ? textoObjetivo.text : ""; } }
 
     /// <summary>Vuelve a aplicar el bloqueo del jugador (lo pide la reserva al apagarse Nilo).</summary>
     public void RefrescarBloqueo() { AplicarBloqueo(); }
@@ -163,15 +187,34 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
+        // El cuaderno es una escena aparte cargada ENCIMA del nivel: mientras esté delante manda
+        // él. Aquí solo se detecta su cierre para devolver el tiempo y el bloqueo al nivel.
+        bool cuaderno = CuadernoUI.Abierto;
+        if (cuaderno != cuadernoAbierto)
+        {
+            cuadernoAbierto = cuaderno;
+
+            // El velo del cuaderno no llega a ser opaco y el proyecto va en espacio de color
+            // lineal: el HUD del nivel se transparentaba y se leía encima del cuaderno. Se apaga
+            // el grupo entero mientras el cuaderno esté delante; AlCerrarCuaderno() lo restaura.
+            if (grupoHUD != null) grupoHUD.SetActive(!cuadernoAbierto);
+
+            if (!cuaderno) AlCerrarCuaderno();
+        }
+
         if (BloqueaJuego != ultimoBloqueo) AplicarBloqueo();
 
         RefrescarFondoPrompt();
         AnimarTeclasPulsadas();
         RefrescarReserva();
+        AnimarConsola();
 
         if (entrada == null) return;
 
         if (teclaPrompt != null && promptVisible && entrada.Pulsado(entrada.Interactuar)) teclaPrompt.Presionar();
+
+        // Con el cuaderno delante nadie más lee la entrada: ni pausa, ni exploración, ni diálogo.
+        if (cuadernoAbierto) return;
 
         // Con diálogo abierto, la entrada es solo suya: avanzar, elegir o cerrar.
         if (dialogo != null && dialogo.Abierto)
@@ -204,6 +247,21 @@ public class UIManager : MonoBehaviour
             return;
         }
 
+        // Subpanel de opciones: se dibuja encima de la pausa y la pausa espera debajo.
+        if (enOpciones && opciones != null)
+        {
+            opciones.Manejar(entrada);
+            return;
+        }
+
+        // Menú de exploración (Tab): conduce su propia navegación con la entrada que le cede
+        // este Update, para que siga habiendo un solo lector del asset.
+        if (enExploracion && exploracion != null)
+        {
+            exploracion.Manejar(entrada);
+            return;
+        }
+
         if (confirmandoReinicio)
         {
             if (entrada.Pulsado(entrada.Cancelar) || entrada.Pulsado(entrada.Pausa))
@@ -226,7 +284,7 @@ public class UIManager : MonoBehaviour
 
         if (entrada.Pulsado(entrada.Pausa)) AbrirPausa();
         else if (entrada.Pulsado(entrada.Reiniciar)) PedirConfirmacion();
-        else if (entrada.Pulsado(entrada.Cuaderno) && nivel != null) nivel.IrAlCuaderno();
+        else if (entrada.Pulsado(entrada.Cuaderno)) AbrirExploracion();
     }
 
     /// <summary>Navegación por flanco: el movimiento no repite opción mientras se mantiene.</summary>
@@ -350,11 +408,15 @@ public class UIManager : MonoBehaviour
                 break;
 
             case 3:
-                CerrarPausa();
-                if (nivel != null) nivel.IrAlCuaderno();
+                // El cuaderno se abre encima del nivel, sin descargarlo ni recargarlo.
+                AbrirCuaderno();
                 break;
 
             case 4:
+                AbrirOpciones();
+                break;
+
+            case 5:
                 // Todavía no hay escena de menú principal en el proyecto (Build Settings arranca
                 // en el nivel). Se avisa con el mismo mensaje de "siguiente fase" que usa el
                 // propio juego y la pausa sigue abierta, sin inventar una mecánica nueva.
@@ -385,7 +447,7 @@ public class UIManager : MonoBehaviour
         {
             case 0: nivel.IrASiguienteNivel(); break;
             case 1: nivel.ReiniciarNivel(); break;
-            case 2: nivel.IrAlCuaderno(); break;
+            case 2: AbrirCuaderno(); break;
         }
     }
 
@@ -407,6 +469,31 @@ public class UIManager : MonoBehaviour
 
         AplicarModo(false);
         RefrescarFilas(filasPausa, OpcionesPausa, seleccionPausa);
+
+        // Cada opción lleva su conector con el color de lo que hace: turquesa para mecanismos y
+        // opciones, verde para Maia, coral para lo que borra progreso, cobre para el cuaderno.
+        if (filasPausa != null)
+        {
+            for (int i = 0; i < filasPausa.Length; i++)
+            {
+                if (filasPausa[i] != null && filasPausa[i].indicador != null)
+                    filasPausa[i].indicador.color = ColorDeOpcionPausa(i);
+            }
+        }
+    }
+
+    /// <summary>Color del conector de cada opción del menú de pausa.</summary>
+    static Color ColorDeOpcionPausa(int indice)
+    {
+        switch (indice)
+        {
+            case 0: return RelevoUI.Turquesa;   // reanudar
+            case 1: return RelevoUI.Verde;      // Maia
+            case 2: return RelevoUI.Coral;      // reiniciar
+            case 3: return RelevoUI.Cobre;      // cuaderno
+            case 4: return RelevoUI.Turquesa;   // opciones
+            default: return RelevoUI.AmbarSuave; // menú principal
+        }
     }
 
     void RefrescarConfirmacion()
@@ -421,8 +508,115 @@ public class UIManager : MonoBehaviour
 
     void AplicarModo(bool confirmando)
     {
-        if (grupoOpciones != null) grupoOpciones.SetActive(!confirmando);
+        // Con el subpanel de opciones delante, la lista de la pausa se oculta: dos listas vivas a
+        // la vez confundirían la navegación aunque el velo las tape.
+        if (grupoOpciones != null) grupoOpciones.SetActive(!confirmando && !enOpciones);
         if (grupoConfirmar != null) grupoConfirmar.SetActive(confirmando);
+    }
+
+    // ------------------------------------------------------------------ exploración y opciones
+
+    /// <summary>
+    /// Tab: menú de exploración del cuaderno, encima del nivel. Congela el tiempo igual que la
+    /// pausa, porque el nivel no debe seguir avanzando con un menú delante.
+    /// </summary>
+    void AbrirExploracion()
+    {
+        if (enExploracion || enPausa || enOpciones || completado || exploracion == null) return;
+
+        // Un diálogo abierto manda: el menú de exploración no se abre encima de una conversación.
+        if (dialogo != null && dialogo.Abierto) return;
+
+        enExploracion = true;
+        Time.timeScale = 0f;
+
+        if (textoPrompt != null) textoPrompt.text = "";
+        promptVisible = false;
+        if (panelPrompt != null) RelevoUIAnim.Salida(panelPrompt, 0.12f, null);
+
+        exploracion.Abrir();
+        AplicarBloqueo();
+    }
+
+    void CerrarExploracion()
+    {
+        enExploracion = false;
+        if (exploracion != null) exploracion.Cerrar();
+        if (!enPausa && !enOpciones) Time.timeScale = 1f;
+        AplicarBloqueo();
+    }
+
+    /// <summary>
+    /// Abre el cuaderno como escena aditiva ENCIMA del nivel: no se descarga ni se recarga la
+    /// escena de origen. Se cierran los menús y se deja el tiempo detenido, de modo que el nivel
+    /// sigue debajo exactamente como estaba (Nilo, batería, puentes, compuertas). Al cerrarse el
+    /// cuaderno, AlCerrarCuaderno devuelve el control.
+    /// </summary>
+    void AbrirCuaderno()
+    {
+        if (nivel == null || cuadernoAbierto) return;
+
+        // Si la escena no está en Build Settings no se carga nada: mejor no cerrar los menús, o el
+        // nivel se quedaría congelado sin nada delante.
+        if (!Application.CanStreamedLevelBeLoaded(LevelManager.NombreEscenaCuaderno))
+        {
+            GameEvents.RaiseMensajeMostrado("Cuaderno de viaje",
+                "El cuaderno todavía no está disponible. Tu progreso ya está guardado.");
+            return;
+        }
+
+        enPausa = false;
+        confirmandoReinicio = false;
+        enExploracion = false;
+        enOpciones = false;
+
+        if (exploracion != null) exploracion.Cerrar();
+        if (opciones != null) opciones.Cerrar();
+        OcultarMenu(panelPausa);
+
+        Time.timeScale = 0f;
+        cuadernoAbierto = CuadernoUI.Abierto;
+        nivel.IrAlCuaderno();
+        AplicarBloqueo();
+    }
+
+    /// <summary>
+    /// El cuaderno se cerró: se vuelve al nivel con el tiempo en marcha. Como el nivel nunca se
+    /// descargó, no hay nada que reconstruir ni que restaurar.
+    /// </summary>
+    void AlCerrarCuaderno()
+    {
+        enPausa = false;
+        confirmandoReinicio = false;
+        enExploracion = false;
+        enOpciones = false;
+
+        if (exploracion != null) exploracion.Cerrar();
+        if (opciones != null) opciones.Cerrar();
+        OcultarMenu(panelPausa);
+
+        Time.timeScale = 1f;
+
+        // El cuaderno y el nivel comparten el mismo InputActionAsset. Al cerrarse se garantiza que
+        // los mapas siguen activos: si algo los apagó, sin esto el nivel se queda sin Tab ni Esc.
+        if (entrada != null) entrada.Activar();
+
+        AplicarBloqueo();
+    }
+
+    void AbrirOpciones()
+    {
+        if (opciones == null) return;
+
+        enOpciones = true;
+        AplicarModo(false);
+        opciones.Abrir();
+    }
+
+    void CerrarOpciones()
+    {
+        enOpciones = false;
+        RefrescarPausa();
     }
 
     void RefrescarFinal()
@@ -742,6 +936,17 @@ public class UIManager : MonoBehaviour
         dialogo = DialogoUI.Crear(raiz);
         ConstruirPausa(raiz);
         ConstruirFinal(raiz);
+
+        // --- exploración (Tab) y opciones: subpaneles del MISMO lienzo, creados al final para
+        // dibujarse encima. No hay Canvas propio, ni UIManager propio, ni EventSystem.
+        exploracion = gameObject.AddComponent<MenuExploracionUI>();
+        exploracion.Construir(raiz);
+        exploracion.AlAbrirCuaderno = AbrirCuaderno;
+        exploracion.AlCerrar = CerrarExploracion;
+
+        opciones = gameObject.AddComponent<OpcionesUI>();
+        opciones.Construir(raiz);
+        opciones.AlCerrar = CerrarOpciones;
     }
 
     /// <summary>Arriba a la izquierda: título del nivel y objetivo actual, en una tarjeta compacta.</summary>
@@ -854,7 +1059,7 @@ public class UIManager : MonoBehaviour
         x = Chip(panel.transform, x, 8f, "E", "interactuar", tecla, verbo, 15);
         x = Chip(panel.transform, x, 8f, "Esc", "pausa", tecla, verbo, 15);
         x = Chip(panel.transform, x, 8f, "R", "reiniciar", tecla, verbo, 15);
-        Chip(panel.transform, x, 8f, "Tab", "cuaderno", tecla, verbo, 15);
+        Chip(panel.transform, x, 8f, "Tab", "explorar", tecla, verbo, 15);
     }
 
     /// <summary>
@@ -909,22 +1114,26 @@ public class UIManager : MonoBehaviour
             Vector2.zero, new Vector2(4000f, 4000f), RelevoUI.Velo);
 
         tarjetaPausa = RelevoUI.Panel(panelPausa.transform, "TarjetaPausa", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(880f, 600f), RelevoUI.Fondo).GetComponent<RectTransform>();
+            Vector2.zero, new Vector2(880f, 660f), RelevoUI.Fondo).GetComponent<RectTransform>();
 
         Transform tarjeta = tarjetaPausa.transform;
         RelevoUI.Marco(tarjeta, RelevoUI.Cobre, 2f);
         RelevoUI.Esquinas(tarjeta, 22f, 2f, RelevoUI.Cobre);
-        RelevoUI.Cable(tarjeta, "Cable", new Vector2(-368f, 268f), new Vector2(368f, 268f), 2f, RelevoUI.CobreTenue);
+        // La tarjeta mide 660 de alto: los cables van en coordenadas del centro, así que se
+        // recolocan para seguir a 32 px del borde superior.
+        RelevoUI.Cable(tarjeta, "Cable", new Vector2(-368f, 298f), new Vector2(368f, 298f), 2f, RelevoUI.CobreTenue);
 
         textoPausa = RelevoUI.Texto(tarjeta, "Titulo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -30f), new Vector2(800f, 54f), 40, TextAnchor.UpperCenter, RelevoUI.Ambar);
+            new Vector2(0f, -46f), new Vector2(800f, 50f), 40, TextAnchor.UpperCenter, RelevoUI.Ambar);
         textoPausa.text = "PAUSA";
 
         subtituloPausa = RelevoUI.Texto(tarjeta, "Subtitulo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -86f), new Vector2(800f, 26f), 16, TextAnchor.UpperCenter,
+            new Vector2(0f, -96f), new Vector2(800f, 24f), 16, TextAnchor.UpperCenter,
             RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.9f));
 
-        RelevoUI.Cable(tarjeta, "Cable bajo titulo", new Vector2(-370f, 186f), new Vector2(370f, 186f), 2f, RelevoUI.CobreTenue);
+        RelevoUI.Cable(tarjeta, "Cable bajo titulo", new Vector2(-370f, 202f), new Vector2(370f, 202f), 2f, RelevoUI.CobreTenue);
+
+        Consola(tarjeta);
 
         // --- opciones
         grupoOpciones = Grupo(tarjeta, "Opciones");
@@ -936,9 +1145,89 @@ public class UIManager : MonoBehaviour
             new Vector2(0f, -140f), new Vector2(800f, 28f), 20, TextAnchor.UpperCenter, RelevoUI.Coral);
         filasConfirmar = CrearFilas(grupoConfirmar.transform, OpcionesConfirmar.Length, 760f, 64f, -196f);
 
-        Leyenda(tarjeta, -448f, 16, true);
+        // La leyenda se ancla abajo a la izquierda: en positivo queda DENTRO de la tarjeta, bajo la
+        // última opción. Con un valor negativo se dibujaba fuera de la pantalla.
+        Leyenda(tarjeta, 30f, 16, true);
 
         panelPausa.SetActive(false);
+    }
+
+    /// <summary>
+    /// Consola de radio del menú de pausa: el receptor de Nilo, con su tren de señal, su conector
+    /// hexagonal y la lectura de frecuencia. Es la identidad técnica del menú —energía, sistemas,
+    /// interferencia— y no toca ninguna lógica: solo dibuja.
+    /// </summary>
+    void Consola(Transform tarjeta)
+    {
+        GameObject receptor = RelevoUI.Franja(tarjeta, "Receptor", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, -6f), new Vector2(840f, 24f), RelevoUI.ConAlfa(RelevoUI.FondoHondo, 0.94f)).gameObject;
+        RelevoUI.Marco(receptor.transform, RelevoUI.ConAlfa(RelevoUI.Cobre, 0.35f), 1f);
+
+        // Tren de barras: la interferencia de la señal, que se mueve sola con el menú abierto.
+        const int barras = 30;
+        barrasConsola = new Image[barras];
+
+        for (int i = 0; i < barras; i++)
+        {
+            GameObject barra = new GameObject("Barra senal " + i);
+            barra.transform.SetParent(receptor.transform, false);
+
+            Image img = barra.AddComponent<Image>();
+            img.color = i % 4 == 0 ? RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.9f) : RelevoUI.ConAlfa(RelevoUI.Cobre, 0.8f);
+            img.raycastTarget = false;
+
+            RectTransform rt = img.rectTransform;
+            rt.anchorMin = new Vector2(0f, 0f);
+            rt.anchorMax = new Vector2(0f, 0f);
+            rt.pivot = new Vector2(0f, 0f);
+            rt.sizeDelta = new Vector2(4f, 10f);
+            rt.anchoredPosition = new Vector2(12f + i * 9f, 4f);
+
+            barrasConsola[i] = img;
+        }
+
+        RelevoUI.Texto(receptor.transform, "Etiqueta receptor", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+            new Vector2(300f, 0f), new Vector2(220f, 20f), 12, TextAnchor.MiddleLeft,
+            RelevoUI.ConAlfa(RelevoUI.Cobre, 0.9f)).text = "RECEPTOR DE NILO";
+
+        senalConsola = RelevoUI.Hexagono(receptor.transform, "Senal", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+            new Vector2(806f, 0f), new Vector2(14f, 14f), RelevoUI.Ambar, true);
+
+        // -48 deja 14 px de aire entre la lectura y el hexágono de señal, que empieza en x = 806.
+        textoConsola = RelevoUI.Texto(receptor.transform, "Frecuencia", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+            new Vector2(-48f, 0f), new Vector2(250f, 20f), 12, TextAnchor.MiddleRight,
+            RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.95f));
+        textoConsola.text = "88.4 MHz · SEÑAL ESTABLE";
+
+        // Raíles de cobre en los cantos: el chasis del receptor.
+        RelevoUI.Franja(tarjeta, "Rail izquierdo", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+            new Vector2(6f, 0f), new Vector2(2f, 560f), RelevoUI.ConAlfa(RelevoUI.Cobre, 0.18f));
+        RelevoUI.Franja(tarjeta, "Rail derecho", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+            new Vector2(-6f, 0f), new Vector2(2f, 560f), RelevoUI.ConAlfa(RelevoUI.Cobre, 0.18f));
+    }
+
+    /// <summary>
+    /// Mueve el tren de barras del receptor. Usa tiempo NO escalado porque la pausa congela
+    /// Time.timeScale: así la señal sigue viva con el juego detenido.
+    /// </summary>
+    void AnimarConsola()
+    {
+        if (barrasConsola == null || panelPausa == null || !panelPausa.activeInHierarchy) return;
+
+        float t = Time.unscaledTime;
+
+        for (int i = 0; i < barrasConsola.Length; i++)
+        {
+            Image barra = barrasConsola[i];
+            if (barra == null) continue;
+
+            float onda = 0.5f + 0.5f * Mathf.Sin(t * (2.4f + (i % 6) * 0.4f) + i * 0.75f);
+            float ruido = Mathf.PerlinNoise(t * 1.7f, i * 0.4f);
+            float altura = 3f + 15f * Mathf.Clamp01(onda * 0.7f + ruido * 0.5f);
+
+            Vector2 tam = barra.rectTransform.sizeDelta;
+            barra.rectTransform.sizeDelta = new Vector2(tam.x, altura);
+        }
     }
 
     void ConstruirFinal(Transform padre)
@@ -969,7 +1258,7 @@ public class UIManager : MonoBehaviour
 
         filasFinal = CrearFilas(tarjeta, OpcionesFinal.Length, 760f, 64f, -262f);
 
-        Leyenda(tarjeta, -496f, 16, false);
+        Leyenda(tarjeta, 30f, 16, false);
 
         // Bandas de la transición de cierre: salen del centro y se apagan.
         bandaAmbar = RelevoUI.Franja(tarjeta, "Banda ambar", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
