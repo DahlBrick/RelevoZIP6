@@ -58,6 +58,14 @@ public static class EstiloComic
         return cambiados;
     }
 
+    /// <summary>Pasa un material creado en ejecución a RELEVO/Comic en el sitio, si es convertible.</summary>
+    public static void ConvertirMaterial(Material m, Color? colorSombra = null)
+    {
+        Shader comic = Shader.Find("RELEVO/Comic");
+        if (comic == null || !Convertible(m)) return;
+        Convertir(m, comic, colorSombra);
+    }
+
     static bool Convertible(Material m)
     {
         if (m == null || m.shader == null) return false;

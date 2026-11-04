@@ -514,6 +514,55 @@ public static class ActorFactory
         return baseEnergia;
     }
 
+    /// <summary>
+    /// Condensador junto a una base (Faro de Liria): torre oscura con ocho barras que se llenan de
+    /// ámbar con la carga, remates de cobre y un cable hasta la base. Las barras miran al sur, hacia
+    /// la cámara del nivel.
+    /// </summary>
+    public static Condensador CrearCondensador(Transform padre, Vector3 posicion, EnergySocket baseEnergia)
+    {
+        GameObject raiz = new GameObject("Condensador " + (baseEnergia != null ? baseEnergia.Identificador : ""));
+        raiz.transform.SetParent(padre, false);
+        raiz.transform.localPosition = posicion;
+
+        Material cobre = RelevoPalette.MaterialDe(ClaveMaterial.Cobre);
+        Material oscuro = KitRelevo.Activo != null && KitRelevo.Activo.oscuro != null
+            ? KitRelevo.Activo.oscuro
+            : RelevoPalette.MaterialDe(ClaveMaterial.MaderaOscura);
+
+        Transform torre = DioramaBuilder.CrearAncla("Torre", raiz.transform, Vector3.zero);
+        DioramaBuilder.CrearCilindro("Base", torre, new Vector3(0f, 0.05f, 0f), 0.6f, 0.1f, cobre);
+        DioramaBuilder.CrearCilindro("Cuerpo", torre, new Vector3(0f, 0.8f, 0f), 0.42f, 1.5f, oscuro);
+        DioramaBuilder.CrearCilindro("Remate", torre, new Vector3(0f, 1.6f, 0f), 0.5f, 0.12f, cobre);
+        DioramaBuilder.CrearCilindro("Aislador", torre, new Vector3(0f, 1.78f, 0f), 0.16f, 0.24f, RelevoPalette.MaterialDe(ClaveMaterial.AmbarSuave));
+        DioramaBuilder.CrearCilindro("Punta", torre, new Vector3(0f, 1.95f, 0f), 0.07f, 0.12f, cobre);
+
+        var barras = new List<Renderer>();
+        for (int i = 0; i < 8; i++)
+        {
+            GameObject b = DioramaBuilder.CrearCaja("Barra " + (i + 1), torre, new Vector3(0f, 0.3f + i * 0.16f, -0.43f),
+                new Vector3(0.46f, 0.1f, 0.1f), cobre, false);
+            barras.Add(b.GetComponent<Renderer>());
+        }
+
+        GameObject goLuz = new GameObject("Luz condensador");
+        goLuz.transform.SetParent(torre, false);
+        goLuz.transform.localPosition = new Vector3(0f, 1.2f, -0.6f);
+        Light luz = goLuz.AddComponent<Light>();
+        luz.type = LightType.Point;
+        luz.color = RelevoPalette.ColorDe(ClaveMaterial.Ambar);
+        luz.range = 5f;
+        luz.intensity = 0f;
+        luz.shadows = LightShadows.None;
+
+        if (baseEnergia != null) CableHasta(padre, posicion, baseEnergia.transform.localPosition);
+
+        Condensador condensador = raiz.AddComponent<Condensador>();
+        condensador.Configurar(baseEnergia, barras, luz);
+        if (baseEnergia != null) baseEnergia.AsignarCondensador(condensador);
+        return condensador;
+    }
+
     static GameObject CableHasta(Transform padre, Vector3 desde, Vector3 hasta)
     {
         Vector3 a = new Vector3(desde.x, 0.06f, desde.z);
@@ -522,6 +571,8 @@ public static class ActorFactory
         Vector3 direccion = b - a;
         float longitud = direccion.magnitude;
         if (longitud < 0.3f) return null;
+        // Un cable largo cruzaría el agua en diagonal (base D del Faro): el puente ya se lee por su color.
+        if (longitud > 5.2f) return null;
 
         direccion /= longitud;
         if (longitud < 2.4f)

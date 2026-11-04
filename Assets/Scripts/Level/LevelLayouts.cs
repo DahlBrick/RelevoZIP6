@@ -19,82 +19,89 @@ public static class LevelLayouts
     }
 
     /// <summary>
-    /// Nivel 1 - Muelle de Cobre. Enseña el ciclo completo: la batería en la base A
-    /// abre el puente eléctrico hacia B, la palanca de B despliega la pasarela
-    /// manual del sur (D-B), Nilo vuelve por el camino de piedra ya existente,
-    /// recupera la batería y sale por el camino permanente.
+    /// Nivel 1 - Muelle de Cobre. Tres orillas (oeste, isla central y este) y el ciclo completo
+    /// dos veces, la segunda sin ayuda:
+    ///  1. La batería en la base A despliega el puente B hacia la isla central. La palanca L abre
+    ///     la pasarela P de vuelta al oeste.
+    ///  2. Al retirar la batería B se repliega: la batería cruza en manos de Nilo por P hasta la base
+    ///     D, que despliega el puente C hacia el este.
+    ///  3. La palanca K del este abre la pasarela Q. Se recupera la batería de D y se cruza por Q
+    ///     hasta la salida. El recuerdo espera en el embarcadero del este.
+    /// Verificado con un solucionador por casillas: 50 acciones, sin atajos.
     /// </summary>
     public static LevelLayout Nivel1()
     {
         return new LevelLayout("Nivel 1 - Muelle de Cobre", TamanoTile,
-            "wwvwwwwwvwwvw",
-            "wwwwwwwwwwwww",
-            "wwwwvwwwwwwvw",
-            "MY#wwwwwww##E",
-            "N#ABBBBBBB###",
-            "###wwwwwwwL##",
-            "w#wPPPPPPPPww",
-            "w#wmmmmwwwwww",
-            "w##mmmmwwwwww",
-            "#Xwmmmmwwwwww");
+            "wwvwwwwwwwwwwvw",
+            "w##wwww#Lwww##w",
+            "MYABBBB###www#E",
+            "N##wwwv##wwww##",
+            "###wwww##DCCC##",
+            "###PPPP###www#K",
+            "w##wwww#v#www##",
+            "wwmwwww###QQQ##",
+            "wwmwwwwwwwwwwX#",
+            "wwwwwwwwwwwwwww");
     }
 
     /// <summary>
-    /// Nivel 2 - Patio de Bombas. Tres muelles separados por dos canales: oeste (0-3), central (6-8)
-    /// y este (11-13). Añade la reserva de energía de Nilo (12 casillas lejos de la batería) y las
-    /// cajas con placas de presión.
+    /// Nivel 2 - Patio de Bombas. Oeste (0-3), patio central (6-9), muelle este (12-14) y el
+    /// islote de la salida (12-14, filas 9-11). Reserva de 12 casillas.
     ///
-    ///  1. Oeste: la compuerta g separa el sur del norte. Se abre empujando la caja k sobre la
-    ///     placa o (tutorial de cajas).
-    ///  2. La batería en la base A despliega el puente B. Lejos de la batería, la reserva cuenta:
-    ///     hay que cruzar, accionar la palanca L y volver por la pasarela P, que es corta.
-    ///  3. Con la pasarela abierta, la batería viaja en manos de Nilo al muelle central y entra en
-    ///     la base D, que despliega el puente C al muelle este.
-    ///  4. En el este, la caja se empuja dos casillas hasta la placa u, que despliega el puente R
-    ///     (manual, turquesa). La vuelta a D tiene que ser por C, el camino corto: volver por R
-    ///     agota la reserva y Nilo se apaga.
-    ///  5. Se retira la batería de D (C se repliega) y se cruza por R con ella hasta la salida.
+    ///  1. Bolsa del suroeste: la caja k va a la placa o (dos empujes al este y dos al sur) para
+    ///     abrir la compuerta g. Empujarla hacia el norte la deja atascada contra el agua.
+    ///  2. Batería en A, se cruza por B y se acciona L lejos de la batería: la reserva solo da para
+    ///     ir directo y volver (por B o por P). La batería pasa por P al patio central.
+    ///  3. Batería en D: C lleva al muelle este, donde la segunda caja se empuja tres casillas al
+    ///     sur hasta la placa u. Con la reserva justa hay que hacerlo sin rodeos o en dos viajes,
+    ///     volviendo a recargar junto a D entre uno y otro.
+    ///  4. La placa sostiene el puente R. Se retira la batería de D y se cruza por R hasta la salida.
+    /// Verificado con el solucionador: reserva mínima 10, 66 acciones.
     /// </summary>
     public static LevelLayout Nivel2()
     {
         return new LevelLayout("Nivel 2 - Patio de Bombas", TamanoTile,
-            "v##vww#v#ww#v#",
-            "####ww###ww###",
-            "###ABB##DCC###",
-            "####ww###ww###",
-            "###cPPc#Lwwk##",
-            "####ww###ww###",
-            "wwgwww###wwu##",
-            "####ww###ww###",
-            "#ok#ww###ww###",
-            "M###ww##cRRc##",
-            "NY##ww#v#ww##E",
-            "v###wwX##ww#v#");
+            "v###ww#v##ww##X",
+            "####ww####ww###",
+            "###ABB####ww###",
+            "####ww###DCC###",
+            "###cPPc###wwk##",
+            "####ww##L#ww###",
+            "####ww####ww###",
+            "wgwwww####wwu##",
+            "####ww####wwwww",
+            "#k##ww###cRR###",
+            "N#Y#ww#v##ww##E",
+            "M##oww####ww#vv");
     }
 
     /// <summary>
-    /// Nivel 3 - Faro de Liria. Una sola banda al oeste (columnas 0-3), el canal en las 4-5 y la
-    /// isla del faro en las 6-10: el mismo encuadre cerrado que el Muelle, sin una segunda banda
-    /// que ensanche el plano.
-    /// La isla tiene una única entrada —el puente de la base D, en la fila 2— y la salida por Q es
-    /// obligatoria: al retirar la batería de D, C se retrae y la fila 2 se cierra, de modo que el
-    /// regreso desde la isla pasa por la pasarela de la palanca K. La salida (E) es el faro y la
-    /// batería se entrega en su cuna en lugar de cruzarse.
+    /// Nivel 3 - Faro de Liria. Introduce los condensadores (z): junto a una base, se cargan
+    /// mientras la batería está puesta y, al retirarla, sostienen el puente unos segundos hasta
+    /// descargarse. Es la única forma de cruzar un puente eléctrico llevando la batería.
     ///
-    /// Ejercita los mismos marcadores que el Nivel 2 (D, C, Q, K) con un solo juego de cada uno.
-    ///</summary>
+    ///  1. Oeste: batería en A, esperar la carga, retirarla y cruzar B antes de que se descargue.
+    ///  2. Isla central: la caja k va a la placa o (un empuje al este y dos al norte) para abrir la
+    ///     compuerta g del pasillo este. Empujarla dos veces al este la atasca en el pasillo.
+    ///  3. Con la batería en la mano (lejos de ella la reserva no alcanza) se baja por el pasillo
+    ///     hasta la palanca K, que abre la pasarela Q junto a la base D.
+    ///  4. Batería en D, carga completa, retirarla y correr por Q y C hasta el islote del faro.
+    ///     Sin Q el camino es demasiado largo para lo que aguanta el condensador.
+    /// Verificado con el solucionador: imposible sin condensadores y sin Q; 41 acciones.
+    /// </summary>
     public static LevelLayout Nivel3()
     {
         return new LevelLayout("Nivel 3 - Faro de Liria", TamanoTile,
-            "####ww#####",
-            "#v##ww##E##",
-            "##cDCC#####",
-            "M###ww###v#",
-            "####ww#####",
-            "N#Y#ww##K##",
-            "##ccww#####",
-            "###cQQ#####",
-            "#v##QQ#c#c#",
-            "##ccww###X#");
+            "v##zww##o#wwvvv",
+            "###ABB#####ww##",
+            "M#v#ww#k##ww###",
+            "NY##ww####ww###",
+            "####ww#wwgww###",
+            "#v##ww#ww#ww###",
+            "wwwwww#wwKww#E#",
+            "wwwwww#ww#ww###",
+            "wwwwww#ww#CC###",
+            "wwwwwwDQQ#ww###",
+            "wwwwwwzww#ww#Xv");
     }
 }

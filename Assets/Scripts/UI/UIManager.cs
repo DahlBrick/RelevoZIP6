@@ -123,7 +123,8 @@ public class UIManager : MonoBehaviour
         {
             return enPausa || enOpciones || enExploracion || cuadernoAbierto || completado
                 || (dialogo != null && dialogo.Bloquea)
-                || (RelevoGame.Reserva != null && RelevoGame.Reserva.Apagado);
+                || (RelevoGame.Reserva != null && RelevoGame.Reserva.Apagado)
+                || CaidaAlAgua.Activa;
         }
     }
 

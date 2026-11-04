@@ -25,7 +25,8 @@ public enum TipoTile
 ///   E salida      X recuerdo    N inicio de Nilo   Y batería   M Maia
 ///   k caja empujable   o placa de la compuerta g   g compuerta
 ///   u placa del puente R   R puente de placa (se despliega mientras la placa u está pisada)
-/// Las casillas marcadas (A, D, L, K, E, X, N, Y, M, k, o, u, g) se apoyan sobre piedra transitable.
+///   z condensador de la base más cercana (sostiene su puente un rato al retirar la batería)
+/// Las casillas marcadas (A, D, L, K, E, X, N, Y, M, k, o, u, g, z) se apoyan sobre piedra transitable.
 /// </summary>
 public sealed class LevelLayout
 {

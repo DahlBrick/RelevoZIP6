@@ -20,6 +20,8 @@ public class EnergySocket : MonoBehaviour, IInteractable
     [SerializeField] Renderer cable;
     [SerializeField] Light luz;
     [SerializeField] ParticleSystem chispas;
+    [Tooltip("Faro de Liria: sostiene el puente un rato después de retirar la batería.")]
+    [SerializeField] Condensador condensador;
 
     float intensidadObjetivo;
 
@@ -28,13 +30,17 @@ public class EnergySocket : MonoBehaviour, IInteractable
     public bool Energizada { get; private set; }
 
     public Transform Ancla { get { return ancla != null ? ancla : transform; } }
+    public Condensador Condensador { get { return condensador; } }
+
+    public void AsignarCondensador(Condensador c) { condensador = c; }
 
     public bool Disponible
     {
         get
         {
-            // Retirar la batería desde su propio puente lo replegaría bajo los pies de Nilo.
-            if (TieneBateria) return !NiloSobreElPuente();
+            // Retirar la batería desde su propio puente lo replegaría bajo los pies de Nilo. Con un
+            // condensador cargado no se repliega al momento, así que se permite.
+            if (TieneBateria) return !NiloSobreElPuente() || CondensadorSostendria();
 
             BatteryController enManos = RelevoGame.Bateria;
             return enManos != null && enManos.EnManos;
@@ -43,7 +49,12 @@ public class EnergySocket : MonoBehaviour, IInteractable
 
     public string Verbo
     {
-        get { return TieneBateria ? "Retirar batería de " + Etiqueta : "Insertar batería en " + Etiqueta; }
+        get
+        {
+            if (TieneBateria && condensador != null)
+                return "Retirar batería de " + Etiqueta + " (condensador " + Mathf.RoundToInt(condensador.Carga * 100f) + " %)";
+            return TieneBateria ? "Retirar batería de " + Etiqueta : "Insertar batería en " + Etiqueta;
+        }
     }
 
     public string Motivo
@@ -54,6 +65,11 @@ public class EnergySocket : MonoBehaviour, IInteractable
                 ? "No puedes retirar la batería desde el puente: se replegaría bajo tus pies"
                 : "Necesitas llevar la batería";
         }
+    }
+
+    bool CondensadorSostendria()
+    {
+        return condensador != null && condensador.Carga > 0.05f;
     }
 
     bool NiloSobreElPuente()
@@ -101,6 +117,7 @@ public class EnergySocket : MonoBehaviour, IInteractable
 
         if (luz != null) luz.intensity = 0f;
         if (Puente != null) Puente.Activar(false);
+        if (condensador != null) condensador.Vincular();
     }
 
     void FijarEmision(float tasa)
@@ -129,6 +146,7 @@ public class EnergySocket : MonoBehaviour, IInteractable
 
         enManos.AcoplarA(this);
         bateria = enManos;
+        if (condensador != null) condensador.AlInsertarBateria();
         Energizar(true);
         AudioDirector.Pedir(Tono.Insertar);
     }
@@ -138,12 +156,21 @@ public class EnergySocket : MonoBehaviour, IInteractable
         Energizada = activa;
         intensidadObjetivo = activa ? 2.4f : 0f;
 
-        if (Puente != null) Puente.Activar(activa);
+        // Con el condensador cargado el puente aguanta: lo repliega él al vaciarse.
+        bool sostenido = !activa && condensador != null && condensador.AlRetirarBateria();
+        if (Puente != null && !sostenido) Puente.Activar(activa);
 
         FijarEmision(activa ? 12f : 0f);
 
-        PintarEnergia(activa);
+        PintarEnergia(activa || sostenido);
         GameEvents.RaiseBaseEnergiaCambiada(this, activa);
+    }
+
+    /// <summary>El condensador se vació: el cable vuelve a cobre.</summary>
+    public void PintarCondensadorVacio()
+    {
+        if (!TieneBateria) PintarEnergia(false);
+        GameEvents.RaiseBaseEnergiaCambiada(this, false);
     }
 
     void PintarEnergia(bool activa)
