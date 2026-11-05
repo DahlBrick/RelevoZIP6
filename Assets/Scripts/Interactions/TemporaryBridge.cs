@@ -70,14 +70,20 @@ public class TemporaryBridge : MonoBehaviour
     /// <summary>Verdadero si el punto (en el plano) está sobre alguno de los tramos del puente.</summary>
     public bool Contiene(Vector3 punto)
     {
+        return Contiene(punto, 0.3f);
+    }
+
+    /// <summary>Con margen negativo solo cuenta si el punto está claramente encima de un tramo.</summary>
+    public bool Contiene(Vector3 punto, float margen)
+    {
         for (int i = 0; i < tramos.Count; i++)
         {
             Tramo tramo = tramos[i];
             if (tramo.plataforma == null) continue;
             Transform padre = tramo.plataforma.parent;
             Vector3 centro = padre != null ? padre.TransformPoint(tramo.destino) : tramo.destino;
-            float mx = tramo.escalaDestino.x * 0.5f + 0.3f;
-            float mz = tramo.escalaDestino.z * 0.5f + 0.3f;
+            float mx = tramo.escalaDestino.x * 0.5f + margen;
+            float mz = tramo.escalaDestino.z * 0.5f + margen;
             if (Mathf.Abs(punto.x - centro.x) <= mx && Mathf.Abs(punto.z - centro.z) <= mz) return true;
         }
         return false;
@@ -99,6 +105,11 @@ public class TemporaryBridge : MonoBehaviour
 
         GameEvents.RaisePuenteCambiado(this, activo);
         AudioDirector.Pedir(activo ? Tono.PuenteActivo : Tono.PuenteRetraido);
+
+        // Replegarse con Nilo encima (un condensador vacío, una placa que se suelta): cae al agua.
+        PlayerController nilo = RelevoGame.Jugador;
+        if (!activo && Application.isPlaying && nilo != null && Contiene(nilo.transform.position, -0.25f))
+            CaidaAlAgua.Empezar(nilo);
     }
 
     void Update()

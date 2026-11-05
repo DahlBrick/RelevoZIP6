@@ -133,6 +133,21 @@ public static class RelevoPalette
         }
 
         materiales[clave] = material;
+        if (comic && Application.isPlaying) EstiloComic.ConvertirMaterial(material);
         return material;
+    }
+
+    static bool comic;
+
+    /// <summary>
+    /// Nivel en estilo cómic: los materiales de la paleta que se piden en ejecución (los que los
+    /// actores repintan al cambiar de estado: bases, cables, barras, placas) salen ya en RELEVO/Comic,
+    /// así un cambio de estado no deja una pieza con el sombreado de URP en medio del cómic.
+    /// </summary>
+    public static void FijarComic(bool activo)
+    {
+        comic = activo;
+        if (!activo || !Application.isPlaying) return;
+        foreach (Material m in materiales.Values) if (m != null) EstiloComic.ConvertirMaterial(m);
     }
 }

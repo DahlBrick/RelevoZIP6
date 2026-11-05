@@ -10,6 +10,8 @@ public static class TutorialMaia
     /// <summary>Verdadero la primera vez que se pregunta por un nivel en esta sesión.</summary>
     public static bool PrimeraVez(int nivel) { return contados.Add(nivel); }
 
+    static bool ConCondensadores { get { return RelevoGame.Definicion != null && RelevoGame.Definicion.tutorialCondensadores; } }
+
     static DialogoUI Dialogo { get { return RelevoGame.UI != null ? RelevoGame.UI.Dialogo : null; } }
 
     static void Decir(string texto, IlustracionTutorial.Tipo ilustracion)
@@ -55,6 +57,33 @@ public static class TutorialMaia
             IlustracionTutorial.Tipo.Cajas);
     }
 
+    /// <summary>Explicación al llegar al Faro de Liria: los condensadores.</summary>
+    public static void PresentacionCondensadores()
+    {
+        ExplicarCondensadores();
+
+        DialogoUI d = Dialogo;
+        if (d == null) return;
+        d.Encolar(new DialogoUI.Mensaje
+        {
+            titulo = "Maia",
+            texto = "¿Lo tienes claro, Nilo?",
+            acento = RelevoUI.Verde,
+            opciones = new[] { "Entendido, Maia", "Explícamelo otra vez" },
+            alElegir = delegate (int i) { if (i == 1) PresentacionCondensadores(); }
+        });
+    }
+
+    static void ExplicarCondensadores()
+    {
+        Decir("Junto a estas bases hay condensadores: torres con ocho barras. Con la batería puesta, las barras se llenan de ámbar.",
+            IlustracionTutorial.Tipo.Ninguna);
+        Decir("Si retiras la batería, el condensador sostiene el puente mientras se vacía. Es la única forma de cruzar un puente llevando la batería contigo.",
+            IlustracionTutorial.Tipo.Ninguna);
+        Decir("Espera a que esté lleno y corre sin pararte. Si el puente se repliega contigo encima, caerás al agua. Tu reserva sigue contando lejos de la batería.",
+            IlustracionTutorial.Tipo.Reserva);
+    }
+
     /// <summary>Al hablar con Maia: menú para repasar cada mecánica o pedir una pista.</summary>
     public static void Menu()
     {
@@ -65,9 +94,16 @@ public static class TutorialMaia
             titulo = "Maia",
             texto = "¿En qué te ayudo, Nilo?",
             acento = RelevoUI.Verde,
-            opciones = new[] { "La reserva de energía", "Las cajas y las placas", "Dame una pista", "Nada, gracias" },
+            opciones = ConCondensadores
+                ? new[] { "Los condensadores", "La reserva de energía", "Las cajas y las placas", "Dame una pista", "Nada, gracias" }
+                : new[] { "La reserva de energía", "Las cajas y las placas", "Dame una pista", "Nada, gracias" },
             alElegir = delegate (int i)
             {
+                if (ConCondensadores)
+                {
+                    if (i == 0) { ExplicarCondensadores(); return; }
+                    i--;
+                }
                 switch (i)
                 {
                     case 0: ExplicarReserva(); break;

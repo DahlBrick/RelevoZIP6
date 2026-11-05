@@ -29,6 +29,10 @@ public class LevelDefinition : ScriptableObject
     [Tooltip("Maia explica la reserva y las cajas con tarjetas ilustradas al empezar.")]
     public bool tutorialPatio = false;
 
+    [Header("Faro de Liria")]
+    [Tooltip("Maia explica los condensadores al empezar y los añade a su menú.")]
+    public bool tutorialCondensadores = false;
+
     [Header("Final")]
     [Tooltip("Nivel 3: la salida es el faro y la batería se entrega físicamente.")]
     public bool salidaEsFaro = false;
@@ -47,8 +51,8 @@ public static class DefinicionesPorDefecto
             case 2:
                 d.nombre = "Nivel 2 - Patio de Bombas";
                 d.tituloIntro = "Patio de Bombas";
-                d.textoIntro = "Las bombas que drenaban Liria están paradas. Aquí la batería no solo abre caminos: también es lo que mantiene a Nilo en pie.";
-                d.pistaMaia = "Abre primero la pasarela del patio central sin alejarte demasiado de la base A. En el muelle este, empuja la caja y vuelve por el camino más corto.";
+                d.textoIntro = "Las bombas que drenaban Liria están paradas. Aquí la batería no solo abre caminos: también es lo que mantiene a Nilo en pie. Cada paso lejos de ella cuenta.";
+                d.pistaMaia = "La caja del suroeste va a su placa empujándola primero al este. Desde la base A, ve directo a la palanca y vuelve. En el muelle este no hace falta hacerlo todo de un viaje: acércate a la base D para recargar.";
                 d.textoCierre = "Las bombas vuelven a girar y el patio se vacía. El faro espera al final del canal.";
                 d.reservaCasillas = 12;
                 d.tutorialPatio = true;
@@ -60,8 +64,10 @@ public static class DefinicionesPorDefecto
             case 3:
                 d.nombre = "Nivel 3 - Faro de Liria";
                 d.tituloIntro = "Faro de Liria";
-                d.textoIntro = "El faro necesita la última batería. Llévala hasta su base y entrégala.";
-                d.pistaMaia = "Ya conoces las dos clases de camino. Usa la energía solo donde haga falta.";
+                d.textoIntro = "El faro necesita la última batería. Aquí los puentes tienen condensadores: guardan un poco de energía cuando la batería se va.";
+                d.pistaMaia = "Carga el condensador del todo antes de retirar la batería. La caja del pasillo va al norte, no al fondo. La palanca está demasiado lejos de D: llévale la batería en la mano.";
+                d.reservaCasillas = 10;
+                d.tutorialCondensadores = true;
                 d.textoCierre = "El faro vuelve a señalar la ruta segura. Los primeros botes cruzan el canal.";
                 d.recuerdoIdentificador = "nivel3_recuerdo";
                 d.recuerdoTitulo = "Recuerdo de Liria - El farero";
@@ -73,8 +79,8 @@ public static class DefinicionesPorDefecto
                 d.nombre = "Nivel 1 - Muelle de Cobre";
                 d.tituloIntro = "Muelle de Cobre";
                 d.textoIntro = "Una crecida cortó los caminos y la energía de Liria. Solo queda una batería compatible con el faro.";
-                d.pistaMaia = "La batería abre el paso, pero la palanca abre el regreso.";
-                d.textoCierre = "El Muelle vuelve a estar conectado. El Patio de Bombas sigue anegado.";
+                d.pistaMaia = "La batería abre el paso, pero la palanca abre el regreso. En el muelle hay dos orillas que cruzar: haz lo mismo dos veces.";
+                d.textoCierre = "Las tres orillas del Muelle vuelven a estar conectadas. El Patio de Bombas sigue anegado.";
                 d.recuerdoIdentificador = "nivel1_recuerdo";
                 d.recuerdoTitulo = "Recuerdo de Liria - La barquera";
                 d.recuerdoTexto = "\"Remaba al amanecer con las redes llenas. Si el faro vuelve a encenderse, volveré a cruzar el canal.\"";

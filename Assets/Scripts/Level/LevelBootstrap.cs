@@ -168,6 +168,7 @@ public class LevelBootstrap : MonoBehaviour
             ActorFactory.EngancharBateriaALaMano(bateria, nilo);
         }
 
+        EnergySocket baseA = null, baseD = null;
         TemporaryBridge puente = null;
         if (layout.TieneCasilla('B'))
         {
@@ -181,7 +182,7 @@ public class LevelBootstrap : MonoBehaviour
                 ? ActorFactory.CentroDePrimerTramo(layout, 'B')
                 : posBase + Vector3.right * 2f;
 
-            ActorFactory.CrearBaseEnergia(raizActores, posBase, "A", "base A", puente, hacia);
+            baseA = ActorFactory.CrearBaseEnergia(raizActores, posBase, "A", "base A", puente, hacia);
         }
 
         // Segunda base y segundo puente: es el mismo actor otra vez, no una variante. El Nivel 1
@@ -199,7 +200,18 @@ public class LevelBootstrap : MonoBehaviour
                 ? ActorFactory.CentroDePrimerTramo(layout, 'C')
                 : posBase + Vector3.right * 2f;
 
-            ActorFactory.CrearBaseEnergia(raizActores, posBase, "D", "base D", puenteC, hacia);
+            baseD = ActorFactory.CrearBaseEnergia(raizActores, posBase, "D", "base D", puenteC, hacia);
+        }
+
+        // Condensadores (Faro de Liria): cada 'z' se engancha a la base más cercana.
+        foreach (Vector2Int c in layout.Casillas('z'))
+        {
+            Vector3 pos = layout.CentroTile(c.x, c.y);
+            EnergySocket cercana = baseA;
+            if (cercana == null || (baseD != null
+                && (baseD.transform.localPosition - pos).sqrMagnitude < (baseA.transform.localPosition - pos).sqrMagnitude))
+                cercana = baseD;
+            if (cercana != null) ActorFactory.CrearCondensador(raizActores, pos, cercana);
         }
 
         PermanentWalkway pasarela = null;
@@ -395,12 +407,17 @@ public class LevelBootstrap : MonoBehaviour
         bool reintento = LevelManager.ReinicioPendiente;
         LevelManager.ReinicioPendiente = false;
 
+        RelevoPalette.FijarComic(estiloComic);
         if (estiloComic) AplicarEstiloComic(camara != null ? camara.Camara : null);
 
         System.Action intro = () =>
         {
             if (def != null && !reintento) GameEvents.RaiseMensajeMostrado(def.tituloIntro, def.textoIntro);
-            if (def != null && def.tutorialPatio && !reintento && TutorialMaia.PrimeraVez(indiceNivel)) TutorialMaia.Presentacion();
+            if (def != null && !reintento && (def.tutorialPatio || def.tutorialCondensadores) && TutorialMaia.PrimeraVez(indiceNivel))
+            {
+                if (def.tutorialCondensadores) TutorialMaia.PresentacionCondensadores();
+                else TutorialMaia.Presentacion();
+            }
         };
         // Primera vez en el nivel: antes de la intro, Nilo despierta. Al reintentar no se repite.
         if (despertar && !reintento && nilo != null) DespertarNivel.Empezar(nilo, camara != null ? camara.Camara : null, intro);

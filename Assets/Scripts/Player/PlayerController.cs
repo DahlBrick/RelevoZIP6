@@ -57,7 +57,8 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (controlador == null) return;
+        // Desactivado mientras Nilo cae al agua (CaidaAlAgua).
+        if (controlador == null || !controlador.enabled) return;
 
         Vector2 entrada = PuedeMoverse && Entrada != null ? Entrada.LeerMovimiento() : Vector2.zero;
 

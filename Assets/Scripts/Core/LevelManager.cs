@@ -83,7 +83,28 @@ public class LevelManager : MonoBehaviour
         }
 
         GameEvents.RaiseRecuerdosCambiados(RecuerdosEncontrados, RecuerdosTotales);
+        ultimoObjetivo = null;
         ActualizarObjetivo();
+    }
+
+    // El objetivo también depende de cosas que no publican eventos (dónde está Nilo, la carga de un
+    // condensador), así que se revisa dos veces por segundo; solo se publica si cambia.
+    string ultimoObjetivo;
+    float relojObjetivo;
+
+    void Update()
+    {
+        relojObjetivo -= Time.deltaTime;
+        if (relojObjetivo > 0f) return;
+        relojObjetivo = 0.5f;
+        ActualizarObjetivo();
+    }
+
+    void Publicar(string objetivo)
+    {
+        if (objetivo == ultimoObjetivo) return;
+        ultimoObjetivo = objetivo;
+        GameEvents.RaiseObjetivoCambiado(objetivo);
     }
 
     /// <summary>
@@ -117,16 +138,28 @@ public class LevelManager : MonoBehaviour
     {
         if (Completado)
         {
-            GameEvents.RaiseObjetivoCambiado("Nivel completado.");
+            Publicar("Nivel completado.");
             return;
         }
 
         BatteryController bateria = RelevoGame.Bateria;
         string objetivo;
 
-        if (bateria != null && Definicion != null && Definicion.tutorialPatio)
+        if (bateria != null && bateria.Estado != EstadoBateria.EnSuelo)
         {
-            GameEvents.RaiseObjetivoCambiado(ObjetivoPatio(bateria));
+            string propio = null;
+            if (IndiceNivel == 1 && TienePalanca("L") && TienePalanca("K")) propio = ObjetivoMuelle(bateria);
+            else if (IndiceNivel == 2 && Definicion != null && Definicion.tutorialPatio) propio = ObjetivoPatio(bateria);
+            else if (IndiceNivel == 3 && Definicion != null && Definicion.tutorialCondensadores) propio = ObjetivoFaro(bateria);
+            if (propio != null)
+            {
+                Publicar(propio);
+                return;
+            }
+        }
+        else if (bateria != null && Definicion != null && Definicion.tutorialPatio && !CompuertaAbierta())
+        {
+            Publicar("Empuja la caja sobre la placa: abre la compuerta del norte.");
             return;
         }
 
@@ -157,7 +190,66 @@ public class LevelManager : MonoBehaviour
                 : "Retira la batería de la base y vuelve por la pasarela manual.";
         }
 
-        GameEvents.RaiseObjetivoCambiado(objetivo);
+        Publicar(objetivo);
+    }
+
+    bool TienePalanca(string id) { return Palanca(id) != null; }
+
+    LeverInteractable Palanca(string id)
+    {
+        for (int i = 0; i < Palancas.Count; i++)
+            if (Palancas[i] != null && Palancas[i].Identificador == id) return Palancas[i];
+        return null;
+    }
+
+    bool Accionada(string id)
+    {
+        LeverInteractable p = Palanca(id);
+        return p != null && p.Accionada;
+    }
+
+    static bool CompuertaAbierta()
+    {
+        for (int i = 0; i < PlacaPresion.Todas.Count; i++)
+        {
+            PlacaPresion p = PlacaPresion.Todas[i];
+            if (p != null && p.Compuerta != null && !p.PorCaja) return false;
+        }
+        return true;
+    }
+
+    static bool PuentePlacaSostenido()
+    {
+        for (int i = 0; i < PlacaPresion.Todas.Count; i++)
+        {
+            PlacaPresion p = PlacaPresion.Todas[i];
+            if (p != null && p.Puente != null && p.PorCaja) return true;
+        }
+        return false;
+    }
+
+    string EtiquetaSalida { get { return Salida != null ? Salida.Etiqueta : "la salida"; } }
+
+    /// <summary>Muelle de Cobre: el ciclo base-puente-palanca dos veces, de oeste a este.</summary>
+    string ObjetivoMuelle(BatteryController bateria)
+    {
+        string b = bateria.BaseActual != null ? bateria.BaseActual.Identificador : "";
+        bool l = Accionada("L"), k = Accionada("K");
+
+        if (!l)
+        {
+            if (b == "A") return "Cruza el puente y acciona la palanca: abrirá el camino de vuelta.";
+            if (bateria.EnManos) return "Coloca la batería en la base A para desplegar el puente.";
+            return "Retira la batería y vuelve a la base A.";
+        }
+        if (!k)
+        {
+            if (b == "A") return "Retira la batería de la base A y llévala por la pasarela a la isla.";
+            if (bateria.EnManos) return "Coloca la batería en la base D para cruzar al este.";
+            return "Cruza al este y acciona la segunda palanca.";
+        }
+        if (b != "") return "Retira la batería de la base " + b + " y vuelve por la pasarela.";
+        return "Lleva la batería hasta " + EtiquetaSalida + ".";
     }
 
     /// <summary>
@@ -166,36 +258,73 @@ public class LevelManager : MonoBehaviour
     /// </summary>
     string ObjetivoPatio(BatteryController bateria)
     {
-        bool compuertaAbierta = true, puentePlaca = false;
-        for (int i = 0; i < PlacaPresion.Todas.Count; i++)
+        string b = bateria.BaseActual != null ? bateria.BaseActual.Identificador : "";
+
+        if (!Accionada("L"))
         {
-            PlacaPresion p = PlacaPresion.Todas[i];
-            if (p == null) continue;
-            if (p.Compuerta != null && !p.PorCaja) compuertaAbierta = false;
-            if (p.Puente != null && p.PorCaja) puentePlaca = true;
-        }
-
-        string baseActual = bateria.BaseActual != null ? bateria.BaseActual.Identificador : "";
-
-        if (bateria.Estado == EstadoBateria.EnSuelo) return "Recoge la batería.";
-        if (!compuertaAbierta && QuedanPalancas)
-            return "Empuja la caja sobre la placa: abre la compuerta del norte.";
-
-        if (QuedanPalancas)
-        {
+            if (!CompuertaAbierta() && b == "") return "Empuja la caja sobre la placa: abre la compuerta del norte.";
+            if (b == "A") return "Cruza, acciona la palanca y vuelve antes de agotar la reserva.";
             if (bateria.EnManos) return "Coloca la batería en la base A para desplegar el puente.";
-            return "Cruza, acciona la palanca y vuelve por la pasarela sin agotar la reserva.";
+            return "Recupera la batería y llévala a la base A.";
         }
 
-        if (!puentePlaca)
+        if (!PuentePlacaSostenido())
         {
-            if (baseActual == "A") return "Retira la batería de la base A y llévala al muelle central.";
+            if (b == "A") return "Retira la batería de la base A y llévala por la pasarela al patio central.";
             if (bateria.EnManos) return "Coloca la batería en la base D para cruzar al muelle este.";
-            return "Empuja la caja del muelle este hasta su placa y vuelve por el camino corto.";
+            return "Empuja la caja del muelle este hasta su placa. Si la reserva baja, vuelve a recargar junto a D.";
         }
 
-        if (baseActual != "") return "Retira la batería de la base y cruza por el puente de la placa.";
-        return "Lleva la batería hasta " + (Salida != null ? Salida.Etiqueta : "la salida") + ".";
+        if (b != "") return "Retira la batería de la base y cruza por el puente de la placa.";
+        return "Lleva la batería hasta " + EtiquetaSalida + ".";
+    }
+
+    /// <summary>Faro de Liria: condensadores, la caja del pasillo y la carrera final.</summary>
+    string ObjetivoFaro(BatteryController bateria)
+    {
+        EnergySocket baseActual = bateria.BaseActual;
+        string b = baseActual != null ? baseActual.Identificador : "";
+        Condensador cond = baseActual != null ? baseActual.Condensador : null;
+        int columna = RelevoGame.Jugador != null && RelevoGame.Layout != null
+            ? RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position).x : 0;
+
+        if (bateria.EnManos && columna < 12)
+        {
+            for (int i = 0; i < Bases.Count; i++)
+            {
+                Condensador c = Bases[i] != null ? Bases[i].Condensador : null;
+                if (c != null && c.Sosteniendo) return "¡Corre! El puente aguanta mientras se vacía el condensador.";
+            }
+        }
+
+        if (columna >= 12) return bateria.EnManos ? "Entrega la batería en " + EtiquetaSalida + "." : "Vuelve a por la batería.";
+
+        if (columna <= 3 && b != "D" && !Accionada("K"))
+        {
+            if (b == "A")
+            {
+                if (cond != null && cond.Carga < 0.99f) return "Espera a que el condensador se llene: mira sus barras.";
+                return "Retira la batería y cruza el puente antes de que el condensador se vacíe.";
+            }
+            if (bateria.EnManos) return "Coloca la batería en la base A: cargará su condensador.";
+        }
+
+        if (!CompuertaAbierta() && !Accionada("K"))
+            return "Empuja la caja hasta la placa del norte: abre la compuerta del pasillo.";
+
+        if (!Accionada("K"))
+        {
+            if (b == "D") return "Lejos de la batería la reserva no llega a la palanca. Llévala contigo por el pasillo.";
+            return "Baja por el pasillo con la batería y acciona la palanca.";
+        }
+
+        if (b == "D")
+        {
+            if (cond != null && cond.Carga < 0.99f) return "Espera a que el condensador de D se llene.";
+            return "Retira la batería y corre por la pasarela y el puente hasta el faro.";
+        }
+        if (bateria.EnManos) return "Coloca la batería en la base D para cargar su condensador.";
+        return "Retira la batería de la base y llévala a la base D.";
     }
 
     public void RegistrarRecuerdo(MemoryInteractable recuerdo)
