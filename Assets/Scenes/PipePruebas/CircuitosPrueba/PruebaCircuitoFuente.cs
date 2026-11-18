@@ -20,6 +20,15 @@ public class PruebaCircuitoFuente : MonoBehaviour
     [SerializeField] Vector2Int casilla;
     [SerializeField] int puerto = 2;
 
+    public void Configurar(PlacaPresion panel, EnergySocket toma, Vector2Int posicion, int salida)
+    {
+        placa = panel;
+        baseEnergia = toma;
+        clase = panel != null ? Clase.Placa : Clase.BaseEnergia;
+        casilla = posicion;
+        puerto = salida;
+    }
+
     public Vector2Int Casilla { get { return casilla; } }
     public int Puerto { get { return puerto; } }
 

@@ -17,6 +17,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Juego/Nivel3_FaroDeLiria.unity
     guid: f333cb930fcf34640b0f7de5fce4e627
+  - enabled: 1
+    path: Assets/Scenes/Juego/Nivel4_AduanaDeLaMarea.unity
+    guid: 5f54856b12dff724a8642a502e3e2534
+  - enabled: 1
+    path: Assets/Scenes/Juego/Nivel5_DarsenaDelTorno.unity
+    guid: 525db4d5f90025a4185aa12787299eff
+  - enabled: 1
+    path: Assets/Scenes/Juego/Nivel6_EsclusaDeLasDosLlaves.unity
+    guid: a919c3ad556a8534a926360500dc9fff
+  - enabled: 1
+    path: Assets/Scenes/PipePruebas/cuadernoRelevo.unity
+    guid: e354e4c990ba55b4e923802679e51255
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

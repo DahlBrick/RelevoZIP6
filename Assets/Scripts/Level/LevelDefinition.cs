@@ -75,6 +75,42 @@ public static class DefinicionesPorDefecto
                 d.salidaEsFaro = true;
                 break;
 
+            case 4:
+                d.nombre = "Nivel 4 - Aduana de la Marea";
+                d.tituloIntro = "Aduana de la Marea";
+                d.textoIntro = "El agua ya lame los sellos de la aduana. Al otro lado del canal queda una puerta abierta para los botes del correo.";
+                d.pistaMaia = "Lleva la caja al rombo y gira los discos con E hasta que el turquesa alcance la orilla. En el taller, sigue el ámbar hasta la pasarela de la galería.";
+                d.reservaCasillas = 18;
+                d.textoCierre = "Los sellos están secos. El primer saco de cartas sale en la barca de la tarde.";
+                d.recuerdoIdentificador = "nivel4_recuerdo";
+                d.recuerdoTitulo = "La última saca";
+                d.recuerdoTexto = "«Guardábamos arriba las cartas sin dueño. Cuando bajaba la marea, alguien siempre venía a preguntar.»";
+                break;
+
+            case 5:
+                d.nombre = "Nivel 5 - Dársena del Torno";
+                d.tituloIntro = "Dársena del Torno";
+                d.textoIntro = "El torno sigue amarrado en la punta oeste. Si Nilo suelta el cable, las dos mitades de la dársena volverán a comunicarse.";
+                d.pistaMaia = "Cruza con la carga de D. Desde el taller, manda corriente hacia el pequeño muelle del oeste. Su torno abre el camino a la otra orilla.";
+                d.reservaCasillas = 20;
+                d.textoCierre = "Vuelve a oírse el torno. Alguien del otro lado responde con tres golpes de remo.";
+                d.recuerdoIdentificador = "nivel5_recuerdo";
+                d.recuerdoTitulo = "Las marcas del torno";
+                d.recuerdoTexto = "«Una raya en la baranda por cada vuelta de manivela. Las de abajo las hice cuando apenas llegaba al torno.»";
+                break;
+
+            case 6:
+                d.nombre = "Nivel 6 - Esclusa de las Dos Llaves";
+                d.tituloIntro = "Esclusa de las Dos Llaves";
+                d.textoIntro = "La esclusa tiene dos llaves de presión. Los estibadores se llevaron todas las cajas menos una.";
+                d.pistaMaia = "Empieza por el panel del oeste. Cuando la palanca abra el paso sur, recupera la misma caja para los barrotes. En la sala de máquinas hay otro camino de vuelta.";
+                d.reservaCasillas = 22;
+                d.textoCierre = "Las dos hojas de la esclusa se abren a la vez. Por primera vez desde la crecida, una barca recorre el canal entero.";
+                d.recuerdoIdentificador = "nivel6_recuerdo";
+                d.recuerdoTitulo = "El turno de noche";
+                d.recuerdoTexto = "«Mi hermana abría la primera hoja. Yo esperaba el golpe de su llave para abrir la segunda.»";
+                break;
+
             default:
                 d.nombre = "Nivel 1 - Muelle de Cobre";
                 d.tituloIntro = "Muelle de Cobre";

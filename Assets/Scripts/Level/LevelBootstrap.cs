@@ -182,7 +182,8 @@ public class LevelBootstrap : MonoBehaviour
                 ? ActorFactory.CentroDePrimerTramo(layout, 'B')
                 : posBase + Vector3.right * 2f;
 
-            baseA = ActorFactory.CrearBaseEnergia(raizActores, posBase, "A", "base A", puente, hacia);
+            bool redirigida = layout.TieneCasilla('t');
+            baseA = ActorFactory.CrearBaseEnergia(raizActores, posBase, "A", "base A", redirigida ? null : puente, redirigida ? posBase : hacia);
         }
 
         // Segunda base y segundo puente: es el mismo actor otra vez, no una variante. El Nivel 1
@@ -261,7 +262,7 @@ public class LevelBootstrap : MonoBehaviour
             ActorFactory.CrearMaia(raizActores, posMaia, def);
         }
 
-        CrearPiezasDelPatio(layout, raizActores);
+        CrearPiezasDelPatio(layout, raizActores, baseA, puente, indiceNivel);
     }
 
     /// <summary>
@@ -269,7 +270,7 @@ public class LevelBootstrap : MonoBehaviour
     /// acciona la compuerta 'g' y la placa 'u' despliega el puente 'R'. En niveles sin esas
     /// casillas no se crea nada.
     /// </summary>
-    static void CrearPiezasDelPatio(LevelLayout layout, Transform raiz)
+    static void CrearPiezasDelPatio(LevelLayout layout, Transform raiz, EnergySocket baseA, TemporaryBridge puenteB, int indice)
     {
         Compuerta compuerta = null;
         foreach (Vector2Int c in layout.Casillas('g')) compuerta = ActorPatio.CrearCompuerta(raiz, layout, c);
@@ -294,7 +295,12 @@ public class LevelBootstrap : MonoBehaviour
             Vector3 destino = ActorPatio.CasillaMasCercana(layout, 'R', centro);
             Vector2Int cd = layout.Casilla(destino);
             Vector3 orilla = layout.CentroTile(cd.x + (c.x > cd.x ? 1 : -1), cd.y);
-            ActorPatio.CrearPlaca(raiz, layout, c, null, puenteR, orilla);
+            if (layout.TieneCasilla('t'))
+            {
+                var panel = ActorPatio.CrearPlaca(raiz, layout, c, null, null, centro);
+                CircuitosDelCanal.Montar(indice, raiz, layout, baseA, puenteB, panel, puenteR);
+            }
+            else ActorPatio.CrearPlaca(raiz, layout, c, null, puenteR, orilla);
         }
 
         foreach (Vector2Int c in layout.Casillas('k')) ActorPatio.CrearCaja(raiz, layout, c);

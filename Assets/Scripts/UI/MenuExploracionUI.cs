@@ -42,7 +42,12 @@ public class MenuExploracionUI : MonoBehaviour
     const float AnchoPestana = 230f;
     const float PasoPestana = 238f;
 
-    const int Niveles = 3;
+    const int Niveles = 6;
+    static readonly Vector2[] HitosCanal = {
+        new Vector2(-215f, 46f), new Vector2(-129f, 74f), new Vector2(-43f, 40f),
+        new Vector2(43f, 66f), new Vector2(129f, 30f), new Vector2(215f, 55f)
+    };
+    static readonly string[] Muelles = { "muelle", "patio", "faro", "aduana", "dársena", "esclusa" };
 
     // Geometría del árbol de skills: la comparten el dibujo (PaginaSkills) y el refresco de la
     // selección (RefrescarSkills), que necesita saber dónde ha quedado el nodo elegido.
@@ -694,7 +699,7 @@ public class MenuExploracionUI : MonoBehaviour
 
         for (int i = 0; i < Niveles; i++)
         {
-            entradas[i] = CrearEntrada(p.transform, i, 140f - i * 150f);
+            entradas[i] = CrearEntrada(p.transform, i, 140f - (i % 3) * 150f);
         }
 
         // ---------------- página derecha: la entrada abierta
@@ -832,6 +837,7 @@ public class MenuExploracionUI : MonoBehaviour
 
             Color acento = ColorDeNivel(nivel);
             Entrada e = entradas[i];
+            e.raiz.SetActive(i / 3 == entradaSel / 3);
             bool elegida = i == entradaSel;
 
             // Tres estados del recuerdo: bloqueado, descubierto y leído.
@@ -1459,26 +1465,24 @@ public class MenuExploracionUI : MonoBehaviour
         RelevoUI.Texto(mapa.transform, "Mapa titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(16f, -10f), new Vector2(400f, 22f), 14, TextAnchor.UpperLeft, TintaSuave).text = "MAPA DEL CANAL";
 
-        // Tres tramos dibujados a mano: muelle, patio y faro.
-        Enlace(mapa.transform, "Ruta 1", new Vector2(-210f, 40f), new Vector2(-70f, 84f), 3f, RelevoUI.ConAlfa(TintaSuave, 0.6f));
-        Enlace(mapa.transform, "Ruta 2", new Vector2(-70f, 84f), new Vector2(70f, 30f), 3f, RelevoUI.ConAlfa(TintaSuave, 0.6f));
-        Enlace(mapa.transform, "Ruta 3", new Vector2(70f, 30f), new Vector2(212f, 76f), 3f, RelevoUI.ConAlfa(TintaSuave, 0.6f));
+        for (int i = 1; i < HitosCanal.Length; i++)
+            Enlace(mapa.transform, "Ruta " + i, HitosCanal[i - 1], HitosCanal[i], 3f, RelevoUI.ConAlfa(TintaSuave, 0.6f));
         Enlace(mapa.transform, "Canal", new Vector2(-230f, -20f), new Vector2(230f, -8f), 2f, RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.35f));
 
         Mancha(mapa.transform, "Mancha mapa", new Vector2(150f, -70f), new Vector2(170f, 90f),
             RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.16f), 10f);
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < HitosCanal.Length; i++)
         {
-            float x = -210f + i * 140f;
-            float y = i == 0 ? 40f : (i == 1 ? 84f : 30f);
+            float x = HitosCanal[i].x;
+            float y = HitosCanal[i].y;
 
             RelevoUI.Hexagono(mapa.transform, "Hito " + i, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(x, y), new Vector2(26f, 26f), RelevoUI.ConAlfa(PapelHondo, 0.9f), true);
 
             RelevoUI.Texto(mapa.transform, "Hito texto " + i, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(x, y - 26f), new Vector2(120f, 20f), 12, TextAnchor.MiddleCenter, TintaSuave).text =
-                i == 0 ? "muelle" : (i == 1 ? "patio" : "faro");
+                Muelles[i];
         }
 
         // El hito del tramo en curso: un conector ámbar encima del mapa, sobre el tramo real.
@@ -1536,10 +1540,10 @@ public class MenuExploracionUI : MonoBehaviour
         estadoFilo[0].color = RelevoUI.Cobre;
 
         // El hito del mapa se mueve al tramo en curso; nunca cambia de página, solo de sitio.
-        int indice = nivel != null ? Mathf.Clamp(nivel.IndiceNivel, 1, 3) : 1;
-        Vector2[] hitos = { new Vector2(-520f, 158f), new Vector2(-380f, 202f), new Vector2(-240f, 148f) };
-        if (hitoActual != null) hitoActual.rectTransform.anchoredPosition = hitos[indice - 1];
-        if (hitoActualTexto != null) hitoActualTexto.rectTransform.anchoredPosition = hitos[indice - 1] + new Vector2(0f, -24f);
+        int indice = nivel != null ? Mathf.Clamp(nivel.IndiceNivel, 1, Niveles) : 1;
+        Vector2 hito = new Vector2(ColIzq, 118f) + HitosCanal[indice - 1];
+        if (hitoActual != null) hitoActual.rectTransform.anchoredPosition = hito;
+        if (hitoActualTexto != null) hitoActualTexto.rectTransform.anchoredPosition = hito + new Vector2(0f, -24f);
 
         if (bateria == null)
         {

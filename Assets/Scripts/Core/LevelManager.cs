@@ -143,6 +143,16 @@ public class LevelManager : MonoBehaviour
         }
 
         BatteryController bateria = RelevoGame.Bateria;
+        if (IndiceNivel >= 4 && bateria != null)
+        {
+            if (bateria.Estado == EstadoBateria.EnSuelo) Publicar("Recoge la batería.");
+            else if (IndiceNivel == 6 && !Accionada("L")) Publicar("Alcanza el torno del muelle oeste.");
+            else if (IndiceNivel == 6 && !Accionada("K")) Publicar("Abre los barrotes y alcanza la palanca de la sala de máquinas.");
+            else if (IndiceNivel == 5 && !Accionada("L")) Publicar("Cruza la dársena y suelta el torno del oeste.");
+            else if (IndiceNivel == 4 && !Accionada("L")) Publicar("Alcanza la palanca de la galería norte.");
+            else Publicar("Lleva la batería hasta la salida.");
+            return;
+        }
         string objetivo;
 
         if (bateria != null && bateria.Estado != EstadoBateria.EnSuelo)
@@ -465,6 +475,9 @@ public class LevelManager : MonoBehaviour
             case 1: return "Nivel1_MuelleDeCobre";
             case 2: return "Nivel2_PatioDeBombas";
             case 3: return "Nivel3_FaroDeLiria";
+            case 4: return "Nivel4_AduanaDeLaMarea";
+            case 5: return "Nivel5_DarsenaDelTorno";
+            case 6: return "Nivel6_EsclusaDeLasDosLlaves";
             default: return "Nivel1_MuelleDeCobre";
         }
     }

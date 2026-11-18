@@ -27,6 +27,7 @@ public class UIManager : MonoBehaviour
         "Opciones",
         "Volver al menú principal"
     };
+    static readonly string[] OpcionesCierreCanal = { "Volver al muelle", "Reiniciar nivel", "Cuaderno de viaje" };
     static readonly string[] OpcionesFinal = { "Siguiente nivel", "Reiniciar nivel", "Cuaderno de viaje" };
     static readonly string[] OpcionesConfirmar = { "Sí, reiniciar", "No, continuar" };
 
@@ -446,7 +447,14 @@ public class UIManager : MonoBehaviour
 
         switch (indice)
         {
-            case 0: nivel.IrASiguienteNivel(); break;
+            case 0:
+                if (nivel.IndiceNivel == 6)
+                {
+                    Time.timeScale = 1f;
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(LevelManager.NombreEscenaNivel(1));
+                }
+                else nivel.IrASiguienteNivel();
+                break;
             case 1: nivel.ReiniciarNivel(); break;
             case 2: AbrirCuaderno(); break;
         }
@@ -646,7 +654,7 @@ public class UIManager : MonoBehaviour
                 : "Sin recuerdo en este tramo: el orbe ámbar sigue esperando.";
         }
 
-        RefrescarFilas(filasFinal, OpcionesFinal, seleccionFinal);
+        RefrescarFilas(filasFinal, nivel != null && nivel.IndiceNivel == 6 ? OpcionesCierreCanal : OpcionesFinal, seleccionFinal);
     }
 
     void RefrescarFilas(Fila[] filas, string[] opciones, int seleccion)

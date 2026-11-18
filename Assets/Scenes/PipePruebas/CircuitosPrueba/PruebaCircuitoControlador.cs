@@ -30,6 +30,13 @@ public class PruebaCircuitoControlador : MonoBehaviour
         get { return fuente != null && fuente.Tipo == PruebaCircuitoFuente.Clase.BaseEnergia; }
     }
 
+    public void Configurar(PruebaCircuitoFuente inicio, PruebaCircuitoReceptor fin, List<PruebaCircuitoPieza> piezas)
+    {
+        fuente = inicio;
+        receptor = fin;
+        tramos = piezas;
+    }
+
     void Start()
     {
         cobre = RelevoPalette.MaterialDe(ClaveMaterial.Cobre);

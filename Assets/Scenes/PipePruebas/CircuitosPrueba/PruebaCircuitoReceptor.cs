@@ -23,6 +23,14 @@ public class PruebaCircuitoReceptor : MonoBehaviour
 
     bool alimentado;
 
+    public void Configurar(TemporaryBridge destino, Vector2Int posicion, int entrada)
+    {
+        clase = Clase.Puente;
+        puente = destino;
+        casilla = posicion;
+        puerto = entrada;
+    }
+
     public Vector2Int Casilla { get { return casilla; } }
     public int Puerto { get { return puerto; } }
 

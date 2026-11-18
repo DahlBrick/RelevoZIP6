@@ -1,5 +1,5 @@
 /// <summary>
-/// Mapas de los tres niveles. Este archivo es la única fuente de verdad del
+/// Mapas de los niveles. Este archivo es la única fuente de verdad del
 /// diseño espacial: para mover un muelle, una base o la salida basta editar
 /// el texto del nivel correspondiente.
 /// </summary>
@@ -14,6 +14,9 @@ public static class LevelLayouts
             case 1: return Nivel1();
             case 2: return Nivel2();
             case 3: return Nivel3();
+            case 4: return Nivel4();
+            case 5: return Nivel5();
+            case 6: return Nivel6();
             default: return null;
         }
     }
@@ -103,5 +106,59 @@ public static class LevelLayouts
             "wwwwww#ww#CC###",
             "wwwwwwDQQ#ww###",
             "wwwwwwzww#ww#Xv");
+    }
+
+    public static LevelLayout Nivel4()
+    {
+        return new LevelLayout("Nivel 4 - Aduana de la Marea", TamanoTile,
+            "v#####CCCDzL###ww",
+            "##E###www#####vww",
+            "####v#wwwBwwwPwww",
+            "mmmwwwwwwBwwwPwww",
+            "wwwwwwwwwtt###www",
+            "wv####www#tt##v#w",
+            "###ut#www##tA###w",
+            "####ttRRR#######w",
+            "##k###www#######w",
+            "NY####www#######w",
+            "M####vwwwwwwwmmmw",
+            "mmmwwwwwwwwwwmmXw");
+    }
+
+    public static LevelLayout Nivel5()
+    {
+        return new LevelLayout("Nivel 5 - Dársena del Torno", TamanoTile,
+            "wwwwwwv######w#E#",
+            "wwwwww#NY####w###",
+            "wwwwwwM##Dz#vw##v",
+            "wwwwwwwww####wwRw",
+            "wwwwwwwwwCwwwwwRw",
+            "#v#wwwwwwCwwwwwRw",
+            "###ww######ww#tt#",
+            "L##ww##A###ww#tt#",
+            "###BBttt###ww#ut#",
+            "###ww######PP####",
+            "mmwww#####vww##k#",
+            "Xmwwwmmmwwwww###v");
+    }
+
+    public static LevelLayout Nivel6()
+    {
+        return new LevelLayout("Nivel 6 - Esclusa de las Dos Llaves", TamanoTile,
+            "wwwwwwwwwwwwwwwwwmm",
+            "wwwwwM###wwwww#####",
+            "###ww#NY##vwww##E#v",
+            "L##wwttt###www#####",
+            "###RRt#u###www#####",
+            "###ww###k##wwwv####",
+            "##vww####o#wwwwwCww",
+            "mXwwwv#####wwwwwCww",
+            "wwwwwwwPwwwwww##Dz#",
+            "wwwwwwwPwwwwww#####",
+            "wwwwwwwgwwwwww#####",
+            "wwwww######www#K###",
+            "wwwww##AtttBBB#####",
+            "wwwww###tt#www#####",
+            "wwwwwv#####QQQ####v");
     }
 }

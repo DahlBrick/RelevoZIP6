@@ -32,7 +32,7 @@ public class CuadernoUI : MonoBehaviour
     [SerializeField] InputActionAsset acciones;
 
     /// <summary>Niveles con recuerdo propio. Coincide con LevelLayouts.Obtener().</summary>
-    const int Niveles = 3;
+    const int Niveles = 6;
 
     // ------------------------------------------------------------------ medidas del pliego
 
@@ -542,16 +542,16 @@ public class CuadernoUI : MonoBehaviour
         for (int i = 0; i < Niveles; i++)
         {
             pestanas[i] = RelevoUI.Panel(hoja, "Pestana " + (i + 1), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(4f, 130f - i * 120f), new Vector2(88f, 74f), PapelClaro).GetComponent<Image>();
+                new Vector2(4f, 220f - i * 88f), new Vector2(88f, 74f), PapelClaro).GetComponent<Image>();
             pestanas[i].rectTransform.localRotation = Quaternion.Euler(0f, 0f, 1.6f);
 
             pestanasTexto[i] = RelevoUI.Texto(hoja, "Pestana texto " + (i + 1), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(4f, 130f - i * 120f), new Vector2(88f, 74f), 22, TextAnchor.MiddleCenter, TintaSuave);
+                new Vector2(4f, 220f - i * 88f), new Vector2(88f, 74f), 22, TextAnchor.MiddleCenter, TintaSuave);
             pestanasTexto[i].font = RelevoUI.FuenteTitulo();
             pestanasTexto[i].text = Romano(i + 1);
 
             pestanasFilo[i] = RelevoUI.Franja(hoja, "Pestana filo " + (i + 1), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(-80f, 130f - i * 120f), new Vector2(5f, 52f), ColorDeNivel(i + 1));
+                new Vector2(-80f, 220f - i * 88f), new Vector2(5f, 52f), ColorDeNivel(i + 1));
         }
     }
 
@@ -605,7 +605,7 @@ public class CuadernoUI : MonoBehaviour
 
         for (int i = 0; i < Niveles; i++)
         {
-            entradas[i] = CrearEntrada(p, i, 140f - i * 150f);
+            entradas[i] = CrearEntrada(p, i, 140f - (i % 3) * 150f);
         }
 
         // ---------------- página derecha: la ficha de la entrada elegida
@@ -944,6 +944,7 @@ public class CuadernoUI : MonoBehaviour
 
             Color acento = ColorDeNivel(nivel);
             Entrada e = entradas[i];
+            e.raiz.SetActive(i / 3 == seleccion / 3);
             bool elegida = i == seleccion;
 
             string chip;
@@ -1008,7 +1009,7 @@ public class CuadernoUI : MonoBehaviour
         {
             bool elegida = i == seleccion;
             Color acento = ColorDeNivel(i + 1);
-            float y = 130f - i * 120f;
+            float y = 220f - i * 88f;
 
             pestanas[i].color = elegida ? PapelClaro : RelevoUI.ConAlfa(PapelSombra, 0.95f);
             pestanas[i].rectTransform.anchoredPosition = new Vector2(elegida ? 14f : 4f, y);

@@ -43,6 +43,16 @@ public sealed class PruebaCircuitoPieza : MonoBehaviour, IInteractable
     float anguloObjetivo;
     bool girando;
 
+    public void Configurar(Vector2Int posicion, bool recta, int mascara, int giroInicial, Renderer[] conductores)
+    {
+        casilla = posicion;
+        forma = recta ? Forma.Recta : Forma.Curva;
+        puertosBase = mascara;
+        pasosIniciales = giroInicial;
+        trazos = conductores;
+        transform.localRotation = Quaternion.Euler(0f, 90f * giroInicial, 0f);
+    }
+
     public Vector2Int Casilla { get { return casilla; } }
     public int Pasos { get { return pasos; } }
     public Renderer[] Trazos { get { return trazos; } }
