@@ -37,6 +37,8 @@ public class MaiaTerminal : MonoBehaviour, IInteractable
     public string TextoActual()
     {
         if (!PresentacionMostrada) return TextoIntroduccion;
+        if (RelevoGame.Nivel != null && RelevoGame.Nivel.IndiceNivel >= 4 && RelevoGame.Nivel.IndiceNivel <= LevelLayouts.Cantidad)
+            return RelevoGame.Nivel.PistaActual();
         if (RelevoGame.Nivel != null && RelevoGame.Nivel.TodasLasPalancasAccionadas) return TextoFinal;
         return TextoPista;
     }

@@ -27,6 +27,12 @@ EditorBuildSettings:
     path: Assets/Scenes/Juego/Nivel6_EsclusaDeLasDosLlaves.unity
     guid: a919c3ad556a8534a926360500dc9fff
   - enabled: 1
+    path: Assets/Scenes/Juego/Nivel7_LonjaDeLasDosVoces.unity
+    guid: f049b9d33480fcc4091017440b215082
+  - enabled: 1
+    path: Assets/Scenes/Juego/Nivel8_ArchivoDeLaFrecuencia.unity
+    guid: 9347bc9940ee82549ae68b6ce9754853
+  - enabled: 1
     path: Assets/Scenes/PipePruebas/cuadernoRelevo.unity
     guid: e354e4c990ba55b4e923802679e51255
   m_configObjects:

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -32,7 +32,7 @@ public class CuadernoUI : MonoBehaviour
     [SerializeField] InputActionAsset acciones;
 
     /// <summary>Niveles con recuerdo propio. Coincide con LevelLayouts.Obtener().</summary>
-    const int Niveles = 6;
+    const int Niveles = LevelLayouts.Cantidad;
 
     // ------------------------------------------------------------------ medidas del pliego
 
@@ -79,7 +79,6 @@ public class CuadernoUI : MonoBehaviour
         public Text lugar;
         public Text pista;
         public Image cinta;
-        public GameObject roto;      // señales de página incompleta (solo en recuerdos bloqueados)
     }
 
     RelevoInput entrada;
@@ -101,12 +100,7 @@ public class CuadernoUI : MonoBehaviour
 
     // --- ficha de la derecha, en la vista de colección
     Image colIlustracion;
-    Image colAnillo;
-    Text colNumero;
-    Text colCaption;
-    Image colSello;
-    Text colSelloTexto;
-    List<Image> colSelloBordes;
+    PostalDeLiria colPostal;
     Text colTitulo;
     Text colSubtitulo;
     Text colNota;
@@ -116,9 +110,7 @@ public class CuadernoUI : MonoBehaviour
 
     // --- recuerdo abierto
     Image detIlustracion;
-    Image detAnillo;
-    Text detNumero;
-    Text detCaption;
+    PostalDeLiria detPostal;
     Text detTitulo;
     Text detOrigen;
     Image detChip;
@@ -135,7 +127,7 @@ public class CuadernoUI : MonoBehaviour
     Text detCtaTexto;
 
     // señales de página incompleta en el recuerdo abierto
-    GameObject detFotoVelada;
+    public static int HojaSolicitada;
     GameObject detCosido;
     GameObject detFragmentos;
     GameObject detArrancado;
@@ -163,6 +155,9 @@ public class CuadernoUI : MonoBehaviour
     void Awake()
     {
         Abierto = true;
+        int pagina = HojaSolicitada > 0 ? HojaSolicitada : (RelevoGame.Nivel != null ? RelevoGame.Nivel.IndiceNivel : 1);
+        seleccion = Mathf.Clamp(pagina - 1, 0, Niveles - 1);
+        HojaSolicitada = 0;
 
         // El cuaderno se abre ENCIMA del nivel, que se queda cargado y congelado: no se devuelve el
         // tiempo (hacerlo reanudaría el nivel que hay detrás). Toda esta interfaz anima con tiempo
@@ -267,7 +262,7 @@ public class CuadernoUI : MonoBehaviour
 
         // La página que el jugador tiene delante es la que se da por leída. Es lo ÚNICO que este
         // panel escribe en el guardado, igual que antes de esta fase.
-        LevelDefinition definicion = DefinicionesPorDefecto.Obtener(seleccion + 1);
+        LevelDefinition definicion = DefinicionesPorDefecto.FichaDelCuaderno(seleccion + 1);
         if (definicion != null
             && SaveManager.TieneRecuerdo(definicion.recuerdoIdentificador)
             && !SaveManager.RecuerdoLeido(definicion.recuerdoIdentificador))
@@ -542,16 +537,16 @@ public class CuadernoUI : MonoBehaviour
         for (int i = 0; i < Niveles; i++)
         {
             pestanas[i] = RelevoUI.Panel(hoja, "Pestana " + (i + 1), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(4f, 220f - i * 88f), new Vector2(88f, 74f), PapelClaro).GetComponent<Image>();
+                new Vector2(4f, 255f - i * 72f), new Vector2(88f, 58f), PapelClaro).GetComponent<Image>();
             pestanas[i].rectTransform.localRotation = Quaternion.Euler(0f, 0f, 1.6f);
 
             pestanasTexto[i] = RelevoUI.Texto(hoja, "Pestana texto " + (i + 1), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(4f, 220f - i * 88f), new Vector2(88f, 74f), 22, TextAnchor.MiddleCenter, TintaSuave);
+                new Vector2(4f, 255f - i * 72f), new Vector2(88f, 58f), 22, TextAnchor.MiddleCenter, TintaSuave);
             pestanasTexto[i].font = RelevoUI.FuenteTitulo();
             pestanasTexto[i].text = Romano(i + 1);
 
             pestanasFilo[i] = RelevoUI.Franja(hoja, "Pestana filo " + (i + 1), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(-80f, 220f - i * 88f), new Vector2(5f, 52f), ColorDeNivel(i + 1));
+                new Vector2(-80f, 255f - i * 72f), new Vector2(5f, 52f), ColorDeNivel(i + 1));
         }
     }
 
@@ -563,6 +558,11 @@ public class CuadernoUI : MonoBehaviour
             case 1: return "I";
             case 2: return "II";
             case 3: return "III";
+            case 4: return "IV";
+            case 5: return "V";
+            case 6: return "VI";
+            case 7: return "VII";
+            case 8: return "VIII";
             default: return numero.ToString();
         }
     }
@@ -598,7 +598,7 @@ public class CuadernoUI : MonoBehaviour
     {
         Text cabecera = RelevoUI.Texto(p, "Cabecera izq", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, 232f), new Vector2(AnchoPagina, 24f), 14, TextAnchor.MiddleLeft, TintaSuave);
-        cabecera.text = "ENTRADAS · TRES RECUERDOS";
+        cabecera.text = "ÍNDICE DE RECUERDOS";
 
         recuento = RelevoUI.Texto(p, "Recuento", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, 232f), new Vector2(AnchoPagina, 24f), 14, TextAnchor.MiddleRight, Sello);
@@ -611,35 +611,12 @@ public class CuadernoUI : MonoBehaviour
         // ---------------- página derecha: la ficha de la entrada elegida
         colIlustracion = RelevoUI.Franja(p, "Ilustracion", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 175f), new Vector2(AnchoPagina, 150f), RelevoUI.ConAlfa(PapelSombra, 0.75f));
-        RelevoUI.Marco(colIlustracion.transform, PapelHondo, 2f);
-        RelevoUI.Esquinas(colIlustracion.transform, 16f, 2f, PapelHondo);
-
-        Mancha(colIlustracion.transform, "Mancha ilus A", new Vector2(150f, -30f), new Vector2(180f, 90f),
-            RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.18f), 14f);
-        Mancha(colIlustracion.transform, "Mancha ilus B", new Vector2(-160f, 40f), new Vector2(120f, 60f),
-            RelevoUI.ConAlfa(RelevoUI.Ambar, 0.12f), -8f);
-
-        colAnillo = RelevoUI.Hexagono(colIlustracion.transform, "Anillo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-186f, 4f), new Vector2(104f, 104f), RelevoUI.Cobre, false);
-
-        colNumero = RelevoUI.Texto(colIlustracion.transform, "Numero", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-186f, 4f), new Vector2(104f, 104f), 34, TextAnchor.MiddleCenter, RelevoUI.Cobre);
-        colNumero.font = RelevoUI.FuenteTitulo();
-
-        Linea(colIlustracion.transform, "Cable", new Vector2(-120f, 4f), new Vector2(236f, 4f), 2f,
-            RelevoUI.ConAlfa(PapelHondo, 0.9f));
-
-        Image clip = RelevoUI.Franja(colIlustracion.transform, "Clip", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(30f, -12f), new Vector2(96f, 16f), RelevoUI.ConAlfa(Tinta, 0.12f));
-        clip.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -12f);
-
-        colCaption = RelevoUI.Texto(colIlustracion.transform, "Caption", new Vector2(0f, 0f), new Vector2(0f, 0f),
-            new Vector2(14f, 8f), new Vector2(240f, 20f), 13, TextAnchor.LowerLeft, TintaSuave);
+        colPostal = PostalDeLiria.Crear(colIlustracion);
 
         colTitulo = RelevoUI.Texto(p, "Col titulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 62f), new Vector2(AnchoPagina, 34f), 24, TextAnchor.MiddleLeft, Tinta);
         colTitulo.font = RelevoUI.FuenteTitulo();
-        colTitulo.fontStyle = FontStyle.Bold;
+        colTitulo.fontStyle = FontStyle.Normal;
 
         colSubtitulo = RelevoUI.Texto(p, "Col subtitulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 34f), new Vector2(AnchoPagina, 22f), 14, TextAnchor.MiddleLeft, Sello);
@@ -651,17 +628,7 @@ public class CuadernoUI : MonoBehaviour
             new Vector2(ColDer, -12f), new Vector2(AnchoPagina, 56f), 17, TextAnchor.MiddleLeft, Tinta);
 
         colTexto = RelevoUI.Texto(p, "Col texto", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -96f), new Vector2(AnchoPagina, 104f), 15, TextAnchor.UpperLeft, TintaSuave);
-
-        colSello = RelevoUI.Franja(p, "Col sello", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer + 150f, 127f), new Vector2(230f, 54f), new Color(0f, 0f, 0f, 0f));
-        colSello.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -7f);
-        colSelloBordes = new List<Image>();
-        RelevoUI.Marco(colSello.transform, RelevoUI.ConAlfa(Sello, 0.8f), 3f, colSelloBordes);
-
-        colSelloTexto = RelevoUI.Texto(colSello.transform, "Col sello texto", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(230f, 54f), 20, TextAnchor.MiddleCenter, RelevoUI.ConAlfa(Sello, 0.9f));
-        colSelloTexto.font = RelevoUI.FuenteTitulo();
+            new Vector2(ColDer, -96f), new Vector2(AnchoPagina, 104f), 17, TextAnchor.UpperLeft, TintaSuave);
 
         colCta = RelevoUI.Capsula(p, "Col cta", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, -226f), new Vector2(AnchoPagina, 42f), RelevoUI.ConAlfa(Sello, 0.9f));
@@ -689,7 +656,7 @@ public class CuadernoUI : MonoBehaviour
         e.numero = RelevoUI.Texto(e.raiz.transform, "Numero", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
             new Vector2(16f, 0f), new Vector2(96f, 96f), 32, TextAnchor.MiddleCenter, RelevoUI.Cobre);
         e.numero.font = RelevoUI.FuenteTitulo();
-        e.numero.text = (indice + 1).ToString();
+        e.numero.text = (indice + 1).ToString("00");
 
         e.chip = RelevoUI.Capsula(e.raiz.transform, "Chip", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(128f, -12f), new Vector2(168f, 24f), RelevoUI.Ambar);
@@ -699,8 +666,8 @@ public class CuadernoUI : MonoBehaviour
         e.chipTexto.fontStyle = FontStyle.Bold;
 
         e.titulo = RelevoUI.Texto(e.raiz.transform, "Titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(128f, -42f), new Vector2(AnchoPagina - 150f, 26f), 19, TextAnchor.UpperLeft, Tinta);
-        e.titulo.font = RelevoUI.FuenteTitulo();
+            new Vector2(128f, -42f), new Vector2(AnchoPagina - 150f, 28f), 21, TextAnchor.UpperLeft, Tinta);
+        e.titulo.font = RelevoUI.Fuente();
         e.titulo.fontStyle = FontStyle.Bold;
 
         e.lugar = RelevoUI.Texto(e.raiz.transform, "Lugar", new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -714,28 +681,6 @@ public class CuadernoUI : MonoBehaviour
         e.cinta = RelevoUI.Franja(e.raiz.transform, "Marcapaginas", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(-6f, 6f), new Vector2(10f, 0f), Sello);
 
-        // Página arrancada: el hueco que dejó la hoja y su canto desgarrado, con el hilo suelto. Solo
-        // se enciende si falta el recuerdo, para que una entrada bloqueada no se lea como una tarjeta
-        // vacía sino como una hoja que alguien arrancó del cuaderno.
-        e.roto = new GameObject("Roto");
-        e.roto.transform.SetParent(e.raiz.transform, false);
-        RectTransform rt = e.roto.AddComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
-
-        RelevoUI.Franja(e.roto.transform, "Hueco", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0f),
-            new Vector2(0f, -65f), new Vector2(556f, 34f), RelevoUI.ConAlfa(PapelHondo, 0.45f));
-
-        Dientes(e.roto.transform, new Vector2(-260f, -32f), new Vector2(260f, -32f), 14f,
-            RelevoUI.ConAlfa(PapelClaro, 0.95f), 22);
-
-        Cosido(e.roto.transform, new Vector2(-150f, -46f), 34f, RelevoUI.ConAlfa(Sello, 0.6f));
-        Cosido(e.roto.transform, new Vector2(180f, -46f), 28f, RelevoUI.ConAlfa(Sello, 0.5f));
-
-        e.roto.SetActive(false);
-
         return e;
     }
 
@@ -746,68 +691,12 @@ public class CuadernoUI : MonoBehaviour
         // ---- página izquierda: la ilustración ocupa la hoja
         detIlustracion = RelevoUI.Franja(p, "Ilustracion", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, 118f), new Vector2(AnchoPagina - 24f, 230f), RelevoUI.ConAlfa(PapelSombra, 0.8f));
-        RelevoUI.Marco(detIlustracion.transform, PapelHondo, 2f);
-        RelevoUI.Esquinas(detIlustracion.transform, 16f, 2f, PapelHondo);
+        detPostal = PostalDeLiria.Crear(detIlustracion);
 
-        Mancha(detIlustracion.transform, "Mancha ilus A", new Vector2(150f, -60f), new Vector2(200f, 100f),
-            RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.16f), 12f);
-        Mancha(detIlustracion.transform, "Mancha ilus B", new Vector2(-170f, 60f), new Vector2(150f, 70f),
-            RelevoUI.ConAlfa(RelevoUI.Ambar, 0.12f), -7f);
-
-        detAnillo = RelevoUI.Hexagono(detIlustracion.transform, "Anillo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-176f, 10f), new Vector2(120f, 120f), RelevoUI.Cobre, false);
-
-        detNumero = RelevoUI.Texto(detIlustracion.transform, "Numero", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-176f, 10f), new Vector2(120f, 120f), 40, TextAnchor.MiddleCenter, RelevoUI.Cobre);
-        detNumero.font = RelevoUI.FuenteTitulo();
-
-        Linea(detIlustracion.transform, "Cable", new Vector2(-104f, 10f), new Vector2(210f, 10f), 2f,
-            RelevoUI.ConAlfa(PapelHondo, 0.9f));
-
-        Image clip = RelevoUI.Franja(detIlustracion.transform, "Clip", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(28f, -14f), new Vector2(102f, 16f), RelevoUI.ConAlfa(Tinta, 0.13f));
-        clip.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -10f);
-
-        detCaption = RelevoUI.Texto(detIlustracion.transform, "Caption", new Vector2(0f, 0f), new Vector2(0f, 0f),
-            new Vector2(14f, 8f), new Vector2(300f, 20f), 13, TextAnchor.LowerLeft, TintaSuave);
-
-        // Hueco de la hoja arrancada: un vacío oscuro rodeado por el canto desgarrado del papel.
-        // Solo aparece en los recuerdos que todavía no están en el cuaderno.
-        detFotoVelada = RelevoUI.Panel(detIlustracion.transform, "Hueco arrancado", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(AnchoPagina - 24f, 230f), RelevoUI.ConAlfa(Tinta, 0.60f));
-
-        RelevoUI.Franja(detFotoVelada.transform, "Hondo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(AnchoPagina - 52f, 200f), RelevoUI.ConAlfa(Esmalte, 0.55f));
-
-        float medioAncho = (AnchoPagina - 24f) * 0.5f;
-        const float medioAlto = 115f;
-
-        Dientes(detFotoVelada.transform, new Vector2(-medioAncho, -medioAlto), new Vector2(medioAncho, -medioAlto),
-            15f, RelevoUI.ConAlfa(PapelClaro, 0.95f), 26);
-        Dientes(detFotoVelada.transform, new Vector2(-medioAncho, medioAlto), new Vector2(medioAncho, medioAlto),
-            14f, RelevoUI.ConAlfa(Papel, 0.90f), 26);
-        Dientes(detFotoVelada.transform, new Vector2(-medioAncho, -medioAlto), new Vector2(-medioAncho, medioAlto),
-            15f, RelevoUI.ConAlfa(PapelClaro, 0.90f), 12);
-        Dientes(detFotoVelada.transform, new Vector2(medioAncho, -medioAlto), new Vector2(medioAncho, medioAlto),
-            15f, RelevoUI.ConAlfa(PapelClaro, 0.90f), 12);
-
-        Text velada = RelevoUI.Texto(detFotoVelada.transform, "Velada texto", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, 12f), new Vector2(400f, 34f), 20, TextAnchor.MiddleCenter, RelevoUI.ConAlfa(PapelSombra, 0.88f));
-        velada.font = RelevoUI.FuenteTitulo();
-        velada.text = "HOJA ARRANCADA";
-
-        Text veladaPie = RelevoUI.Texto(detFotoVelada.transform, "Velada pie", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, -20f), new Vector2(420f, 24f), 13, TextAnchor.MiddleCenter, RelevoUI.ConAlfa(PapelSombra, 0.62f));
-        veladaPie.text = "aquí estaba la fotografía del tramo";
-
-        Mancha(detFotoVelada.transform, "Mancha velada", new Vector2(120f, -76f), new Vector2(220f, 78f),
-            RelevoUI.ConAlfa(Tinta, 0.35f), 18f);
-
-        // ---- página izquierda: identidad
         detTitulo = RelevoUI.Texto(p, "Det titulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, -32f), new Vector2(AnchoPagina - 24f, 34f), 26, TextAnchor.MiddleLeft, Tinta);
         detTitulo.font = RelevoUI.FuenteTitulo();
-        detTitulo.fontStyle = FontStyle.Bold;
+        detTitulo.fontStyle = FontStyle.Normal;
 
         detOrigen = RelevoUI.Texto(p, "Det origen", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, -62f), new Vector2(AnchoPagina - 24f, 22f), 14, TextAnchor.MiddleLeft, Sello);
@@ -918,6 +807,7 @@ public class CuadernoUI : MonoBehaviour
         detCtaTexto = RelevoUI.Texto(p, "Det cta texto", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, -218f), new Vector2(AnchoPagina, 42f), 17, TextAnchor.MiddleCenter, PapelClaro);
         detCtaTexto.fontStyle = FontStyle.Bold;
+        detCtaTexto.text = "Enter · volver al índice";
 
         detAviso = RelevoUI.Texto(p, "Det aviso", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, -218f), new Vector2(AnchoPagina, 42f), 16, TextAnchor.MiddleCenter,
@@ -934,7 +824,7 @@ public class CuadernoUI : MonoBehaviour
         for (int i = 0; i < Niveles; i++)
         {
             int nivel = i + 1;
-            LevelDefinition definicion = DefinicionesPorDefecto.Obtener(nivel);
+            LevelDefinition definicion = DefinicionesPorDefecto.FichaDelCuaderno(nivel);
 
             bool tiene = definicion != null && SaveManager.TieneRecuerdo(definicion.recuerdoIdentificador);
             bool leido = tiene && SaveManager.RecuerdoLeido(definicion.recuerdoIdentificador);
@@ -981,13 +871,12 @@ public class CuadernoUI : MonoBehaviour
             e.chipTexto.color = tiene ? Esmalte : Tinta;
 
             e.cinta.rectTransform.sizeDelta = new Vector2(10f, elegida ? 92f : 0f);
-            e.roto.SetActive(!tiene);
 
             if (definicion == null) continue;
 
-            e.titulo.text = tiene ? definicion.recuerdoTitulo : "— hoja arrancada —";
+            e.titulo.text = definicion.tituloIntro;
             e.titulo.color = tiene ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.9f);
-            e.lugar.text = "Origen · " + definicion.tituloIntro;
+            e.lugar.text = tiene ? definicion.recuerdoTitulo : "Recuerdo por encontrar";
 
             e.pista.text = leido
                 ? "abierto en el cuaderno"
@@ -995,6 +884,14 @@ public class CuadernoUI : MonoBehaviour
 
             e.pista.color = leido ? RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.95f)
                 : (tiene ? RelevoUI.ConAlfa(RelevoUI.Ambar, 0.95f) : RelevoUI.ConAlfa(Sello, 0.75f));
+            if (elegida)
+            {
+                e.fondo.color = new Color32(30, 69, 69, 255);
+                e.titulo.color = PapelClaro;
+                e.lugar.color = new Color32(238, 220, 180, 255);
+                e.pista.color = new Color32(200, 221, 205, 255);
+                e.anillo.color = e.numero.color = new Color32(239, 188, 109, 255);
+            }
         }
 
         recuento.text = "encontrados " + encontrados + " de " + Niveles + "  ·  leídos " + leidos;
@@ -1009,11 +906,11 @@ public class CuadernoUI : MonoBehaviour
         {
             bool elegida = i == seleccion;
             Color acento = ColorDeNivel(i + 1);
-            float y = 220f - i * 88f;
+            float y = 255f - i * 72f;
 
             pestanas[i].color = elegida ? PapelClaro : RelevoUI.ConAlfa(PapelSombra, 0.95f);
             pestanas[i].rectTransform.anchoredPosition = new Vector2(elegida ? 14f : 4f, y);
-            pestanas[i].rectTransform.sizeDelta = new Vector2(elegida ? 104f : 88f, elegida ? 82f : 74f);
+            pestanas[i].rectTransform.sizeDelta = new Vector2(elegida ? 104f : 88f, elegida ? 68f : 58f);
 
             pestanasTexto[i].color = elegida ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.85f);
             pestanasTexto[i].fontStyle = elegida ? FontStyle.Bold : FontStyle.Normal;
@@ -1032,7 +929,7 @@ public class CuadernoUI : MonoBehaviour
         vistaColeccion.SetActive(!abierto);
         vistaRecuerdo.SetActive(abierto);
 
-        LevelDefinition d = DefinicionesPorDefecto.Obtener(seleccion + 1);
+        LevelDefinition d = DefinicionesPorDefecto.FichaDelCuaderno(seleccion + 1);
         bool tiene = d != null && SaveManager.TieneRecuerdo(d.recuerdoIdentificador);
         bool leido = tiene && SaveManager.RecuerdoLeido(d.recuerdoIdentificador);
 
@@ -1049,19 +946,13 @@ public class CuadernoUI : MonoBehaviour
         if (d == null) return;
 
         // ---------------- ficha de la derecha (colección)
-        colIlustracion.color = RelevoUI.ConAlfa(tiene ? RelevoUI.Aclarar(PapelSombra, 0.12f) : PapelSombra, 0.75f);
-        colAnillo.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.75f);
-        colNumero.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.9f);
-        colNumero.text = pagina.ToString();
-        colCaption.text = tiene
-            ? "ILUSTRACIÓN · TRAMO " + pagina + " · " + d.tituloIntro.ToUpperInvariant()
-            : "ILUSTRACIÓN PENDIENTE · TRAMO " + pagina;
+        colPostal.Mostrar(d);
 
         colTitulo.text = tiene ? d.recuerdoTitulo : "Recuerdo sin encontrar";
         colTitulo.color = tiene ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.9f);
 
         colSubtitulo.text = "Nivel de origen · " + d.nombre;
-        colSubtitulo.color = tiene ? Sello : RelevoUI.ConAlfa(Sello, 0.5f);
+        colSubtitulo.color = tiene ? Sello : Sello;
 
         colNota.text = tiene ? d.recuerdoTexto : "«—»";
         colNota.color = tiene ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.7f);
@@ -1070,12 +961,8 @@ public class CuadernoUI : MonoBehaviour
             ? d.textoIntro
             : "Esta hoja está cosida al lomo. El recuerdo del " + d.tituloIntro
               + " todavía no ha llegado al cuaderno: Nilo tiene que encontrarlo en el tramo.";
-        colTexto.color = tiene ? TintaSuave : RelevoUI.ConAlfa(TintaSuave, 0.75f);
-
-        colSelloTexto.text = !tiene ? "SIN ENCONTRAR" : (leido ? "LEÍDO" : "DESCUBIERTO");
-        colSelloTexto.color = !tiene ? RelevoUI.ConAlfa(Gris, 0.85f)
-            : (leido ? RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.9f) : RelevoUI.ConAlfa(Sello, 0.85f));
-        Tintar(colSelloBordes, RelevoUI.ConAlfa(colSelloTexto.color, 0.8f));
+        colTexto.text = HuellaDelCanal.NotaDeViaje(d.indice, colTexto.text);
+        colTexto.color = tiene ? TintaSuave : TintaSuave;
 
         colCta.color = tiene ? RelevoUI.ConAlfa(Sello, 0.9f) : RelevoUI.ConAlfa(PapelHondo, 0.7f);
         colCtaTexto.color = tiene ? PapelClaro : RelevoUI.ConAlfa(PapelClaro, 0.8f);
@@ -1084,19 +971,13 @@ public class CuadernoUI : MonoBehaviour
             : "Enter · abrir la hoja incompleta";
 
         // ---------------- doble página (recuerdo)
-        detIlustracion.color = RelevoUI.ConAlfa(tiene ? RelevoUI.Aclarar(PapelSombra, 0.12f) : PapelSombra, 0.8f);
-        detAnillo.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.8f);
-        detNumero.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.9f);
-        detNumero.text = pagina.ToString();
-        detCaption.text = tiene
-            ? "RECUERDO " + pagina + " · " + d.tituloIntro.ToUpperInvariant()
-            : "PÁGINA ARRANCADA · TRAMO " + pagina;
+        detPostal.Mostrar(d);
 
         detTitulo.text = tiene ? d.recuerdoTitulo : "Hoja arrancada";
         detTitulo.color = tiene ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.95f);
 
         detOrigen.text = "Nivel de origen · " + d.nombre;
-        detOrigen.color = tiene ? Sello : RelevoUI.ConAlfa(Sello, 0.5f);
+        detOrigen.color = tiene ? Sello : Sello;
 
         detChip.color = !tiene ? RelevoUI.ConAlfa(Gris, 0.7f)
             : (leido ? RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.85f) : RelevoUI.ConAlfa(acento, 0.85f));
@@ -1114,10 +995,10 @@ public class CuadernoUI : MonoBehaviour
         detFrase.text = tiene ? d.recuerdoTexto : "— hoja arrancada —";
         detFrase.color = tiene ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.7f);
 
-        detNarrativa.text = tiene ? d.textoIntro : string.Empty;
+        detNarrativa.text = HuellaDelCanal.NotaDeViaje(d.indice, tiene ? d.textoIntro : string.Empty);
         detNarrativa.gameObject.SetActive(tiene);
 
-        detFotoVelada.SetActive(!tiene);
+
         detFragmentos.SetActive(!tiene);
         detCosido.SetActive(!tiene);
         if (detArrancado != null) detArrancado.SetActive(!tiene);

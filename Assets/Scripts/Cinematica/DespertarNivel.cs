@@ -174,8 +174,8 @@ public sealed class DespertarNivel : MonoBehaviour
         if (!dialogoLanzado && T >= T_Dialogo)
         {
             dialogoLanzado = true;
-            dialogo.Encolar("Maia", "¿Hola? ¿Hay alguien en la red? ...¡Nilo! Sabía que ibas a despertar.", RelevoUI.Verde);
-            dialogo.Encolar("Maia", "Llevas... déjame ver... mucho rato dormido. No te digo cuánto, porque te vas a sentir mal.", RelevoUI.Verde);
+            dialogo.Encolar("Maia", "¿Me copias, Nilo? Si te llega esto desde el muelle, deja la radio encendida. Te hago compañía hasta el amanecer.", RelevoUI.Verde);
+            dialogo.Encolar("Maia", "Casi me olvido. Dejé la batería donde siempre. Si alguien pregunta, esta vez sí le puse la tapa.", RelevoUI.Verde);
         }
         bool hablando = dialogoLanzado && dialogo.Abierto;
         if (hablando)

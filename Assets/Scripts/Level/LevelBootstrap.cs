@@ -263,6 +263,7 @@ public class LevelBootstrap : MonoBehaviour
         }
 
         CrearPiezasDelPatio(layout, raizActores, baseA, puente, indiceNivel);
+        HuellaDelCanal.Montar(indiceNivel, layout, raizActores);
     }
 
     /// <summary>
@@ -316,10 +317,10 @@ public class LevelBootstrap : MonoBehaviour
     void Enlazar(LevelLayout layout, LevelDefinition def)
     {
         // El audio no tiene representación visual, así que nunca se hornea.
-        if (Object.FindObjectsByType<AudioDirector>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
-        {
-            new GameObject("Audio").AddComponent<AudioDirector>();
-        }
+        var audioNivel = Object.FindFirstObjectByType<AudioDirector>();
+        if (audioNivel == null) audioNivel = new GameObject("Audio").AddComponent<AudioDirector>();
+        if (gameObject.scene.name == LevelManager.NombreEscenaNivel(indiceNivel))
+            audioNivel.IniciarMusicaNivel();
 
         RelevoInput entrada = new RelevoInput(acciones);
         RelevoGame.Input = entrada;
@@ -418,7 +419,11 @@ public class LevelBootstrap : MonoBehaviour
 
         System.Action intro = () =>
         {
-            if (def != null && !reintento) GameEvents.RaiseMensajeMostrado(def.tituloIntro, def.textoIntro);
+            if (def != null && !reintento)
+            {
+                string huella = indiceNivel == 8 ? HuellaDelCanal.Anotacion(SaveManager.Datos.ramalLonja) : "";
+                GameEvents.RaiseMensajeMostrado(def.tituloIntro, string.IsNullOrEmpty(huella) ? def.textoIntro : huella + "\n\n" + def.textoIntro);
+            }
             if (def != null && !reintento && (def.tutorialPatio || def.tutorialCondensadores) && TutorialMaia.PrimeraVez(indiceNivel))
             {
                 if (def.tutorialCondensadores) TutorialMaia.PresentacionCondensadores();

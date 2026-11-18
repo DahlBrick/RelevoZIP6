@@ -16,6 +16,51 @@ public class PlayerInteractor : MonoBehaviour
 
     PlayerController jugador;
     IInteractable actual;
+    Transform marco;
+    readonly LineRenderer[] esquinas = new LineRenderer[4];
+    Material colorMarco;
+
+    void CrearMarco()
+    {
+        marco = new GameObject("Foco de interacción").transform;
+        marco.SetParent(transform, false);
+        for (int i = 0; i < esquinas.Length; i++)
+        {
+            var esquina = new GameObject("Esquina");
+            esquina.transform.SetParent(marco, false);
+            esquina.transform.localRotation = Quaternion.Euler(0f, 90f * i, 0f);
+            var linea = esquina.AddComponent<LineRenderer>();
+            linea.useWorldSpace = false;
+            linea.widthMultiplier = 0.10f;
+            linea.numCornerVertices = 2;
+            linea.positionCount = 3;
+            linea.SetPositions(new[] { new Vector3(0.42f, 0f, 0.85f), new Vector3(0.85f, 0f, 0.85f), new Vector3(0.85f, 0f, 0.42f) });
+            linea.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            linea.receiveShadows = false;
+            esquinas[i] = linea;
+        }
+    }
+
+    void LateUpdate()
+    {
+        if (actual == null || (actual as Component) == null || (RelevoGame.UI != null && RelevoGame.UI.BloqueaJuego))
+        {
+            if (marco != null && marco.gameObject.activeSelf) marco.gameObject.SetActive(false);
+            return;
+        }
+        if (marco == null) CrearMarco();
+        if (!marco.gameObject.activeSelf) marco.gameObject.SetActive(true);
+        Vector3 punto = actual.Ancla.position;
+        punto.y = transform.position.y + 0.27f;
+        marco.SetPositionAndRotation(punto, Quaternion.identity);
+        Material tinta = RelevoPalette.MaterialDe(actual.Disponible ? ClaveMaterial.Ambar : ClaveMaterial.Coral);
+        if (colorMarco != tinta)
+        {
+            colorMarco = tinta;
+            foreach (var esquina in esquinas) esquina.sharedMaterial = tinta;
+        }
+    }
+
     string ultimoAviso;
 
     public IInteractable Actual { get { return actual; } }
@@ -41,6 +86,7 @@ public class PlayerInteractor : MonoBehaviour
     {
         actual = null;
         ultimoAviso = null;
+        if (marco != null) marco.gameObject.SetActive(false);
     }
 
     public void Inicializar(PlayerController jugador)
@@ -70,7 +116,7 @@ public class PlayerInteractor : MonoBehaviour
         if (actual != null)
         {
             disponible = actual.Disponible;
-            aviso = disponible ? "[E] " + actual.Verbo : actual.Motivo;
+            aviso = disponible ? actual.Verbo : actual.Motivo;
         }
 
         if (aviso != ultimoAviso)

@@ -48,6 +48,9 @@ public class AudioDirector : MonoBehaviour
 
     [SerializeField, Range(0f, 1f)] float volumen = 0.45f;
 
+    [Header("Música del canal")]
+    [SerializeField, Range(0f, 1f)] float volumenMusica = 0.24f;
+    AudioSource musica;
     AudioSource fuente;
     readonly Dictionary<Tono, AudioClip> tonosGenerados = new Dictionary<Tono, AudioClip>();
 
@@ -60,6 +63,20 @@ public class AudioDirector : MonoBehaviour
         fuente.volume = volumen;
         GenerarTonos();
         GameEvents.SonidoSolicitado += Reproducir;
+    }
+
+    public void IniciarMusicaNivel()
+    {
+        if (musica != null) return;
+        var tema = Resources.Load<AudioClip>("MareasDeLiria");
+        if (tema == null) return;
+        musica = gameObject.AddComponent<AudioSource>();
+        musica.playOnAwake = false;
+        musica.spatialBlend = 0f;
+        musica.loop = true;
+        musica.clip = tema;
+        musica.volume = volumenMusica;
+        musica.Play();
     }
 
     void OnDestroy()

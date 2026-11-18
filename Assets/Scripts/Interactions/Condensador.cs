@@ -97,6 +97,8 @@ public sealed class Condensador : MonoBehaviour
             }
         }
 
+        if (baseEnergia.Puente != null)
+            baseEnergia.Puente.MostrarCarga(Sosteniendo ? Carga : 0f);
         Pintar(Sosteniendo && Carga < 0.35f);
 
         if (luz != null)

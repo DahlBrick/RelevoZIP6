@@ -34,7 +34,7 @@ public static class TutorialMaia
             titulo = "Maia",
             texto = "¿Lo tienes claro, Nilo?",
             acento = RelevoUI.Verde,
-            opciones = new[] { "Entendido, Maia", "Explícamelo otra vez" },
+            opciones = new[] { "Guardar la indicación", "Repetir el mensaje" },
             alElegir = delegate (int i) { if (i == 1) Presentacion(); }
         });
     }
@@ -69,7 +69,7 @@ public static class TutorialMaia
             titulo = "Maia",
             texto = "¿Lo tienes claro, Nilo?",
             acento = RelevoUI.Verde,
-            opciones = new[] { "Entendido, Maia", "Explícamelo otra vez" },
+            opciones = new[] { "Guardar la indicación", "Repetir el mensaje" },
             alElegir = delegate (int i) { if (i == 1) PresentacionCondensadores(); }
         });
     }

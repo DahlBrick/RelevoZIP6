@@ -89,6 +89,38 @@ public class TemporaryBridge : MonoBehaviour
         return false;
     }
 
+    // Dos bandas sobre cada tablero muestran la carga que aún sostiene el cruce.
+    readonly List<Transform> bandasCarga = new List<Transform>();
+    public void MostrarCarga(float fraccion)
+    {
+        if (fraccion <= 0f && bandasCarga.Count == 0) return;
+        if (bandasCarga.Count == 0)
+        {
+            var material = RelevoPalette.MaterialDe(ClaveMaterial.Ambar);
+            foreach (var tramo in tramos)
+            {
+                if (tramo.plataforma == null) continue;
+                for (int lado = -1; lado <= 1; lado += 2)
+                {
+                    var banda = DioramaBuilder.CrearCaja("Reserva del puente", tramo.plataforma,
+                        new Vector3(lado * 0.39f, 0.54f, 0f), new Vector3(0.075f, 0.08f, 0.82f), material, false);
+                    bandasCarga.Add(banda.transform);
+                }
+            }
+        }
+        foreach (var banda in bandasCarga)
+        {
+            if (banda.gameObject.activeSelf != (fraccion > 0f)) banda.gameObject.SetActive(fraccion > 0f);
+            if (fraccion <= 0f) continue;
+            Vector3 tamano = banda.localScale;
+            tamano.z = 0.82f * Mathf.Clamp01(fraccion);
+            banda.localScale = tamano;
+            Vector3 posicion = banda.localPosition;
+            posicion.z = (0.82f - tamano.z) * 0.5f;
+            banda.localPosition = posicion;
+        }
+    }
+
     public void Activar(bool activo)
     {
         if (Desplegado == activo) return;

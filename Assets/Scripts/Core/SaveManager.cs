@@ -7,6 +7,7 @@ using UnityEngine;
 public class SaveData
 {
     public int version = 1;
+    public DestinoCorriente ramalLonja;
     public List<string> nivelesCompletados = new List<string>();
     public List<string> recuerdos = new List<string>();
 
@@ -85,10 +86,13 @@ public static class SaveManager
         return Datos.nivelesCompletados.Contains(ClaveNivel(indice));
     }
 
-    public static void MarcarNivelCompletado(int indice)
+    public static void MarcarNivelCompletado(int indice, DestinoCorriente ramal = DestinoCorriente.Ninguno)
     {
-        if (NivelCompletado(indice)) return;
-        Datos.nivelesCompletados.Add(ClaveNivel(indice));
+        bool completado = NivelCompletado(indice);
+        bool nuevaEleccion = indice == 7 && ramal != DestinoCorriente.Ninguno && Datos.ramalLonja != ramal;
+        if (completado && !nuevaEleccion) return;
+        if (!completado) Datos.nivelesCompletados.Add(ClaveNivel(indice));
+        if (nuevaEleccion) Datos.ramalLonja = ramal;
         Guardar();
     }
 

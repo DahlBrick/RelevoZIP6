@@ -10,6 +10,19 @@ using UnityEngine.SceneManagement;
 public class LevelManager : MonoBehaviour
 {
     public int IndiceNivel = 1;
+    public DestinoCorriente RamalLonja { get; private set; }
+
+    public void AlimentarLonja(string palanca)
+    {
+        if (IndiceNivel != 7 || RamalLonja != DestinoCorriente.Ninguno) return;
+        RamalLonja = palanca == "L" ? DestinoCorriente.Mercado : DestinoCorriente.Radio;
+        var huella = FindFirstObjectByType<HuellaDelCanal>();
+        if (huella != null) huella.Mostrar(RamalLonja);
+        GameEvents.RaiseMensajeMostrado("Lonja de las Dos Voces", RamalLonja == DestinoCorriente.Mercado
+            ? "Se enciende el farol sobre los cajones. Al fondo arranca una bomba. Por primera vez en todo el muelle se oye el agua bajar."
+            : "El piloto de la antena parpadea. «Buenas noches a quienes siguen de turno». La aguja vuelve a moverse. En los puestos del norte cae la tarde.");
+    }
+
     public string NombreNivel = "Nivel 1";
     public LevelDefinition Definicion;
 
@@ -146,6 +159,14 @@ public class LevelManager : MonoBehaviour
         if (IndiceNivel >= 4 && bateria != null)
         {
             if (bateria.Estado == EstadoBateria.EnSuelo) Publicar("Recoge la batería.");
+            else if (IndiceNivel == 7 && RamalLonja == DestinoCorriente.Ninguno)
+                Publicar(RelevoGame.Jugador != null && RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position).x <= 2
+                    ? "Carga el condensador y cruza con la batería." : "Elige a quién dar corriente. Mercado al norte, emisora al sur.");
+            else if (IndiceNivel == 8 && !CompuertaAbierta()) Publicar("Sujeta la reja para pasar la segunda caja al taller.");
+            else if (IndiceNivel == 8 && !CajaEnPanel()) Publicar("Lleva la segunda caja al panel del taller.");
+            else if (IndiceNivel == 8 && !Accionada("L")) Publicar("Abre el regreso desde la palanca de la sala de cintas.");
+            else if (IndiceNivel == 8 && RelevoGame.Jugador != null && RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position).x >= 15)
+                Publicar("Lleva la batería al condensador y cruza hacia el archivo.");
             else if (IndiceNivel == 6 && !Accionada("L")) Publicar("Alcanza el torno del muelle oeste.");
             else if (IndiceNivel == 6 && !Accionada("K")) Publicar("Abre los barrotes y alcanza la palanca de la sala de máquinas.");
             else if (IndiceNivel == 5 && !Accionada("L")) Publicar("Cruza la dársena y suelta el torno del oeste.");
@@ -370,7 +391,7 @@ public class LevelManager : MonoBehaviour
         }
 
         Completado = true;
-        SaveManager.MarcarNivelCompletado(IndiceNivel);
+        SaveManager.MarcarNivelCompletado(IndiceNivel, RamalLonja);
 
         AudioDirector.Pedir(Tono.Salida);
         AudioDirector.Pedir(Tono.Faro);
@@ -384,9 +405,98 @@ public class LevelManager : MonoBehaviour
         ActualizarObjetivo();
     }
 
+    bool PuenteActivo(string id)
+    {
+        return Puentes.Exists(p => p != null && p.Identificador == id && p.Desplegado);
+    }
+
+    bool CajaEnPanel()
+    {
+        var panel = RelevoGame.Layout.Casillas('u');
+        return panel.Count > 0 && CajaEmpujable.AsentadaEn(panel[0]) != null;
+    }
+
+    string PistaDelPanel()
+    {
+        return CajaEnPanel()
+            ? "La caja ya alimenta el panel. Sigue la línea turquesa y gira el primer disco donde se interrumpe."
+            : "El rombo necesita peso incluso después de que te alejes. Busca desde qué lado puedes empujar la caja.";
+    }
+
+    string PistaDelTorno(BatteryController bateria)
+    {
+        if (bateria.BaseActual == null || bateria.BaseActual.Identificador != "A")
+            return "Busca la base A en el taller. La línea de sus discos llega hasta el puente del torno.";
+        return PuenteActivo("B")
+            ? "El puente ámbar ya está tendido. Deja la batería en A mientras vas a la palanca."
+            : "La base A ya tiene corriente. Sigue el ámbar desde la toma y gira el disco donde se corta.";
+    }
+
+    string PistaDelCondensador(BatteryController bateria)
+    {
+        var toma = Bases.Find(b => b != null && b.Identificador == "D");
+        if (toma == null || toma.Condensador == null) return "Busca la torre de la base D.";
+        if (toma.Condensador.Sosteniendo) return "El condensador está descargándose. Cruza ahora con la batería.";
+        if (bateria.BaseActual != toma) return "Inserta la batería en D y mira las barras de la torre.";
+        return toma.Condensador.Carga < 0.99f
+            ? "Deja la batería puesta hasta que se encienda la última barra."
+            : "La torre está llena. Retira la batería y cruza el puente mientras las barras siguen encendidas.";
+    }
+
+    public string PistaActual()
+    {
+        var bateria = RelevoGame.Bateria;
+        if (IndiceNivel < 4 || IndiceNivel > LevelLayouts.Cantidad || bateria == null || RelevoGame.Jugador == null)
+            return Definicion != null ? Definicion.pistaMaia : "";
+        if (Completado) return Definicion.textoCierre;
+        if (bateria.Estado == EstadoBateria.EnSuelo) return "Recoge la batería junto al punto de llegada. Nilo recarga su reserva cuando la lleva encima.";
+
+        var casilla = RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position);
+        bool galeria = Accionada("L");
+        bool enBaseA = bateria.BaseActual != null && bateria.BaseActual.Identificador == "A";
+        switch (IndiceNivel)
+        {
+            case 7:
+                if (casilla.x <= 2) return PistaDelCondensador(bateria);
+                if (RamalLonja == DestinoCorriente.Ninguno)
+                    return "El mercado necesita la caja en el rombo y los discos turquesa alineados al norte. Para la emisora, usa la base A y sigue el cobre hacia el sur. Solo podrás bajar una palanca.";
+                if (enBaseA) return "Vuelve por el puente de la emisora. Retira la batería de A y toma la pasarela del sureste.";
+                return "Cruza al embarcadero del este por la pasarela del ramal que elegiste.";
+            case 8:
+                if (!CompuertaAbierta()) return "Empuja la caja del sur una casilla al este y después al sur. Déjala en el rombo mientras pasas la otra por la reja.";
+                if (!CajaEnPanel()) return "La caja que queda va al taller de enfrente. Pásala por los barrotes y empújala al norte sobre el panel.";
+                if (!PuenteActivo("R")) return PistaDelPanel();
+                if (!galeria) return "Cruza el puente turquesa hacia la emisora. Desde A, el cobre lleva al puente de la palanca norte.";
+                if (enBaseA) return "Recupera la batería en A. La palanca abrió una segunda pasarela al archivo.";
+                if (casilla.x >= 15) return PistaDelCondensador(bateria);
+                break;
+            case 4:
+                if (casilla.x <= 5 && casilla.y >= 5)
+                    return PuenteActivo("R") && CajaEnPanel() ? "El paso turquesa está firme. Lleva la batería al taller de enfrente." : PistaDelPanel();
+                if (!galeria) return PistaDelTorno(bateria);
+                if (enBaseA) return "La palanca abrió el regreso. Recupera la batería en A y toma la pasarela hacia la galería.";
+                if (casilla.x > 5) return PistaDelCondensador(bateria);
+                break;
+            case 5:
+                if (casilla.y <= 3 && casilla.x <= 12) return PistaDelCondensador(bateria);
+                if (!galeria) return PistaDelTorno(bateria);
+                if (enBaseA) return "El torno ya abrió la pasarela del este. Vuelve por la batería antes de tomarla.";
+                if (!PuenteActivo("R") || !CajaEnPanel()) return PistaDelPanel();
+                break;
+            case 6:
+                if (!galeria) return PuenteActivo("R") && CajaEnPanel() ? "Cruza al muelle oeste. Su torno despliega la pasarela del sur." : PistaDelPanel();
+                if (!CompuertaAbierta()) return "La pasarela del sur queda fija. Ahora puedes sacar la caja del primer rombo y llevarla al de los barrotes.";
+                if (!Accionada("K")) return PistaDelTorno(bateria);
+                if (enBaseA) return "El segundo torno dejó abierta la pasarela del extremo sur. Úsala para llevar la batería a la sala del este.";
+                if (casilla.y >= 6) return PistaDelCondensador(bateria);
+                break;
+        }
+        return "Ya tienes paso. Acércate al pórtico iluminado con la batería en las manos.";
+    }
+
     public void MostrarPista()
     {
-        string pista = Definicion != null ? Definicion.pistaMaia : "";
+        string pista = PistaActual();
         if (string.IsNullOrEmpty(pista) && Maia != null) pista = Maia.TextoPista;
         if (string.IsNullOrEmpty(pista)) pista = "La batería abre el paso eléctrico; la palanca abre el regreso.";
 
@@ -478,6 +588,8 @@ public class LevelManager : MonoBehaviour
             case 4: return "Nivel4_AduanaDeLaMarea";
             case 5: return "Nivel5_DarsenaDelTorno";
             case 6: return "Nivel6_EsclusaDeLasDosLlaves";
+            case 7: return "Nivel7_LonjaDeLasDosVoces";
+            case 8: return "Nivel8_ArchivoDeLaFrecuencia";
             default: return "Nivel1_MuelleDeCobre";
         }
     }

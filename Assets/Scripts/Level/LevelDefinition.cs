@@ -41,6 +41,20 @@ public class LevelDefinition : ScriptableObject
 /// <summary>Valores por defecto cuando el nivel no tiene un asset asignado.</summary>
 public static class DefinicionesPorDefecto
 {
+    static readonly LevelDefinition[] fichas = new LevelDefinition[LevelLayouts.Cantidad];
+
+    public static LevelDefinition FichaDelCuaderno(int indice)
+    {
+        int pagina = indice - 1;
+        if (pagina < 0 || pagina >= fichas.Length) return null;
+        if (fichas[pagina] == null)
+        {
+            fichas[pagina] = Obtener(indice);
+            fichas[pagina].hideFlags = HideFlags.HideAndDontSave;
+        }
+        return fichas[pagina];
+    }
+
     public static LevelDefinition Obtener(int indice)
     {
         LevelDefinition d = ScriptableObject.CreateInstance<LevelDefinition>();
@@ -81,7 +95,7 @@ public static class DefinicionesPorDefecto
                 d.textoIntro = "El agua ya lame los sellos de la aduana. Al otro lado del canal queda una puerta abierta para los botes del correo.";
                 d.pistaMaia = "Lleva la caja al rombo y gira los discos con E hasta que el turquesa alcance la orilla. En el taller, sigue el ámbar hasta la pasarela de la galería.";
                 d.reservaCasillas = 18;
-                d.textoCierre = "Los sellos están secos. El primer saco de cartas sale en la barca de la tarde.";
+                d.textoCierre = "El primer saco de cartas sale en la barca de la tarde. En el mostrador queda un sobre para la emisora. El matasellos es de la noche de la crecida.";
                 d.recuerdoIdentificador = "nivel4_recuerdo";
                 d.recuerdoTitulo = "La última saca";
                 d.recuerdoTexto = "«Guardábamos arriba las cartas sin dueño. Cuando bajaba la marea, alguien siempre venía a preguntar.»";
@@ -111,10 +125,34 @@ public static class DefinicionesPorDefecto
                 d.recuerdoTexto = "«Mi hermana abría la primera hoja. Yo esperaba el golpe de su llave para abrir la segunda.»";
                 break;
 
+            case 7:
+                d.nombre = "Nivel 7 - Lonja de las Dos Voces";
+                d.tituloIntro = "Lonja de las Dos Voces";
+                d.textoIntro = "La radio de la lonja enciende su piloto. «Buenas noches a quienes siguen de turno». Al norte esperan los puestos del mercado. Al sur está la emisora. Solo la primera palanca que bajes recibirá corriente.";
+                d.pistaMaia = "Desde el muelle de carga, la caja alimenta la línea turquesa del mercado. La batería alimenta la línea ámbar de la emisora.";
+                d.textoCierre = "En la taquilla queda una llave del archivo. El papel que la envuelve lleva la fecha de la crecida.";
+                d.recuerdoIdentificador = "nivel7_recuerdo";
+                d.recuerdoTitulo = "Las dos etiquetas";
+                d.recuerdoTexto = "En el tablero, la etiqueta «RADIO» se despega por una esquina. Debajo todavía se lee «BOMBA DE LA LONJA». Las dos tienen los mismos agujeros.";
+                d.reservaCasillas = 22;
+                break;
+
+            case 8:
+                d.nombre = "Nivel 8 - Archivo de la Frecuencia";
+                d.tituloIntro = "Archivo de la Frecuencia";
+                d.textoIntro = "En el archivo, una cinta se pone en marcha. «Buenas noches a quienes siguen de turno». El reloj de la cabina marca las doce y diecisiete. Alguien ha dejado dos cajas junto a la reja.";
+                d.pistaMaia = "Una caja sostiene los barrotes. Empuja la otra hasta el panel del taller. La palanca del archivo deja libre el regreso a por la batería.";
+                d.textoCierre = "La cinta llega al final. Tres segundos de agua. Un clic. Maia vuelve a dar las buenas noches. En la etiqueta alguien escribió «conservar el original».";
+                d.recuerdoIdentificador = "nivel8_recuerdo";
+                d.recuerdoTitulo = "Cinta de las 00:17";
+                d.recuerdoTexto = "El carrete dice «Emisión de la noche de la crecida». Antes de la voz de Maia se oyen dos golpes secos. En la tapa, donde iría la firma del operador, queda un rectángulo más claro.";
+                d.reservaCasillas = 22;
+                break;
+
             default:
                 d.nombre = "Nivel 1 - Muelle de Cobre";
                 d.tituloIntro = "Muelle de Cobre";
-                d.textoIntro = "Una crecida cortó los caminos y la energía de Liria. Solo queda una batería compatible con el faro.";
+                d.textoIntro = "«Buenas noches a quienes siguen de turno». La voz sale de una radio junto al muelle. Tras la crecida, los puentes siguen bajo el agua. Junto a Nilo queda una batería compatible con el faro.";
                 d.pistaMaia = "La batería abre el paso, pero la palanca abre el regreso. En el muelle hay dos orillas que cruzar: haz lo mismo dos veces.";
                 d.textoCierre = "Las tres orillas del Muelle vuelven a estar conectadas. El Patio de Bombas sigue anegado.";
                 d.recuerdoIdentificador = "nivel1_recuerdo";

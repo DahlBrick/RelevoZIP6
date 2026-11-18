@@ -24,7 +24,7 @@ public class MemoryInteractable : MonoBehaviour, IInteractable
     public string Verbo { get { return "Examinar recuerdo"; } }
     public string Motivo { get { return "Ya guardaste este recuerdo"; } }
 
-    void OnEnable() { PlayerInteractor.Registrar(this); }
+    void OnEnable() { if (!recogido) PlayerInteractor.Registrar(this); }
     void OnDisable() { PlayerInteractor.Desregistrar(this); }
 
     public void Configurar(string identificador, string titulo, string texto, Transform visual, Transform ancla)
@@ -45,14 +45,16 @@ public class MemoryInteractable : MonoBehaviour, IInteractable
     /// </summary>
     public void Vincular()
     {
-        recogido = false;
+        recogido = SaveManager.TieneRecuerdo(Identificador);
+        if (recogido) PlayerInteractor.Desregistrar(this);
+        else PlayerInteractor.Registrar(this);
         fase = 0f;
 
         if (visual == null) return;
 
         posicionBase = visual.localPosition;
         visual.localRotation = Quaternion.identity;
-        visual.gameObject.SetActive(true);
+        visual.gameObject.SetActive(!recogido);
     }
 
     void Update()

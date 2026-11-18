@@ -5,6 +5,7 @@
 /// </summary>
 public static class LevelLayouts
 {
+    public const int Cantidad = 8;
     public const float TamanoTile = 2f;
 
     public static LevelLayout Obtener(int indice)
@@ -17,6 +18,8 @@ public static class LevelLayouts
             case 4: return Nivel4();
             case 5: return Nivel5();
             case 6: return Nivel6();
+            case 7: return Nivel7();
+            case 8: return Nivel8();
             default: return null;
         }
     }
@@ -160,5 +163,42 @@ public static class LevelLayouts
             "wwwww##AtttBBB#####",
             "wwwww###tt#www#####",
             "wwwwwv#####QQQ####v");
+    }
+
+    public static LevelLayout Nivel7()
+    {
+        return new LevelLayout("Nivel 7 - Lonja de las Dos Voces", TamanoTile,
+            "wwwwww#L####vwwwww",
+            "wwwwww#######wwwww",
+            "wwwwwwwwRwwwwwwwww",
+            "wwwwwwwwRwwwwwwv##",
+            "v##www##t####PP###",
+            "##zwww##tt###ww###",
+            "##DCCC##ut###ww##E",
+            "###www###k###ww###",
+            "NY#www####Attww###",
+            "M##wwwv####ttQQ##v",
+            "mmwwwwwwwwwBwww###",
+            "wwwwwwwwwwwBwwwmmw",
+            "wwwwwwww#####wwmXw",
+            "wwwwwwww#K###wwwww",
+            "wwwwwwww####vwwwww");
+    }
+
+    public static LevelLayout Nivel8()
+    {
+        return new LevelLayout("Nivel 8 - Archivo de la Frecuencia", TamanoTile,
+            "##vwwww##v##wwwz###L",
+            "#E#mmmm#####CCCD####",
+            "###wwww#####www####v",
+            "wwwwwwwwwwwwwwwPwBww",
+            "wwwwwwwwwwwwwwwPwBww",
+            "######w##tttRRR##t##",
+            "NY##k#w##tu#www##tt#",
+            "M#####g#####www###A#",
+            "##k###w#####www#####",
+            "###o##w#####www####v",
+            "#v####wv####www#####",
+            "mmmwwwwwwwwwwwwwwwmX");
     }
 }

@@ -18,6 +18,8 @@ public static class CircuitosDelCanal
             case 4: redPanel = "ESE"; redBase = "ONONO"; break;
             case 5: redPanel = "ENONE"; redBase = "SOO"; break;
             case 6: redPanel = "NOOS"; redBase = "ESENE"; break;
+            case 7: redPanel = "ENON"; redBase = "EESO"; break;
+            case 8: redPanel = "ONEE"; redBase = "NON"; break;
             default: return;
         }
         MontarRed(actores, mapa, redPanel, panel.Casilla, panel, null, puenteR, 'R');

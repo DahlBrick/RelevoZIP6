@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// HUD y menús de RELEVO, construidos por código con UGUI y sin assets externos.
@@ -57,6 +58,9 @@ public class UIManager : MonoBehaviour
     GameObject panelPrompt;
     Image franjaPrompt;
     Image capsulaPrompt;
+    GameObject leyendaTeclado;
+    Text leyendaMando;
+    static Gamepad ultimoMando;
     Text letraPrompt;
     Text textoPrompt;
     TeclaAnimada teclaPrompt;
@@ -142,6 +146,7 @@ public class UIManager : MonoBehaviour
 
     void OnEnable()
     {
+        InputSystem.onActionChange += AlUsarControl;
         GameEvents.BateriaCambiada += AlCambiarBateria;
         GameEvents.ObjetivoCambiado += AlCambiarObjetivo;
         GameEvents.PromptCambiado += AlCambiarPrompt;
@@ -152,6 +157,7 @@ public class UIManager : MonoBehaviour
 
     void OnDisable()
     {
+        InputSystem.onActionChange -= AlUsarControl;
         GameEvents.BateriaCambiada -= AlCambiarBateria;
         GameEvents.ObjetivoCambiado -= AlCambiarObjetivo;
         GameEvents.PromptCambiado -= AlCambiarPrompt;
@@ -165,11 +171,45 @@ public class UIManager : MonoBehaviour
         this.nivel = nivel;
         this.entrada = entrada;
         this.definicion = definicion;
+        AjustarControles(ultimoMando != null && ultimoMando.added ? ultimoMando :
+            (Keyboard.current == null ? Gamepad.current : null));
 
         if (tituloNivel != null) tituloNivel.text = NombreDelNivel().ToUpperInvariant();
         if (panelReserva != null) panelReserva.SetActive(definicion != null && definicion.reservaCasillas > 0);
 
         AplicarBloqueo();
+    }
+
+    void AlUsarControl(object objeto, InputActionChange cambio)
+    {
+        if (cambio != InputActionChange.ActionPerformed || entrada == null) return;
+        var accion = objeto as InputAction;
+        if (accion == null || accion.actionMap?.asset != entrada.Asset) return;
+        var dispositivo = accion.activeControl?.device;
+        if (!(dispositivo is Gamepad) && !(dispositivo is Keyboard)) return;
+        var mando = dispositivo as Gamepad;
+        if (mando != ultimoMando) AjustarControles(mando);
+    }
+
+    void AjustarControles(Gamepad mando)
+    {
+        ultimoMando = mando;
+        bool usarMando = mando != null;
+        leyendaTeclado.SetActive(!usarMando);
+        leyendaMando.gameObject.SetActive(usarMando);
+        if (teclaPrompt != null) teclaPrompt.gameObject.SetActive(!usarMando);
+        bool usarLetra = usarMando || teclaPrompt == null;
+        capsulaPrompt.gameObject.SetActive(usarLetra);
+        letraPrompt.gameObject.SetActive(usarLetra);
+        letraPrompt.text = usarMando ? NombreBoton(mando.buttonNorth) : "E";
+        if (usarMando)
+            leyendaMando.text = "Stick izq.  Mover     " + letraPrompt.text + "  Interactuar     "
+                + NombreBoton(mando.startButton) + "  Pausa     " + NombreBoton(mando.selectButton) + "  Explorar";
+    }
+
+    static string NombreBoton(InputControl boton)
+    {
+        return string.IsNullOrEmpty(boton.shortDisplayName) ? boton.displayName : boton.shortDisplayName;
     }
 
     string NombreDelNivel()
@@ -212,6 +252,7 @@ public class UIManager : MonoBehaviour
         AnimarConsola();
 
         if (entrada == null) return;
+        if (ultimoMando != null && !ultimoMando.added) AjustarControles(null);
 
         if (teclaPrompt != null && promptVisible && entrada.Pulsado(entrada.Interactuar)) teclaPrompt.Presionar();
 
@@ -448,7 +489,7 @@ public class UIManager : MonoBehaviour
         switch (indice)
         {
             case 0:
-                if (nivel.IndiceNivel == 6)
+                if (nivel.IndiceNivel == LevelLayouts.Cantidad)
                 {
                     Time.timeScale = 1f;
                     UnityEngine.SceneManagement.SceneManager.LoadScene(LevelManager.NombreEscenaNivel(1));
@@ -654,7 +695,7 @@ public class UIManager : MonoBehaviour
                 : "Sin recuerdo en este tramo: el orbe ámbar sigue esperando.";
         }
 
-        RefrescarFilas(filasFinal, nivel != null && nivel.IndiceNivel == 6 ? OpcionesCierreCanal : OpcionesFinal, seleccionFinal);
+        RefrescarFilas(filasFinal, nivel != null && nivel.IndiceNivel == LevelLayouts.Cantidad ? OpcionesCierreCanal : OpcionesFinal, seleccionFinal);
     }
 
     void RefrescarFilas(Fila[] filas, string[] opciones, int seleccion)
@@ -950,7 +991,11 @@ public class UIManager : MonoBehaviour
         // dibujarse encima. No hay Canvas propio, ni UIManager propio, ni EventSystem.
         exploracion = gameObject.AddComponent<MenuExploracionUI>();
         exploracion.Construir(raiz);
-        exploracion.AlAbrirCuaderno = AbrirCuaderno;
+        exploracion.AlAbrirCuaderno = pagina =>
+        {
+            CuadernoUI.HojaSolicitada = pagina;
+            AbrirCuaderno();
+        };
         exploracion.AlCerrar = CerrarExploracion;
 
         opciones = gameObject.AddComponent<OpcionesUI>();
@@ -1063,12 +1108,22 @@ public class UIManager : MonoBehaviour
         Color tecla = RelevoUI.ConAlfa(RelevoUI.Cobre, 0.85f);
         Color verbo = RelevoUI.ConAlfa(RelevoUI.Tinta, 0.62f);
 
+        leyendaTeclado = new GameObject("Controles de teclado", typeof(RectTransform));
+        var grupo = (RectTransform)leyendaTeclado.transform;
+        grupo.SetParent(panel.transform, false);
+        grupo.anchorMin = Vector2.zero;
+        grupo.anchorMax = Vector2.one;
+        grupo.offsetMin = grupo.offsetMax = Vector2.zero;
+        leyendaMando = RelevoUI.Texto(panel.transform, "Controles de mando", new Vector2(0f, 0.5f),
+            new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(750f, 40f), 18, TextAnchor.MiddleLeft, RelevoUI.Tinta);
+        leyendaMando.gameObject.SetActive(false);
+
         float x = 14f;
-        x = Chip(panel.transform, x, 8f, "WASD", "mover", tecla, verbo, 15);
-        x = Chip(panel.transform, x, 8f, "E", "interactuar", tecla, verbo, 15);
-        x = Chip(panel.transform, x, 8f, "Esc", "pausa", tecla, verbo, 15);
-        x = Chip(panel.transform, x, 8f, "R", "reiniciar", tecla, verbo, 15);
-        Chip(panel.transform, x, 8f, "Tab", "explorar", tecla, verbo, 15);
+        x = Chip(grupo, x, 8f, "WASD", "mover", tecla, verbo, 15);
+        x = Chip(grupo, x, 8f, "E", "interactuar", tecla, verbo, 15);
+        x = Chip(grupo, x, 8f, "Esc", "pausa", tecla, verbo, 15);
+        x = Chip(grupo, x, 8f, "R", "reiniciar", tecla, verbo, 15);
+        Chip(grupo, x, 8f, "Tab", "explorar", tecla, verbo, 15);
     }
 
     /// <summary>
@@ -1094,7 +1149,6 @@ public class UIManager : MonoBehaviour
                 new Vector2(0f, 0.5f), new Vector2(14f, 5f), 64f, RelevoUI.Ambar, true);
             teclaPrompt.Reposo(1.5f);
         }
-        else
         {
             capsulaPrompt = RelevoUI.Capsula(panelPrompt.transform, "Tecla E", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(18f, 0f), new Vector2(56f, 40f), RelevoUI.Ambar);
@@ -1103,6 +1157,9 @@ public class UIManager : MonoBehaviour
                 new Vector2(18f, 0f), new Vector2(56f, 40f), 26, TextAnchor.MiddleCenter, RelevoUI.FondoHondo);
             letraPrompt.text = "E";
             letraPrompt.fontStyle = FontStyle.Bold;
+            letraPrompt.resizeTextForBestFit = true;
+            letraPrompt.resizeTextMinSize = 12;
+            letraPrompt.resizeTextMaxSize = 26;
         }
 
         RelevoUI.Franja(panelPrompt.transform, "Filete", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),

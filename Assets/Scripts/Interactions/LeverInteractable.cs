@@ -22,9 +22,10 @@ public class LeverInteractable : MonoBehaviour, IInteractable
     float anguloObjetivo = -35f;
 
     public Transform Ancla { get { return ancla != null ? ancla : transform; } }
-    public bool Disponible { get { return !Accionada; } }
-    public string Verbo { get { return "Accionar palanca"; } }
-    public string Motivo { get { return "La palanca ya está accionada"; } }
+    public bool Disponible { get { return !Accionada && (!EsLonja || RelevoGame.Nivel.RamalLonja == DestinoCorriente.Ninguno); } }
+    bool EsLonja { get { return RelevoGame.Nivel != null && RelevoGame.Nivel.IndiceNivel == 7; } }
+    public string Verbo { get { return EsLonja ? (Identificador == "L" ? "Dar corriente al mercado" : "Dar corriente a la emisora") : "Accionar palanca"; } }
+    public string Motivo { get { return EsLonja && !Accionada ? "La corriente ya está en el otro ramal" : "La palanca ya está accionada"; } }
 
     void OnEnable() { PlayerInteractor.Registrar(this); }
     void OnDisable() { PlayerInteractor.Desregistrar(this); }
@@ -71,9 +72,10 @@ public class LeverInteractable : MonoBehaviour, IInteractable
 
     public void Interactuar(PlayerController jugador)
     {
-        if (Accionada) return;
+        if (!Disponible) return;
 
         Accionada = true;
+        if (EsLonja) RelevoGame.Nivel.AlimentarLonja(Identificador);
         anguloObjetivo = 35f;
 
         if (Destino != null) Destino.Abrir();

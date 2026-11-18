@@ -22,7 +22,7 @@ using UnityEngine.UI;
 public class MenuExploracionUI : MonoBehaviour
 {
     /// <summary>Lo engancha UIManager para abrir la escena del cuaderno sin duplicar la lógica.</summary>
-    public System.Action AlAbrirCuaderno;
+    public System.Action<int> AlAbrirCuaderno;
 
     /// <summary>Lo engancha UIManager para cerrar el overlay y devolver el tiempo.</summary>
     public System.Action AlCerrar;
@@ -42,12 +42,12 @@ public class MenuExploracionUI : MonoBehaviour
     const float AnchoPestana = 230f;
     const float PasoPestana = 238f;
 
-    const int Niveles = 6;
+    const int Niveles = LevelLayouts.Cantidad;
     static readonly Vector2[] HitosCanal = {
-        new Vector2(-215f, 46f), new Vector2(-129f, 74f), new Vector2(-43f, 40f),
-        new Vector2(43f, 66f), new Vector2(129f, 30f), new Vector2(215f, 55f)
+        new Vector2(-195f, 77f), new Vector2(-65f, 64f), new Vector2(65f, 83f), new Vector2(195f, 70f),
+        new Vector2(195f, -17f), new Vector2(65f, -35f), new Vector2(-65f, -22f), new Vector2(-195f, -40f)
     };
-    static readonly string[] Muelles = { "muelle", "patio", "faro", "aduana", "dársena", "esclusa" };
+    static readonly string[] Muelles = { "muelle", "patio", "faro", "aduana", "dársena", "esclusa", "lonja", "archivo" };
 
     // Geometría del árbol de skills: la comparten el dibujo (PaginaSkills) y el refresco de la
     // selección (RefrescarSkills), que necesita saber dónde ha quedado el nodo elegido.
@@ -58,7 +58,7 @@ public class MenuExploracionUI : MonoBehaviour
     const float SkYNivel2 = -50f;
     const float SkPanelTope = -127f;   // borde superior del panel de descripción (centro -192, alto 130)
 
-    static readonly string[] Nombres = { "CUADERNO", "INVENTARIO", "SKILLS", "EQUIPAMIENTO", "ESTADO" };
+    static readonly string[] Nombres = { "TRAVESÍA", "INVENTARIO", "TALLER", "EQUIPAMIENTO", "ESTADO" };
 
     static readonly string[] Pies =
     {
@@ -271,17 +271,13 @@ public class MenuExploracionUI : MonoBehaviour
     readonly Entrada[] entradas = new Entrada[Niveles];
     Text recuento;
     Image detIlustracion;
-    Image detAnillo;
-    Text detNumero;
-    Text detCaption;
+    PostalDeLiria detPostal;
     Text detTitulo;
     Text detOrigen;
     Text detFrase;
     Text detNarrativa;
     Text detLugar;
-    Image detSelloFondo;
-    Text detSelloTexto;
-    List<Image> detSelloBordes;
+
     Image detCta;
     Text detCtaTexto;
     int entradaSel;
@@ -398,7 +394,7 @@ public class MenuExploracionUI : MonoBehaviour
         cabTitulo = RelevoUI.Texto(hoja, "Cabecera titulo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -18f), new Vector2(AnchoDoble, 42f), 34, TextAnchor.MiddleCenter, Tinta);
         cabTitulo.font = RelevoUI.FuenteTitulo();
-        cabTitulo.text = "CUADERNO DE VIAJE";
+        cabTitulo.text = "ATLAS DEL CANAL";
 
         cabPie = RelevoUI.Texto(hoja, "Cabecera pie", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -60f), new Vector2(AnchoDoble, 26f), 18, TextAnchor.MiddleCenter, TintaSuave);
@@ -423,7 +419,7 @@ public class MenuExploracionUI : MonoBehaviour
         if (panel == null) return;
 
         seccion = 0;
-        entradaSel = 0;
+        entradaSel = Mathf.Clamp(RelevoGame.Nivel != null ? RelevoGame.Nivel.IndiceNivel - 1 : 0, 0, Niveles - 1);
         inventarioSel = 0;
         ramaSel = 0;
         nivelSel = 0;
@@ -470,7 +466,7 @@ public class MenuExploracionUI : MonoBehaviour
                 return;
             }
 
-            if (seccion == (int)Seccion.Cuaderno && AlAbrirCuaderno != null) AlAbrirCuaderno();
+            if (seccion == (int)Seccion.Cuaderno && AlAbrirCuaderno != null) AlAbrirCuaderno(entradaSel + 1);
             return;
         }
 
@@ -620,16 +616,7 @@ public class MenuExploracionUI : MonoBehaviour
         RelevoUI.Hexagono(hoja, "Radio punto", new Vector2(1f, 1f), new Vector2(1f, 1f),
             new Vector2(-120f, -138f), new Vector2(18f, 18f), RelevoUI.ConAlfa(Sello, 0.45f), true);
 
-        // Recorte pegado con celo en la esquina inferior izquierda.
-        Image recorte = RelevoUI.Franja(hoja, "Recorte", new Vector2(0f, 0f), new Vector2(0f, 0f),
-            new Vector2(120f, 60f), new Vector2(230f, 74f), RelevoUI.ConAlfa(PapelClaro, 0.9f));
-        RelevoUI.Marco(recorte.transform, RelevoUI.ConAlfa(PapelHondo, 0.7f), 1f);
-        RelevoUI.Franja(recorte.transform, "Celo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, 6f), new Vector2(76f, 18f), RelevoUI.ConAlfa(RelevoUI.Tinta, 0.10f));
 
-        Text nota = RelevoUI.Texto(recorte.transform, "Texto", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, -4f), new Vector2(206f, 56f), 13, TextAnchor.MiddleCenter, TintaSuave);
-        nota.text = "«Si la luz se apaga,\nesperen.»\n— cuaderno de la barquera";
     }
 
     // ------------------------------------------------------------------ pestañas y pie
@@ -692,7 +679,7 @@ public class MenuExploracionUI : MonoBehaviour
 
         Text cabeceraIzq = RelevoUI.Texto(p.transform, "Cabecera izq", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, 232f), new Vector2(AnchoPagina, 24f), 14, TextAnchor.MiddleLeft, TintaSuave);
-        cabeceraIzq.text = "ENTRADAS · TRES TRAMOS";
+        cabeceraIzq.text = "PUERTOS DEL CANAL";
 
         recuento = RelevoUI.Texto(p.transform, "Recuento", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, 232f), new Vector2(AnchoPagina, 24f), 14, TextAnchor.MiddleRight, Sello);
@@ -705,34 +692,12 @@ public class MenuExploracionUI : MonoBehaviour
         // ---------------- página derecha: la entrada abierta
         detIlustracion = RelevoUI.Franja(p.transform, "Ilustracion", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 175f), new Vector2(AnchoPagina, 150f), RelevoUI.ConAlfa(PapelSombra, 0.75f));
-        RelevoUI.Marco(detIlustracion.transform, PapelHondo, 2f);
-        RelevoUI.Esquinas(detIlustracion.transform, 16f, 2f, PapelHondo);
-
-        Mancha(detIlustracion.transform, "Mancha ilus A", new Vector2(150f, -30f), new Vector2(180f, 90f),
-            RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.18f), 14f);
-        Mancha(detIlustracion.transform, "Mancha ilus B", new Vector2(-160f, 40f), new Vector2(120f, 60f),
-            RelevoUI.ConAlfa(RelevoUI.Ambar, 0.12f), -8f);
-
-        detAnillo = RelevoUI.Hexagono(detIlustracion.transform, "Anillo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-186f, 4f), new Vector2(104f, 104f), RelevoUI.Cobre, false);
-
-        detNumero = RelevoUI.Texto(detIlustracion.transform, "Numero", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-186f, 4f), new Vector2(104f, 104f), 34, TextAnchor.MiddleCenter, RelevoUI.Cobre);
-        detNumero.font = RelevoUI.FuenteTitulo();
-
-        Enlace(detIlustracion.transform, "Cable", new Vector2(-120f, 4f), new Vector2(236f, 4f), 2f, RelevoUI.ConAlfa(PapelHondo, 0.9f));
-
-        Image clip = RelevoUI.Franja(detIlustracion.transform, "Clip", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(30f, -12f), new Vector2(96f, 16f), RelevoUI.ConAlfa(RelevoUI.Tinta, 0.12f));
-        clip.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -12f);
-
-        detCaption = RelevoUI.Texto(detIlustracion.transform, "Caption", new Vector2(0f, 0f), new Vector2(0f, 0f),
-            new Vector2(14f, 8f), new Vector2(240f, 20f), 13, TextAnchor.LowerLeft, TintaSuave);
+        detPostal = PostalDeLiria.Crear(detIlustracion);
 
         detTitulo = RelevoUI.Texto(p.transform, "Detalle titulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 62f), new Vector2(AnchoPagina, 34f), 24, TextAnchor.MiddleLeft, Tinta);
         detTitulo.font = RelevoUI.FuenteTitulo();
-        detTitulo.fontStyle = FontStyle.Bold;
+        detTitulo.fontStyle = FontStyle.Normal;
 
         detOrigen = RelevoUI.Texto(p.transform, "Detalle origen", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 34f), new Vector2(AnchoPagina, 22f), 14, TextAnchor.MiddleLeft, Sello);
@@ -744,7 +709,7 @@ public class MenuExploracionUI : MonoBehaviour
             new Vector2(ColDer, -12f), new Vector2(AnchoPagina, 56f), 17, TextAnchor.MiddleLeft, Tinta);
 
         detNarrativa = RelevoUI.Texto(p.transform, "Detalle narrativa", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -96f), new Vector2(AnchoPagina, 104f), 15, TextAnchor.UpperLeft, TintaSuave);
+            new Vector2(ColDer, -96f), new Vector2(AnchoPagina, 104f), 17, TextAnchor.UpperLeft, TintaSuave);
 
         detLugar = RelevoUI.Texto(p.transform, "Detalle lugar", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer + 12f, -162f), new Vector2(AnchoPagina - 12f, 22f), 14, TextAnchor.MiddleLeft, TintaSuave);
@@ -759,15 +724,7 @@ public class MenuExploracionUI : MonoBehaviour
             new Vector2(ColDer, -226f), new Vector2(AnchoPagina, 42f), 17, TextAnchor.MiddleCenter, PapelClaro);
         detCtaTexto.fontStyle = FontStyle.Bold;
 
-        detSelloFondo = RelevoUI.Franja(p.transform, "Sello fondo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer + 150f, 127f), new Vector2(230f, 54f), new Color(0f, 0f, 0f, 0f));
-        detSelloFondo.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -7f);
-        detSelloBordes = new List<Image>();
-        RelevoUI.Marco(detSelloFondo.transform, RelevoUI.ConAlfa(Sello, 0.8f), 3f, detSelloBordes);
 
-        detSelloTexto = RelevoUI.Texto(detSelloFondo.transform, "Sello texto", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            Vector2.zero, new Vector2(230f, 54f), 20, TextAnchor.MiddleCenter, RelevoUI.ConAlfa(Sello, 0.9f));
-        detSelloTexto.font = RelevoUI.FuenteTitulo();
 
         return p;
     }
@@ -791,7 +748,7 @@ public class MenuExploracionUI : MonoBehaviour
         e.numero = RelevoUI.Texto(e.raiz.transform, "Numero", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
             new Vector2(16f, 0f), new Vector2(96f, 96f), 32, TextAnchor.MiddleCenter, RelevoUI.Cobre);
         e.numero.font = RelevoUI.FuenteTitulo();
-        e.numero.text = (indice + 1).ToString();
+        e.numero.text = (indice + 1).ToString("00");
 
         e.chip = RelevoUI.Capsula(e.raiz.transform, "Chip", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(128f, -12f), new Vector2(168f, 24f), RelevoUI.Ambar);
@@ -801,8 +758,8 @@ public class MenuExploracionUI : MonoBehaviour
         e.chipTexto.fontStyle = FontStyle.Bold;
 
         e.titulo = RelevoUI.Texto(e.raiz.transform, "Titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(128f, -42f), new Vector2(AnchoPagina - 150f, 26f), 19, TextAnchor.UpperLeft, Tinta);
-        e.titulo.font = RelevoUI.FuenteTitulo();
+            new Vector2(128f, -42f), new Vector2(AnchoPagina - 150f, 28f), 21, TextAnchor.UpperLeft, Tinta);
+        e.titulo.font = RelevoUI.Fuente();
         e.titulo.fontStyle = FontStyle.Bold;
 
         e.lugar = RelevoUI.Texto(e.raiz.transform, "Lugar", new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -827,7 +784,7 @@ public class MenuExploracionUI : MonoBehaviour
         for (int i = 0; i < Niveles; i++)
         {
             int nivel = i + 1;
-            LevelDefinition definicion = DefinicionesPorDefecto.Obtener(nivel);
+            LevelDefinition definicion = DefinicionesPorDefecto.FichaDelCuaderno(nivel);
 
             bool tiene = definicion != null && SaveManager.TieneRecuerdo(definicion.recuerdoIdentificador);
             bool leido = tiene && SaveManager.RecuerdoLeido(definicion.recuerdoIdentificador);
@@ -872,9 +829,9 @@ public class MenuExploracionUI : MonoBehaviour
 
             if (definicion == null) continue;
 
-            e.titulo.text = tiene ? definicion.recuerdoTitulo : "Recuerdo bloqueado";
+            e.titulo.text = definicion.tituloIntro;
             e.titulo.color = tiene ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.85f);
-            e.lugar.text = "Origen · " + definicion.tituloIntro;
+            e.lugar.text = tiene ? definicion.recuerdoTitulo : "Recuerdo por encontrar";
 
             e.pista.text = leido
                 ? "abierto en el cuaderno"
@@ -882,6 +839,14 @@ public class MenuExploracionUI : MonoBehaviour
 
             e.pista.color = leido ? RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.95f)
                 : (tiene ? RelevoUI.ConAlfa(RelevoUI.Ambar, 0.95f) : RelevoUI.ConAlfa(TintaSuave, 0.8f));
+            if (elegida)
+            {
+                e.fondo.color = new Color32(30, 69, 69, 255);
+                e.titulo.color = PapelClaro;
+                e.lugar.color = new Color32(238, 220, 180, 255);
+                e.pista.color = new Color32(200, 221, 205, 255);
+                e.anillo.color = e.numero.color = new Color32(239, 188, 109, 255);
+            }
 
             e.cinta.rectTransform.sizeDelta = new Vector2(10f, elegida ? 92f : 0f);
 
@@ -897,19 +862,13 @@ public class MenuExploracionUI : MonoBehaviour
     /// <summary>Vuelca el recuerdo seleccionado en la página derecha, con sus seis campos.</summary>
     void DetallarRecuerdo(LevelDefinition d, bool tiene, bool leido, int nivel, Color acento)
     {
-        detIlustracion.color = RelevoUI.ConAlfa(tiene ? RelevoUI.Aclarar(PapelSombra, 0.12f) : PapelSombra, 0.75f);
-        detAnillo.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.75f);
-        detNumero.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.9f);
-        detNumero.text = nivel.ToString();
-        detCaption.text = tiene
-            ? "ILUSTRACIÓN · TRAMO " + nivel + " · " + d.tituloIntro.ToUpperInvariant()
-            : "ILUSTRACIÓN PENDIENTE · TRAMO " + nivel;
+        detPostal.Mostrar(d);
 
         detTitulo.text = tiene ? d.recuerdoTitulo : "Recuerdo bloqueado";
         detTitulo.color = tiene ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.9f);
 
         detOrigen.text = "Nivel de origen · " + d.nombre;
-        detOrigen.color = tiene ? Sello : RelevoUI.ConAlfa(Sello, 0.5f);
+        detOrigen.color = tiene ? Sello : Sello;
 
         detFrase.text = tiene
             ? d.recuerdoTexto
@@ -918,24 +877,12 @@ public class MenuExploracionUI : MonoBehaviour
 
         detNarrativa.text = tiene
             ? d.textoIntro
-            : "La página está en blanco. El orbe ámbar del " + d.tituloIntro
-              + " sigue esperando a que Nilo lo encuentre y lo traiga hasta aquí.";
-        detNarrativa.color = tiene ? TintaSuave : RelevoUI.ConAlfa(TintaSuave, 0.75f);
+            : "Falta el recuerdo de este puerto. Hay un destello en " + d.tituloIntro
+              + ".";
+        detNarrativa.text = HuellaDelCanal.NotaDeViaje(d.indice, detNarrativa.text);
+        detNarrativa.color = tiene ? TintaSuave : TintaSuave;
 
         detLugar.text = "Lugar de origen · " + d.tituloIntro;
-
-        detSelloTexto.text = !tiene ? "BLOQUEADO" : (leido ? "LEÍDO" : "DESCUBIERTO");
-        Color colorSello = !tiene ? RelevoUI.ConAlfa(Gris, 0.85f)
-            : (leido ? RelevoUI.ConAlfa(RelevoUI.Turquesa, 0.9f) : RelevoUI.ConAlfa(Sello, 0.85f));
-
-        detSelloTexto.color = colorSello;
-
-        // El marco se colorea, no se vuelve a crear: crear uno por refresco acumularía hijos.
-        if (detSelloBordes != null)
-        {
-            Color colorMarco = RelevoUI.ConAlfa(colorSello, 0.8f);
-            for (int b = 0; b < detSelloBordes.Count; b++) if (detSelloBordes[b] != null) detSelloBordes[b].color = colorMarco;
-        }
 
         detCta.color = tiene ? RelevoUI.ConAlfa(Sello, 0.9f) : RelevoUI.ConAlfa(PapelHondo, 0.7f);
         detCtaTexto.color = tiene ? PapelClaro : RelevoUI.ConAlfa(PapelClaro, 0.75f);
@@ -1496,7 +1443,7 @@ public class MenuExploracionUI : MonoBehaviour
             new Vector2(ColIzq, -150f), new Vector2(AnchoPagina, 130f), 15, TextAnchor.UpperLeft, TintaSuave);
         notas.text = "«Turquesa es manual; ámbar, prestado.»\n" +
                      "«Un tramo en contra corta el camino entero.»\n\n" +
-                     "Anotado por Maia en el margen de la página 3.";
+                     "Transcripción de la radio del faro. La fecha quedó bajo una mancha de sal.";
 
         // ---------------- página derecha: el parte del tramo
         Text cabecera = RelevoUI.Texto(p.transform, "Cabecera", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
@@ -1541,7 +1488,7 @@ public class MenuExploracionUI : MonoBehaviour
 
         // El hito del mapa se mueve al tramo en curso; nunca cambia de página, solo de sitio.
         int indice = nivel != null ? Mathf.Clamp(nivel.IndiceNivel, 1, Niveles) : 1;
-        Vector2 hito = new Vector2(ColIzq, 118f) + HitosCanal[indice - 1];
+        Vector2 hito = new Vector2(ColIzq, 92f) + HitosCanal[indice - 1];
         if (hitoActual != null) hitoActual.rectTransform.anchoredPosition = hito;
         if (hitoActualTexto != null) hitoActualTexto.rectTransform.anchoredPosition = hito + new Vector2(0f, -24f);
 
@@ -1606,7 +1553,7 @@ public class MenuExploracionUI : MonoBehaviour
         int leidos = 0;
         for (int i = 1; i <= Niveles; i++)
         {
-            LevelDefinition d = DefinicionesPorDefecto.Obtener(i);
+            LevelDefinition d = DefinicionesPorDefecto.FichaDelCuaderno(i);
             if (d == null) continue;
             if (SaveManager.TieneRecuerdo(d.recuerdoIdentificador)) encontrados++;
             if (SaveManager.RecuerdoLeido(d.recuerdoIdentificador)) leidos++;
@@ -1645,7 +1592,7 @@ public class MenuExploracionUI : MonoBehaviour
     {
         if (panel == null) return;
 
-        cabTitulo.text = "CUADERNO DE VIAJE";
+        cabTitulo.text = "ATLAS DEL CANAL";
         cabPie.text = Pies[seccion];
 
         for (int i = 0; i < Nombres.Length; i++)
