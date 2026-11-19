@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3420aacd20efec408a1f736c7bfa607, type: 3}
+  m_Name: Puerto10
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  indice: 10
+  nombre: Nivel 10 - Casa de las Dos Guardias
+  tituloIntro: Casa de las Dos Guardias
+  textoIntro: "En las dos orillas hay sendas placas con dos trazos. En el libro de
+    guardia de la noche de la crecida solo figura una firma. La segunda casilla tiene
+    una mancha circular, del tama\xF1o de un carrete."
+  pistaMaia: "Graba primero la se\xF1al de embarque en I. Termina sobre II y busca
+    su gemela en la otra orilla."
+  textoCierre: "Al cerrarse los dos contactos, la radio deja pasar el final de la
+    cinta. Despu\xE9s de las buenas noches de Maia se oye una silla arrastr\xE1ndose.
+    Alguien se qued\xF3 hasta que lleg\xF3 la \xFAltima barca."
+  recuerdoIdentificador: nivel10_recuerdo
+  recuerdoTitulo: "Papel carb\xF3n del segundo turno"
+  recuerdoTexto: "Al trasluz aparece el rengl\xF3n que faltaba del registro. En vez
+    de una firma dice \xABGuard\xE9 tu sitio\xBB. La letra es la misma que en la
+    ficha del astillero."
+  reservaCasillas: 0
+  tutorialPatio: 0
+  tutorialCondensadores: 0
+  salidaEsFaro: 0

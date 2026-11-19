@@ -49,8 +49,12 @@ public static class DefinicionesPorDefecto
         if (pagina < 0 || pagina >= fichas.Length) return null;
         if (fichas[pagina] == null)
         {
-            fichas[pagina] = Obtener(indice);
-            fichas[pagina].hideFlags = HideFlags.HideAndDontSave;
+            fichas[pagina] = Resources.Load<LevelDefinition>("Bitacora/Guiones/Puerto"+indice.ToString("00"));
+            if (fichas[pagina] == null)
+            {
+                fichas[pagina] = Obtener(indice);
+                fichas[pagina].hideFlags = HideFlags.HideAndDontSave;
+            }
         }
         return fichas[pagina];
     }
@@ -169,6 +173,28 @@ public static class DefinicionesPorDefecto
                 d.recuerdoIdentificador = "nivel10_recuerdo";
                 d.recuerdoTitulo = "Papel carbón del segundo turno";
                 d.recuerdoTexto = "Al trasluz aparece el renglón que faltaba del registro. En vez de una firma dice «Guardé tu sitio». La letra es la misma que en la ficha del astillero.";
+                break;
+
+            case 11:
+                d.nombre = "Nivel 11 - Mercado de la Sal";
+                d.tituloIntro = "Mercado de la Sal";
+                d.textoIntro = "Todavía queda sal en los bordes de las mesas. La reja del mercado está echada y el montacargas espera al otro lado del canal.";
+                d.pistaMaia = "El cajón sostiene la reja. Deja la batería en la base del mercado y busca la palanca al otro lado. Cuando vuelvas a por ella, la pasarela seguirá tendida.";
+                d.textoCierre = "La balanza recupera el equilibrio. Un hilo de agua vuelve a correr entre los bancales.";
+                d.recuerdoIdentificador = "nivel11_recuerdo";
+                d.recuerdoTitulo = "Pesa de media arroba";
+                d.recuerdoTexto = "En el asa quedan granos de sal. La base está gastada por un lado. Alguien encajó un trocito de cobre debajo para que la balanza volviera a marcar lo justo.";
+                break;
+
+            case 12:
+                d.nombre = "Nivel 12 - Varadero de las Campanas";
+                d.tituloIntro = "Varadero de las Campanas";
+                d.textoIntro = "Las campanas del varadero avisaban a quienes trabajaban de espaldas al agua. Una cuelga junto al puente de carga. La otra, frente al horno.";
+                d.pistaMaia = "Deja el cajón en el rombo del taller. La campana anuncia que puedes cruzar. En la cabina, graba una espera sobre I y embarca cuando el eco tome el relevo.";
+                d.textoCierre = "Las dos campanas vuelven a distinguirse desde el agua. Sobre el banco de fundición queda espacio para la próxima pieza.";
+                d.recuerdoIdentificador = "nivel12_recuerdo";
+                d.recuerdoTitulo = "Badajo de repuesto";
+                d.recuerdoTexto = "Alguien envolvió la cuerda con un trozo de manga. En la punta del badajo asoma el bronce claro. Lo probaron muchas veces antes de colgarlo.";
                 break;
 
             default:

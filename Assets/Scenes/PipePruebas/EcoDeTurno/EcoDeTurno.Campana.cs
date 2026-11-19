@@ -20,11 +20,13 @@ public sealed partial class EcoDeTurno
         get
         {
             if (transbordador.Navegando) return "Sujeta la batería mientras cruza el transbordador.";
+            if (puerto == 12 && transbordador.EnDestino)
+                return RelevoGame.Layout.Casilla(nilo.transform.position).x >= 18 ? "Lleva la batería al pórtico o abre el regreso." : "Carga la torre D y cruza con la batería.";
             if (puerto == 10 && estado == Estado.Abierto) return "Cruza la pasarela hacia la casa de señales.";
             if (transbordador.EnDestino)
                 return puerto == 9 ? (RelevoGame.Nivel.Puentes.Exists(p => p.Desplegado) ? "Lleva la batería por el puente de carga hasta la grada." : "Deja la caja en el rombo para tender el puente de carga.") :
                     estado == Estado.Reproduciendo ? "Pisa II en esta orilla mientras el eco pisa II en la otra." : "Vuelve en el pontón para grabar otro turno.";
-            if (estado == Estado.Grabando) return puerto == 9 ? "Graba una espera sobre I." : "Graba una espera en I y termina sobre II.";
+            if (estado == Estado.Grabando) return puerto != 10 ? "Graba una espera sobre I." : "Graba una espera en I y termina sobre II.";
             if (estado == Estado.Reproduciendo) return "Embarca cuando se encienda el torno.";
             return "Busca el magnetófono de dos carretes.";
         }
@@ -34,6 +36,9 @@ public sealed partial class EcoDeTurno
     {
         get
         {
+            if (puerto == 12) return transbordador.EnDestino
+                ? "La última campana mira al puente de D. Carga todas las barras antes de retirar la batería. El cajón de esta orilla abre la reja del almacén si quieres entrar."
+                : "Deja que la cinta espere sobre I. Durante la repetición, toma el torno del norte con la batería.";
             if (estado == Estado.Abierto) return "El cerrojo ya cayó, Nilo. La pasarela de la casa de señales se queda tendida.";
             if (puerto == 9 && transbordador.EnDestino) return "En la grada empujábamos el cajón sobre el rombo. Así el puente de carga se quedaba tendido hasta acabar el turno.";
             if (puerto == 10 && transbordador.EnDestino) return "¿Ves los dos trazos? Quédate en esta placa mientras la cinta pisa su gemela. Si oyes el clic final demasiado pronto, el torno de vuelta tiene contrapeso.";
@@ -47,7 +52,7 @@ public sealed partial class EcoDeTurno
     public void ConstruirCampana(int numero, LevelLayout plano, PlayerController jugador, PermanentWalkway pasarela)
     {
         puerto = numero;
-        capacidad = numero == 9 ? 8f : 13f;
+        capacidad = numero == 10 ? 13f : 8f;
         nilo = jugador;
         puente = pasarela;
         consola = DioramaBuilder.CrearAncla("Magnetófono de guardia",transform,plano.PrimerMarcador('F',Vector3.zero));
@@ -70,7 +75,7 @@ public sealed partial class EcoDeTurno
         }
         transbordador = DioramaBuilder.CrearAncla("Transbordador de maroma",transform,Vector3.zero).gameObject.AddComponent<TransbordadorDeMaroma>();
         transbordador.Construir(this,ida,vuelta);
-        DecorarGuardia(plano);
+        if (puerto == 9 || puerto == 10) DecorarGuardia(plano);
         CrearEco(transform);
     }
 

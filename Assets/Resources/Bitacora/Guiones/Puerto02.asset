@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3420aacd20efec408a1f736c7bfa607, type: 3}
+  m_Name: Puerto02
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  indice: 2
+  nombre: Nivel 2 - Patio de Bombas
+  tituloIntro: Patio de Bombas
+  textoIntro: "Las bombas que drenaban Liria est\xE1n paradas. Aqu\xED la bater\xEDa
+    no solo abre caminos: tambi\xE9n es lo que mantiene a Nilo en pie. Cada paso
+    lejos de ella cuenta."
+  pistaMaia: "La caja del suroeste va a su placa empuj\xE1ndola primero al este.
+    Desde la base A, ve directo a la palanca y vuelve. En el muelle este no hace
+    falta hacerlo todo de un viaje: ac\xE9rcate a la base D para recargar."
+  textoCierre: "Las bombas vuelven a girar y el patio se vac\xEDa. El faro espera
+    al final del canal."
+  recuerdoIdentificador: nivel2_recuerdo
+  recuerdoTitulo: Recuerdo de Liria - El aprendiz de bombas
+  recuerdoTexto: "\"Aprend\xED a leer los cables antes que las letras. Turquesa es
+    manual; \xE1mbar, prestado.\""
+  reservaCasillas: 12
+  tutorialPatio: 1
+  tutorialCondensadores: 0
+  salidaEsFaro: 0

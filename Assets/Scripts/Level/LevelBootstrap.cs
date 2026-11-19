@@ -92,7 +92,7 @@ public class LevelBootstrap : MonoBehaviour
 
     LevelDefinition DefinicionActiva()
     {
-        LevelDefinition def = definicion != null ? definicion : DefinicionesPorDefecto.Obtener(indiceNivel);
+        LevelDefinition def = definicion != null ? definicion : DefinicionesPorDefecto.FichaDelCuaderno(indiceNivel);
         RelevoGame.Definicion = def;
         return def;
     }
@@ -278,6 +278,7 @@ public class LevelBootstrap : MonoBehaviour
             cabina.gameObject.AddComponent<EcoDeTurno>().ConstruirCampana(indiceNivel,layout,nilo,pasarela);
         }
         CrearPiezasDelPatio(layout, raizActores, baseA, puente, indiceNivel);
+        PuertosDeSal.Montar(indiceNivel,layout,raizActores);
         HuellaDelCanal.Montar(indiceNivel, layout, raizActores);
     }
 
@@ -389,7 +390,16 @@ public class LevelBootstrap : MonoBehaviour
         if (salida != null) salida.Vincular();
 
         MemoryInteractable recuerdo = Object.FindFirstObjectByType<MemoryInteractable>(FindObjectsInactive.Include);
-        if (recuerdo != null) recuerdo.Vincular();
+        if (recuerdo != null)
+        {
+            if (def != null && gameObject.scene.name == LevelManager.NombreEscenaNivel(indiceNivel))
+            {
+                recuerdo.Identificador = def.recuerdoIdentificador;
+                recuerdo.Titulo = def.recuerdoTitulo;
+                recuerdo.Texto = def.recuerdoTexto;
+            }
+            recuerdo.Vincular();
+        }
 
         // Piezas del Patio de Bombas: vuelven a su estado inicial también en escena horneada.
         foreach (CajaEmpujable caja in Object.FindObjectsByType<CajaEmpujable>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -409,6 +419,12 @@ public class LevelBootstrap : MonoBehaviour
 
         MaiaTerminal maia = Object.FindFirstObjectByType<MaiaTerminal>(FindObjectsInactive.Include);
 
+        if (maia != null && def != null && gameObject.scene.name == LevelManager.NombreEscenaNivel(indiceNivel))
+        {
+            maia.TextoIntroduccion = def.textoIntro;
+            maia.TextoPista = def.pistaMaia;
+            maia.TextoFinal = def.textoCierre;
+        }
         nivel.Vincular(salida, recuerdo, maia);
 
         // --- HUD
@@ -453,8 +469,12 @@ public class LevelBootstrap : MonoBehaviour
             }
         };
         // Primera vez en el nivel: antes de la intro, Nilo despierta. Al reintentar no se repite.
-        if (despertar && !reintento && nilo != null) DespertarNivel.Empezar(nilo, camara != null ? camara.Camara : null, intro);
-        else intro();
+        if (reintento) intro();
+        else SecuenciaDePuerto.Reproducir(gameObject.scene,SecuenciaDePuerto.Momento.Llegada,() =>
+        {
+            if (despertar && nilo != null) DespertarNivel.Empezar(nilo,camara != null ? camara.Camara : null,intro);
+            else intro();
+        });
 
         Debug.Log("RELEVO: " + nivel.NombreNivel
             + (escenaHorneada ? " (escena horneada)" : " (construido en ejecución)")

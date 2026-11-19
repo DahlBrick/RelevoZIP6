@@ -34,10 +34,10 @@ public class MenuExploracionUI : MonoBehaviour
 
     const int Niveles = LevelLayouts.Cantidad;
     static readonly Vector2[] HitosCanal = {
-        new Vector2(-205,77), new Vector2(-102,64), new Vector2(0,83), new Vector2(102,70), new Vector2(205,76),
-        new Vector2(205,-20), new Vector2(102,-35), new Vector2(0,-22), new Vector2(-102,-38), new Vector2(-205,-22)
+        new Vector2(-216,77), new Vector2(-130,65), new Vector2(-44,80), new Vector2(44,65), new Vector2(130,80), new Vector2(216,67),
+        new Vector2(216,-20), new Vector2(130,-35), new Vector2(44,-19), new Vector2(-44,-37), new Vector2(-130,-19), new Vector2(-216,-35)
     };
-    static readonly string[] Muelles = { "muelle", "patio", "faro", "aduana", "dársena", "esclusa", "lonja", "archivo", "astillero", "guardias" };
+    static readonly string[] Muelles = { "muelle", "patio", "faro", "aduana", "dársena", "esclusa", "lonja", "archivo", "astillero", "guardias", "sal", "varadero" };
 
     static readonly string[] Nombres = { "RECUERDOS", "TALLER", "MAPA Y ESTADO" };
     static readonly string[] Pies = { "el cuaderno de Nilo", "mecanismos del tramo", "carta de navegación de Liria" };
@@ -477,8 +477,8 @@ public class MenuExploracionUI : MonoBehaviour
 
         // ---------------- página derecha: la entrada abierta
         detIlustracion = RelevoUI.Franja(p.transform, "Ilustracion", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, 175f), new Vector2(AnchoPagina, 150f), RelevoUI.ConAlfa(PapelSombra, 0.75f));
-        detPostal = PostalDeLiria.Crear(detIlustracion);
+            new Vector2(ColDer, 195f), new Vector2(AnchoPagina, 190f), RelevoUI.ConAlfa(PapelSombra, 0.75f));
+        detPostal = PostalDeLiria.Crear(detIlustracion,true);
 
         detTitulo = RelevoUI.Texto(p.transform, "Detalle titulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 62f), new Vector2(AnchoPagina, 34f), 24, TextAnchor.MiddleLeft, Tinta);
@@ -540,16 +540,16 @@ public class MenuExploracionUI : MonoBehaviour
             new Vector2(128f, -12f), new Vector2(168f, 24f), RelevoUI.Ambar);
 
         e.chipTexto = RelevoUI.Texto(e.raiz.transform, "Chip texto", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(128f, -12f), new Vector2(168f, 24f), 13, TextAnchor.MiddleCenter, Esmalte);
+            new Vector2(128f, -12f), new Vector2(168f, 24f), 16, TextAnchor.MiddleCenter, Esmalte);
         e.chipTexto.fontStyle = FontStyle.Bold;
 
         e.titulo = RelevoUI.Texto(e.raiz.transform, "Titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(128f, -42f), new Vector2(AnchoPagina - 150f, 28f), 21, TextAnchor.UpperLeft, Tinta);
+            new Vector2(128f, -40f), new Vector2(AnchoPagina - 140f, 32f), 24, TextAnchor.UpperLeft, Tinta);
         e.titulo.font = RelevoUI.Fuente();
         e.titulo.fontStyle = FontStyle.Bold;
 
         e.lugar = RelevoUI.Texto(e.raiz.transform, "Lugar", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(128f, -70f), new Vector2(AnchoPagina - 150f, 22f), 14, TextAnchor.UpperLeft, TintaSuave);
+            new Vector2(128f, -74f), new Vector2(AnchoPagina - 142f, 40f), 18, TextAnchor.UpperLeft, TintaSuave);
 
         e.pista = RelevoUI.Texto(e.raiz.transform, "Pista", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(128f, -94f), new Vector2(AnchoPagina - 150f, 20f), 13, TextAnchor.UpperLeft,
@@ -559,6 +559,8 @@ public class MenuExploracionUI : MonoBehaviour
         e.cinta = RelevoUI.Franja(e.raiz.transform, "Marcapaginas", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(-6f, 6f), new Vector2(10f, 0f), Sello);
 
+        e.pista.gameObject.SetActive(false);
+        LaminaDeLiria.Miniatura(e.raiz.transform,e.numero,indice+1);
         return e;
     }
 
@@ -607,7 +609,7 @@ public class MenuExploracionUI : MonoBehaviour
             for (int f = 0; f < e.filetes.Length; f++) e.filetes[f].color = elegida ? Sello : PapelHondo;
 
             e.anillo.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.7f);
-            e.numero.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.85f);
+            e.numero.color = new Color32(250,229,179,255);
 
             e.chip.color = colorChip;
             e.chipTexto.text = chip;
@@ -631,7 +633,7 @@ public class MenuExploracionUI : MonoBehaviour
                 e.titulo.color = PapelClaro;
                 e.lugar.color = new Color32(238, 220, 180, 255);
                 e.pista.color = new Color32(200, 221, 205, 255);
-                e.anillo.color = e.numero.color = new Color32(239, 188, 109, 255);
+                e.anillo.color = new Color32(239, 188, 109, 255);
             }
 
             e.cinta.rectTransform.sizeDelta = new Vector2(10f, elegida ? 92f : 0f);
@@ -663,8 +665,7 @@ public class MenuExploracionUI : MonoBehaviour
 
         detNarrativa.text = tiene
             ? d.textoIntro
-            : "Falta el recuerdo de este puerto. Hay un destello en " + d.tituloIntro
-              + ".";
+            : LaminaDeLiria.PistaDeHallazgo(d.indice);
         detNarrativa.text = HuellaDelCanal.NotaDeViaje(d.indice, detNarrativa.text);
         detNarrativa.color = tiene ? TintaSuave : TintaSuave;
 

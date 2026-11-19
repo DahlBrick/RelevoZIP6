@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3420aacd20efec408a1f736c7bfa607, type: 3}
+  m_Name: Puerto01
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  indice: 1
+  nombre: Nivel 1 - Muelle de Cobre
+  tituloIntro: Muelle de Cobre
+  textoIntro: "\xABBuenas noches a quienes siguen de turno\xBB. La voz sale de una
+    radio junto al muelle. Tras la crecida, los puentes siguen bajo el agua. Junto
+    a Nilo queda una bater\xEDa compatible con el faro."
+  pistaMaia: "La bater\xEDa abre el paso, pero la palanca abre el regreso. En el
+    muelle hay dos orillas que cruzar: haz lo mismo dos veces."
+  textoCierre: Las tres orillas del Muelle vuelven a estar conectadas. El Patio de
+    Bombas sigue anegado.
+  recuerdoIdentificador: nivel1_recuerdo
+  recuerdoTitulo: Recuerdo de Liria - La barquera
+  recuerdoTexto: "\"Remaba al amanecer con las redes llenas. Si el faro vuelve a
+    encenderse, volver\xE9 a cruzar el canal.\""
+  reservaCasillas: 0
+  tutorialPatio: 0
+  tutorialCondensadores: 0
+  salidaEsFaro: 0

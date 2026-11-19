@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3420aacd20efec408a1f736c7bfa607, type: 3}
+  m_Name: Puerto07
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  indice: 7
+  nombre: Nivel 7 - Lonja de las Dos Voces
+  tituloIntro: Lonja de las Dos Voces
+  textoIntro: "La radio de la lonja enciende su piloto. \xABBuenas noches a quienes
+    siguen de turno\xBB. Al norte esperan los puestos del mercado. Al sur est\xE1
+    la emisora. Solo la primera palanca que bajes recibir\xE1 corriente."
+  pistaMaia: "Desde el muelle de carga, la caja alimenta la l\xEDnea turquesa del
+    mercado. La bater\xEDa alimenta la l\xEDnea \xE1mbar de la emisora."
+  textoCierre: En la taquilla queda una llave del archivo. El papel que la envuelve
+    lleva la fecha de la crecida.
+  recuerdoIdentificador: nivel7_recuerdo
+  recuerdoTitulo: Las dos etiquetas
+  recuerdoTexto: "En el tablero, la etiqueta \xABRADIO\xBB se despega por una esquina.
+    Debajo todav\xEDa se lee \xABBOMBA DE LA LONJA\xBB. Las dos tienen los mismos
+    agujeros."
+  reservaCasillas: 22
+  tutorialPatio: 0
+  tutorialCondensadores: 0
+  salidaEsFaro: 0

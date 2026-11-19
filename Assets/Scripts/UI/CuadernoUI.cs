@@ -143,6 +143,7 @@ public class CuadernoUI : MonoBehaviour
     Coroutine girando;
 
     int seleccion;
+    Image botonCerrar;
     bool abierto;
     bool flanco;
 
@@ -185,7 +186,7 @@ public class CuadernoUI : MonoBehaviour
 
     void Update()
     {
-        if (entrada == null) return;
+        if (entrada == null || LeerRaton()) return;
 
         // Esc, Tab y pausa: cierran desde la colección y vuelven a ella desde un recuerdo abierto.
         bool atras = entrada.Pulsado(entrada.Cancelar)
@@ -243,6 +244,29 @@ public class CuadernoUI : MonoBehaviour
         flanco = true;
 
         return eje > 0f ? 1 : -1;
+    }
+
+    bool LeerRaton()
+    {
+        var raton=Mouse.current;
+        if(raton==null)return false;
+        float rueda=raton.scroll.ReadValue().y;
+        if(Mathf.Abs(rueda)>0.01f){ CambiarRecuerdo(rueda<0 ? 1 : -1); return true; }
+        if(!raton.leftButton.wasPressedThisFrame)return false;
+        Vector2 p=raton.position.ReadValue();
+        if(RectTransformUtility.RectangleContainsScreenPoint(botonCerrar.rectTransform,p)){Volver();return true;}
+        for(int i=0;i<Niveles;i++)
+        {
+            bool tab=RectTransformUtility.RectangleContainsScreenPoint(pestanas[i].rectTransform,p);
+            bool fila=!abierto && entradas[i].raiz.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(entradas[i].fondo.rectTransform,p);
+            if(!tab && !fila)continue;
+            if(i!=seleccion)CambiarRecuerdo(i-seleccion);
+            else if(fila)AbrirRecuerdo();
+            return true;
+        }
+        if(!abierto && RectTransformUtility.RectangleContainsScreenPoint(colCta.rectTransform,p)){AbrirRecuerdo();return true;}
+        if(abierto && RectTransformUtility.RectangleContainsScreenPoint(detCta.rectTransform,p)){abierto=false;Refrescar();SonarHoja();return true;}
+        return false;
     }
 
     void CambiarRecuerdo(int paso)
@@ -314,8 +338,8 @@ public class CuadernoUI : MonoBehaviour
 
         CanvasScaler escalador = lienzo.AddComponent<CanvasScaler>();
         escalador.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        escalador.referenceResolution = new Vector2(1920f, 1080f);
-        escalador.matchWidthOrHeight = 0.5f;
+        escalador.referenceResolution = new Vector2(1620f, 930f);
+        escalador.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
 
         lienzo.AddComponent<GraphicRaycaster>();
 
@@ -336,6 +360,9 @@ public class CuadernoUI : MonoBehaviour
             Vector2.zero, new Vector2(AnchoHoja, AltoHoja), Cuero).GetComponent<RectTransform>();
 
         Papeleria();
+        botonCerrar=RelevoUI.Capsula(hoja,"Cerrar cuaderno",new Vector2(1,1),new Vector2(1,1),new Vector2(-109,-62),new Vector2(140,36),Sello);
+        var salir=RelevoUI.Texto(botonCerrar.transform,"Rótulo",Vector2.one*0.5f,Vector2.one*0.5f,Vector2.zero,new Vector2(140,34),18,TextAnchor.MiddleCenter,PapelClaro);
+        salir.text="Cerrar";
 
         Text cabTitulo = RelevoUI.Texto(hoja, "Cabecera titulo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -30f), new Vector2(700f, 40f), 32, TextAnchor.MiddleCenter, Tinta);
@@ -537,16 +564,16 @@ public class CuadernoUI : MonoBehaviour
         for (int i = 0; i < Niveles; i++)
         {
             pestanas[i] = RelevoUI.Panel(hoja, "Pestana " + (i + 1), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(4f, 255f - i * 56f), new Vector2(88f, 52f), PapelClaro).GetComponent<Image>();
+                new Vector2(4f, 297f - i * 53f), new Vector2(88f, 52f), PapelClaro).GetComponent<Image>();
             pestanas[i].rectTransform.localRotation = Quaternion.Euler(0f, 0f, 1.6f);
 
             pestanasTexto[i] = RelevoUI.Texto(hoja, "Pestana texto " + (i + 1), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(4f, 255f - i * 56f), new Vector2(88f, 52f), 22, TextAnchor.MiddleCenter, TintaSuave);
+                new Vector2(4f, 297f - i * 53f), new Vector2(88f, 52f), 22, TextAnchor.MiddleCenter, TintaSuave);
             pestanasTexto[i].font = RelevoUI.FuenteTitulo();
             pestanasTexto[i].text = Romano(i + 1);
 
             pestanasFilo[i] = RelevoUI.Franja(hoja, "Pestana filo " + (i + 1), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(-80f, 255f - i * 56f), new Vector2(5f, 52f), ColorDeNivel(i + 1));
+                new Vector2(-80f, 297f - i * 53f), new Vector2(5f, 52f), ColorDeNivel(i + 1));
         }
     }
 
@@ -565,6 +592,8 @@ public class CuadernoUI : MonoBehaviour
             case 8: return "VIII";
             case 9: return "IX";
             case 10: return "X";
+            case 11: return "XI";
+            case 12: return "XII";
             default: return numero.ToString();
         }
     }
@@ -612,8 +641,8 @@ public class CuadernoUI : MonoBehaviour
 
         // ---------------- página derecha: la ficha de la entrada elegida
         colIlustracion = RelevoUI.Franja(p, "Ilustracion", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, 175f), new Vector2(AnchoPagina, 150f), RelevoUI.ConAlfa(PapelSombra, 0.75f));
-        colPostal = PostalDeLiria.Crear(colIlustracion);
+            new Vector2(ColDer, 195f), new Vector2(AnchoPagina, 190f), RelevoUI.ConAlfa(PapelSombra, 0.75f));
+        colPostal = PostalDeLiria.Crear(colIlustracion,true);
 
         colTitulo = RelevoUI.Texto(p, "Col titulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 62f), new Vector2(AnchoPagina, 34f), 24, TextAnchor.MiddleLeft, Tinta);
@@ -630,7 +659,7 @@ public class CuadernoUI : MonoBehaviour
             new Vector2(ColDer, -12f), new Vector2(AnchoPagina, 56f), 17, TextAnchor.MiddleLeft, Tinta);
 
         colTexto = RelevoUI.Texto(p, "Col texto", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -96f), new Vector2(AnchoPagina, 104f), 17, TextAnchor.UpperLeft, TintaSuave);
+            new Vector2(ColDer, -96f), new Vector2(AnchoPagina, 104f), 20, TextAnchor.UpperLeft, TintaSuave);
 
         colCta = RelevoUI.Capsula(p, "Col cta", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, -226f), new Vector2(AnchoPagina, 42f), RelevoUI.ConAlfa(Sello, 0.9f));
@@ -664,16 +693,16 @@ public class CuadernoUI : MonoBehaviour
             new Vector2(128f, -12f), new Vector2(168f, 24f), RelevoUI.Ambar);
 
         e.chipTexto = RelevoUI.Texto(e.raiz.transform, "Chip texto", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(128f, -12f), new Vector2(168f, 24f), 13, TextAnchor.MiddleCenter, Esmalte);
+            new Vector2(128f, -12f), new Vector2(168f, 24f), 16, TextAnchor.MiddleCenter, Esmalte);
         e.chipTexto.fontStyle = FontStyle.Bold;
 
         e.titulo = RelevoUI.Texto(e.raiz.transform, "Titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(128f, -42f), new Vector2(AnchoPagina - 150f, 28f), 21, TextAnchor.UpperLeft, Tinta);
+            new Vector2(128f, -40f), new Vector2(AnchoPagina - 140f, 32f), 24, TextAnchor.UpperLeft, Tinta);
         e.titulo.font = RelevoUI.Fuente();
         e.titulo.fontStyle = FontStyle.Bold;
 
         e.lugar = RelevoUI.Texto(e.raiz.transform, "Lugar", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(128f, -70f), new Vector2(AnchoPagina - 150f, 22f), 14, TextAnchor.UpperLeft, TintaSuave);
+            new Vector2(128f, -74f), new Vector2(AnchoPagina - 142f, 40f), 18, TextAnchor.UpperLeft, TintaSuave);
 
         e.pista = RelevoUI.Texto(e.raiz.transform, "Pista", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(128f, -94f), new Vector2(AnchoPagina - 150f, 20f), 13, TextAnchor.UpperLeft,
@@ -683,6 +712,8 @@ public class CuadernoUI : MonoBehaviour
         e.cinta = RelevoUI.Franja(e.raiz.transform, "Marcapaginas", new Vector2(0f, 1f), new Vector2(0f, 1f),
             new Vector2(-6f, 6f), new Vector2(10f, 0f), Sello);
 
+        e.pista.gameObject.SetActive(false);
+        LaminaDeLiria.Miniatura(e.raiz.transform,e.numero,indice+1);
         return e;
     }
 
@@ -693,7 +724,7 @@ public class CuadernoUI : MonoBehaviour
         // ---- página izquierda: la ilustración ocupa la hoja
         detIlustracion = RelevoUI.Franja(p, "Ilustracion", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, 118f), new Vector2(AnchoPagina - 24f, 230f), RelevoUI.ConAlfa(PapelSombra, 0.8f));
-        detPostal = PostalDeLiria.Crear(detIlustracion);
+        detPostal = PostalDeLiria.Crear(detIlustracion,true);
 
         detTitulo = RelevoUI.Texto(p, "Det titulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, -32f), new Vector2(AnchoPagina - 24f, 34f), 26, TextAnchor.MiddleLeft, Tinta);
@@ -866,7 +897,7 @@ public class CuadernoUI : MonoBehaviour
             for (int f = 0; f < e.filetes.Length; f++) e.filetes[f].color = elegida ? Sello : PapelHondo;
 
             e.anillo.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.7f);
-            e.numero.color = tiene ? acento : RelevoUI.ConAlfa(Gris, 0.85f);
+            e.numero.color = new Color32(250,229,179,255);
 
             e.chip.color = colorChip;
             e.chipTexto.text = chip;
@@ -892,7 +923,7 @@ public class CuadernoUI : MonoBehaviour
                 e.titulo.color = PapelClaro;
                 e.lugar.color = new Color32(238, 220, 180, 255);
                 e.pista.color = new Color32(200, 221, 205, 255);
-                e.anillo.color = e.numero.color = new Color32(239, 188, 109, 255);
+                e.anillo.color = new Color32(239, 188, 109, 255);
             }
         }
 
@@ -908,11 +939,11 @@ public class CuadernoUI : MonoBehaviour
         {
             bool elegida = i == seleccion;
             Color acento = ColorDeNivel(i + 1);
-            float y = 255f - i * 56f;
+            float y = 297f - i * 53f;
 
             pestanas[i].color = elegida ? PapelClaro : RelevoUI.ConAlfa(PapelSombra, 0.95f);
             pestanas[i].rectTransform.anchoredPosition = new Vector2(elegida ? 14f : 4f, y);
-            pestanas[i].rectTransform.sizeDelta = new Vector2(elegida ? 104f : 88f, elegida ? 55f : 50f);
+            pestanas[i].rectTransform.sizeDelta = new Vector2(elegida ? 104f : 88f, elegida ? 52f : 47f);
 
             pestanasTexto[i].color = elegida ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.85f);
             pestanasTexto[i].fontStyle = elegida ? FontStyle.Bold : FontStyle.Normal;
@@ -941,9 +972,11 @@ public class CuadernoUI : MonoBehaviour
         indicadorHoja.text = "HOJA " + pagina + " / " + Niveles;
         cabPie.text = abierto ? "el recuerdo, tal y como Nilo lo apuntó" : "recuerdos, sellos y anotaciones";
 
-        pieTexto.text = abierto
+        bool mando = Gamepad.current != null && (Mouse.current == null || Gamepad.current.lastUpdateTime > Mouse.current.lastUpdateTime)
+            && (Keyboard.current == null || Gamepad.current.lastUpdateTime > Keyboard.current.lastUpdateTime);
+        pieTexto.text = mando ? (abierto ? "Cruceta · pasar hoja     /     B · volver" : "Cruceta · elegir     /     A · abrir     /     B · cerrar") : abierto
             ? "← →  otro recuerdo      ·      Esc / Tab  volver a la colección"
-            : "← →  pasar página      ·      ↑ ↓  elegir      ·      Enter  abrir el recuerdo      ·      Esc / Tab  cerrar";
+            : "Rueda o flechas · elegir     /     Clic o Enter · abrir     /     Esc o Tab · cerrar";
 
         if (d == null) return;
 
@@ -956,21 +989,20 @@ public class CuadernoUI : MonoBehaviour
         colSubtitulo.text = "Nivel de origen · " + d.nombre;
         colSubtitulo.color = tiene ? Sello : Sello;
 
-        colNota.text = tiene ? d.recuerdoTexto : "«—»";
+        colNota.text = tiene ? d.recuerdoTexto : "Nota de campo";
         colNota.color = tiene ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.7f);
 
         colTexto.text = tiene
             ? d.textoIntro
-            : "Esta hoja está cosida al lomo. El recuerdo del " + d.tituloIntro
-              + " todavía no ha llegado al cuaderno: Nilo tiene que encontrarlo en el tramo.";
+            : LaminaDeLiria.PistaDeHallazgo(d.indice);
         colTexto.text = HuellaDelCanal.NotaDeViaje(d.indice, colTexto.text);
         colTexto.color = tiene ? TintaSuave : TintaSuave;
 
         colCta.color = tiene ? RelevoUI.ConAlfa(Sello, 0.9f) : RelevoUI.ConAlfa(PapelHondo, 0.7f);
         colCtaTexto.color = tiene ? PapelClaro : RelevoUI.ConAlfa(PapelClaro, 0.8f);
         colCtaTexto.text = tiene
-            ? "Enter · abrir este recuerdo"
-            : "Enter · abrir la hoja incompleta";
+            ? "Abrir el recuerdo"
+            : "Ver la ficha de búsqueda";
 
         // ---------------- doble página (recuerdo)
         detPostal.Mostrar(d);
@@ -987,7 +1019,7 @@ public class CuadernoUI : MonoBehaviour
         detChipTexto.color = tiene ? Esmalte : Tinta;
 
         detPista.text = !tiene
-            ? "vuelve al " + d.tituloIntro + " y encuéntralo"
+            ? LaminaDeLiria.PistaDeHallazgo(d.indice)
             : (leido ? "abierto en el cuaderno" : "recién encontrado");
         detPista.color = !tiene ? RelevoUI.ConAlfa(Sello, 0.85f) : RelevoUI.ConAlfa(TintaSuave, 0.95f);
 

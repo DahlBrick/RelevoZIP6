@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3420aacd20efec408a1f736c7bfa607, type: 3}
+  m_Name: Puerto11
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  indice: 11
+  nombre: Nivel 11 - Mercado de la Sal
+  tituloIntro: Mercado de la Sal
+  textoIntro: "Todav\xEDa queda sal en los bordes de las mesas. La reja del mercado
+    est\xE1 echada y el montacargas espera al otro lado del canal."
+  pistaMaia: "El caj\xF3n sostiene la reja. Deja la bater\xEDa en la base del mercado
+    y busca la palanca al otro lado. Cuando vuelvas a por ella, la pasarela seguir\xE1
+    tendida."
+  textoCierre: La balanza recupera el equilibrio. Un hilo de agua vuelve a correr
+    entre los bancales.
+  recuerdoIdentificador: nivel11_recuerdo
+  recuerdoTitulo: Pesa de media arroba
+  recuerdoTexto: "En el asa quedan granos de sal. La base est\xE1 gastada por un
+    lado. Alguien encaj\xF3 un trocito de cobre debajo para que la balanza volviera
+    a marcar lo justo."
+  reservaCasillas: 0
+  tutorialPatio: 0
+  tutorialCondensadores: 0
+  salidaEsFaro: 0

@@ -5,7 +5,7 @@
 /// </summary>
 public static class LevelLayouts
 {
-    public const int Cantidad = 10;
+    public const int Cantidad = 12;
     public const float TamanoTile = 2f;
 
     public static LevelLayout Obtener(int indice)
@@ -22,6 +22,8 @@ public static class LevelLayouts
             case 8: return Nivel8();
             case 9: return Nivel9();
             case 10: return Nivel10();
+            case 11: return Nivel11();
+            case 12: return Nivel12();
             default: return null;
         }
     }
@@ -232,5 +234,40 @@ public static class LevelLayouts
             "wwwww##v#F###1wwww",
             "wwwww#m#######wwww",
             "wwwww#M#NY###vwwww");
+    }
+
+    public static LevelLayout Nivel11()
+    {
+        return new LevelLayout("Nivel 11 - Mercado de la Sal", TamanoTile,
+            "va#a##wwwv####wwwwww",
+            "######www###L#www##v",
+            "#b###ABBB#####www#E#",
+            "######www##a#hwww###",
+            "######PPP#####www##h",
+            "wwwgwwwww#b###www###",
+            "v#####www#bb#zwww#a#",
+            "M#k###www####Dwww###",
+            "#N##o#www#####CCC###",
+            "##Y###www#####wwwv##",
+            "h####hwwwmmwwwwwwwww",
+            "wwwwwwwwwXmwwwwwwwww");
+    }
+
+    public static LevelLayout Nivel12()
+    {
+        return new LevelLayout("Nivel 12 - Varadero de las Campanas", TamanoTile,
+            "wwwwwwwww#a###z#wws#v",
+            "wwwwwv#hw#o#k##DCC#E#",
+            "wwwwwX##g#######ww##b",
+            "wwwww###wv###I##PP###",
+            "wwwwwwwwwwwwwwwwww#Lh",
+            "wwwwwwwwwwwwwwwwwwwww",
+            "wwwwwwwwwwwwwwwwwwwww",
+            "#a####www####H##wwwww",
+            "b####jwww######hwwwww",
+            "##k###RRR#######wwwww",
+            "M###u#www#F#####wwwww",
+            "#NY###www#####1#wwwww",
+            "v###bhwww#ab###vwwwww");
     }
 }

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3420aacd20efec408a1f736c7bfa607, type: 3}
+  m_Name: Puerto04
+  m_EditorClassIdentifier: Assembly-CSharp::LevelDefinition
+  indice: 4
+  nombre: Nivel 4 - Aduana de la Marea
+  tituloIntro: Aduana de la Marea
+  textoIntro: El agua ya lame los sellos de la aduana. Al otro lado del canal queda
+    una puerta abierta para los botes del correo.
+  pistaMaia: "Lleva la caja al rombo y gira los discos con E hasta que el turquesa
+    alcance la orilla. En el taller, sigue el \xE1mbar hasta la pasarela de la galer\xEDa."
+  textoCierre: El primer saco de cartas sale en la barca de la tarde. En el mostrador
+    queda un sobre para la emisora. El matasellos es de la noche de la crecida.
+  recuerdoIdentificador: nivel4_recuerdo
+  recuerdoTitulo: "La \xFAltima saca"
+  recuerdoTexto: "\xABGuard\xE1bamos arriba las cartas sin due\xF1o. Cuando bajaba
+    la marea, alguien siempre ven\xEDa a preguntar.\xBB"
+  reservaCasillas: 18
+  tutorialPatio: 0
+  tutorialCondensadores: 0
+  salidaEsFaro: 0

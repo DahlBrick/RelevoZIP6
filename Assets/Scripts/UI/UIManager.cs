@@ -128,7 +128,7 @@ public class UIManager : MonoBehaviour
     {
         get
         {
-            return enPausa || enOpciones || enExploracion || cuadernoAbierto || completado
+            return SecuenciaDePuerto.EnCurso || enPausa || enOpciones || enExploracion || cuadernoAbierto || completado
                 || (dialogo != null && dialogo.Bloquea)
                 || (RelevoGame.Reserva != null && RelevoGame.Reserva.Apagado)
                 || CaidaAlAgua.Activa;
@@ -231,7 +231,7 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
-        if (cartaPuertos != null || Time.frameCount == fotogramaCierreCarta) return;
+        if (SecuenciaDePuerto.BloqueaEntrada || cartaPuertos != null || Time.frameCount == fotogramaCierreCarta) return;
         // El cuaderno es una escena aparte cargada ENCIMA del nivel: mientras esté delante manda
         // él. Aquí solo se detecta su cierre para devolver el tiempo y el bloqueo al nivel.
         bool cuaderno = CuadernoUI.Abierto;
@@ -505,7 +505,7 @@ public class UIManager : MonoBehaviour
         if (RelevoGame.Jugador != null) RelevoGame.Jugador.PuedeMoverse = !BloqueaJuego;
 
         // Con un menú delante, el HUD se atenúa: la jerarquía se lee de un vistazo.
-        if (grupoHUD != null) RelevoUIAnim.FijarAlfa(grupoHUD, BloqueaJuego ? 0.18f : 1f);
+        if (grupoHUD != null) RelevoUIAnim.FijarAlfa(grupoHUD, SecuenciaDePuerto.EnCurso ? 0f : (BloqueaJuego ? 0.18f : 1f));
     }
 
     // ------------------------------------------------------------------ refresco de menús

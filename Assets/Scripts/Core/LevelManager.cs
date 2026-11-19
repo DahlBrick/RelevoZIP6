@@ -161,6 +161,8 @@ public class LevelManager : MonoBehaviour
         if (IndiceNivel >= 4 && bateria != null)
         {
             if (bateria.Estado == EstadoBateria.EnSuelo) Publicar("Recoge la batería.");
+            else if (IndiceNivel == 11) Publicar(MercadoDeSal(false));
+            else if (IndiceNivel == 12 && !PuenteActivo("R")) Publicar("Empuja el cajón hasta el rombo del taller.");
             else if (Turno != null) Publicar(Turno.Objetivo);
             else if (IndiceNivel == 7 && RamalLonja == DestinoCorriente.Ninguno)
                 Publicar(RelevoGame.Jugador != null && RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position).x <= 2
@@ -399,6 +401,11 @@ public class LevelManager : MonoBehaviour
         AudioDirector.Pedir(Tono.Salida);
         AudioDirector.Pedir(Tono.Faro);
 
+        SecuenciaDePuerto.Reproducir(gameObject.scene,SecuenciaDePuerto.Momento.Cierre,MostrarCierre);
+    }
+
+    void MostrarCierre()
+    {
         GameEvents.RaiseNivelCompletado(NombreNivel);
 
         string cierre = Definicion != null ? Definicion.textoCierre : "";
@@ -446,12 +453,23 @@ public class LevelManager : MonoBehaviour
             : "La torre está llena. Retira la batería y cruza el puente mientras las barras siguen encendidas.";
     }
 
+    string MercadoDeSal(bool pista)
+    {
+        if (!CompuertaAbierta()) return pista ? "El cajón tiene sitio al sur y al este. Déjalo sobre el rombo para que la reja permanezca abierta." : "Sostén la reja del mercado con la caja.";
+        if (!Accionada("L")) return PuenteActivo("B") ? "Deja la batería en A y cruza al torno del norte." : "Alimenta la base A junto al embarcadero.";
+        if (RelevoGame.Bateria.BaseActual != null && RelevoGame.Bateria.BaseActual.Identificador == "A") return "Vuelve por la pasarela de madera y recupera la batería.";
+        if (RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position).x >= 17) return "Lleva la batería al pórtico del mercado.";
+        return pista ? PistaDelCondensador(RelevoGame.Bateria) : "Carga el condensador de D y cruza con la batería.";
+    }
+
     public string PistaActual()
     {
         var bateria = RelevoGame.Bateria;
         if (IndiceNivel < 4 || IndiceNivel > LevelLayouts.Cantidad || bateria == null || RelevoGame.Jugador == null)
             return Definicion != null ? Definicion.pistaMaia : "";
         if (Completado) return Definicion.textoCierre;
+        if (IndiceNivel == 11) return MercadoDeSal(true);
+        if (IndiceNivel == 12 && !PuenteActivo("R")) return "El primer cajón debe quedarse sobre el rombo. Empújalo antes al sur y luego hacia el este. Oirás la campana del puente de carga.";
         if (Turno != null) return Turno.Pista;
         if (bateria.Estado == EstadoBateria.EnSuelo) return "Recoge la batería junto al punto de llegada. Nilo recarga su reserva cuando la lleva encima.";
 
@@ -596,6 +614,8 @@ public class LevelManager : MonoBehaviour
             case 8: return "Nivel8_ArchivoDeLaFrecuencia";
             case 9: return "Nivel9_AstilleroDeLaMaroma";
             case 10: return "Nivel10_CasaDeLasDosGuardias";
+            case 11: return "Nivel11_MercadoDeLaSal";
+            case 12: return "Nivel12_VaraderoDeLasCampanas";
             default: return "Nivel1_MuelleDeCobre";
         }
     }

@@ -16,6 +16,10 @@ public sealed class CartaDePuertos : MonoBehaviour
     readonly Text[] numeros = new Text[LevelLayouts.Cantidad];
     readonly Text[] nombres = new Text[LevelLayouts.Cantidad];
     readonly Text[] marcas = new Text[LevelLayouts.Cantidad];
+    const int PuertosPorTramo=4;
+    static readonly string[] Tramos={ "Costa de Cobre", "Canales de la Lonja", "Muelles de Guardia" };
+    readonly Image[] tramos=new Image[Tramos.Length];
+    readonly Text[] rotulosTramo=new Text[Tramos.Length];
     Text titulo, leyenda, accion, estado, retorno, instrucciones;
     RawImage foto;
     Image boton, volver;
@@ -84,19 +88,32 @@ public sealed class CartaDePuertos : MonoBehaviour
         }
         Rotulo(cabecera,"Avance",340,-10,374,50,18,Papel,TextAnchor.MiddleRight).text =
             completos + " de " + filas.Length + " puertos restaurados\n" + recuerdos + " recuerdos en el cuaderno";
+        for(int i=0;i<tramos.Length;i++)
+        {
+            tramos[i]=Banda(hoja,"Tramo "+(i+1),(i-1)*355,174,345,49,Crema);
+            rotulosTramo[i]=Rotulo(tramos[i].transform,"Nombre",0,0,335,44,21,Tinta,TextAnchor.MiddleCenter);
+            rotulosTramo[i].text=(i*PuertosPorTramo+1).ToString("00")+"–"+Mathf.Min((i+1)*PuertosPorTramo,filas.Length).ToString("00")+"   "+Tramos[i];
+        }
         for (int i=0; i<filas.Length; i++)
         {
             int id=i+1;
-            var fila=Banda(hoja,"Puerto "+id,-286,184-i*41,484,38,Crema);
+            var fila=Banda(hoja,"Puerto "+id,-286,100-(i%PuertosPorTramo)*80,484,73,Crema);
+            var mini=new GameObject("Vista de puerto",typeof(RectTransform),typeof(RawImage)).GetComponent<RawImage>();
+            mini.rectTransform.SetParent(fila.transform,false);
+            mini.rectTransform.anchoredPosition=new Vector2(-180,0);
+            mini.rectTransform.sizeDelta=new Vector2(110,63);
+            mini.texture=Resources.Load<Texture2D>("Bitacora/Puerto"+id);
+            mini.raycastTarget=false;
             filas[i]=fila;
-            numeros[i]=Rotulo(fila.transform,"Número",-204,0,50,38,20,Gris,TextAnchor.MiddleCenter);
+            numeros[i]=Rotulo(fila.transform,"Número",-87,10,54,32,21,Gris,TextAnchor.MiddleCenter);
             numeros[i].text=id.ToString("00");
-            nombres[i]=Rotulo(fila.transform,"Nombre",-9,0,324,43,19,Tinta);
+            nombres[i]=Rotulo(fila.transform,"Nombre",81,10,285,35,21,Tinta);
+            nombres[i].resizeTextForBestFit=true; nombres[i].resizeTextMinSize=17; nombres[i].resizeTextMaxSize=21;
             nombres[i].text=DefinicionesPorDefecto.FichaDelCuaderno(id).tituloIntro;
-            marcas[i]=Rotulo(fila.transform,"Estado",195,0,88,41,13,Gris,TextAnchor.MiddleCenter);
+            marcas[i]=Rotulo(fila.transform,"Estado",64,-18,340,23,15,Gris);
         }
 
-        var marco=Banda(hoja,"Postal",252,69,546,244,Agua);
+        var marco=Banda(hoja,"Postal",252,45,546,189,Agua);
         var imagen=new GameObject("Fotografía",typeof(RectTransform),typeof(RawImage));
         foto=imagen.GetComponent<RawImage>();
         foto.raycastTarget=false;
@@ -105,7 +122,7 @@ public sealed class CartaDePuertos : MonoBehaviour
         foto.rectTransform.anchorMax=Vector2.one;
         foto.rectTransform.offsetMin=Vector2.one*3;
         foto.rectTransform.offsetMax=Vector2.one*-3;
-        estado=Rotulo(hoja,"Registro",251,-76,546,26,16,Gris);
+        estado=Rotulo(hoja,"Registro",251,-67,546,26,16,Gris);
         titulo=Rotulo(hoja,"Puerto elegido",251,-111,546,48,30,Tinta);
         leyenda=Rotulo(hoja,"Detalle",251,-161,546,60,18,Tinta);
         boton=Banda(hoja,"Partir",252,-228,546,51,Agua);
@@ -123,8 +140,15 @@ public sealed class CartaDePuertos : MonoBehaviour
 
     void Refrescar()
     {
+        int tramo=(seleccion-1)/PuertosPorTramo;
+        for(int j=0;j<tramos.Length;j++)
+        {
+            tramos[j].color=j==tramo?Agua:Crema;
+            rotulosTramo[j].color=j==tramo?Oro:Tinta;
+        }
         for (int i=0;i<filas.Length;i++)
         {
+            filas[i].gameObject.SetActive(i/PuertosPorTramo==tramo);
             int n=i+1;
             bool elegido=n==seleccion;
             bool abierto=Disponible(n);
@@ -140,8 +164,8 @@ public sealed class CartaDePuertos : MonoBehaviour
         foto.enabled=tex!=null;
         if(tex!=null)
         {
-            float alto=Mathf.Min(1f,(float)tex.width/tex.height/(540f/238f));
-            float ancho=Mathf.Min(1f,(540f/238f)*tex.height/tex.width);
+            float alto=Mathf.Min(1f,(float)tex.width/tex.height/(540f/183f));
+            float ancho=Mathf.Min(1f,(540f/183f)*tex.height/tex.width);
             foto.uvRect=new Rect((1-ancho)*0.5f,(1-alto)*0.5f,ancho,alto);
         }
         bool abiertoSel=Disponible(seleccion);
@@ -164,8 +188,8 @@ public sealed class CartaDePuertos : MonoBehaviour
         retorno.text = repetir ? "Ver el prólogo" : (confirmar ? "Cancelar viaje" : "Volver");
         bool mando=Gamepad.current!=null && (Mouse.current==null || Gamepad.current.lastUpdateTime>Mouse.current.lastUpdateTime)
             && (Keyboard.current==null || Gamepad.current.lastUpdateTime>Keyboard.current.lastUpdateTime);
-        instrucciones.text=mando?"Cruceta o palanca para elegir    ·    A para aceptar"+(origen>0?"    ·    B para volver":"")
-            :"↑ ↓  Elegir puerto      ·      Enter  Aceptar"+(origen>0?"      ·      Esc  Volver":"");
+        instrucciones.text=mando?"↑ ↓ Puerto   ·   ← → Tramo   ·   A Aceptar"+(origen>0?"    ·    B para volver":"")
+            :"↑ ↓  Puerto     ·     ← →  Tramo     ·     Enter  Aceptar"+(origen>0?"      ·      Esc  Volver":"");
         if (repetir) instrucciones.text += mando ? "    ·    Botón oeste para el prólogo" : "      ·      P  Prólogo";
     }
 
@@ -178,10 +202,15 @@ public sealed class CartaDePuertos : MonoBehaviour
             var pos=raton.position.ReadValue();
             if (volver.gameObject.activeSelf && Contiene(volver,pos)) { AccionSecundaria(); return; }
             if (Contiene(boton,pos)) { Aceptar(); return; }
+            if(!confirmar)
+                for(int j=0;j<tramos.Length;j++)
+                    if(Contiene(tramos[j],pos)){Seleccionar(Mathf.Min(j*PuertosPorTramo+1+(seleccion-1)%PuertosPorTramo,filas.Length));return;}
             if (!confirmar)
                 for(int i=0;i<filas.Length;i++)
-                    if(Contiene(filas[i],pos)) { Seleccionar(i+1); return; }
+                    if(filas[i].gameObject.activeSelf && Contiene(filas[i],pos)) { Seleccionar(i+1); return; }
         }
+        if(!confirmar && raton!=null && Mathf.Abs(raton.scroll.ReadValue().y)>0.01f)
+        { Seleccionar(Mathf.Clamp(seleccion+(raton.scroll.ReadValue().y<0?1:-1),1,filas.Length)); return; }
         var teclado=Keyboard.current;
         var mando=Gamepad.current;
         if (verPrologo != null && SaveManager.NivelCompletado(1) &&
@@ -196,6 +225,19 @@ public sealed class CartaDePuertos : MonoBehaviour
         if (teclado!=null && teclado.upArrowKey.isPressed) eje=1;
         if (teclado!=null && teclado.downArrowKey.isPressed) eje=-1;
         if (mando!=null && Mathf.Abs(mando.dpad.y.ReadValue())>0.5f) eje=mando.dpad.y.ReadValue();
+        float horizontal=entrada!=null ? entrada.LeerMovimiento().x : 0;
+        if(teclado!=null && teclado.leftArrowKey.isPressed)horizontal=-1;
+        if(teclado!=null && teclado.rightArrowKey.isPressed)horizontal=1;
+        if(mando!=null && Mathf.Abs(mando.dpad.x.ReadValue())>0.5f)horizontal=mando.dpad.x.ReadValue();
+        if(Mathf.Abs(horizontal)>0.5f && Mathf.Abs(horizontal)>Mathf.Abs(eje))
+        {
+            if(!flanco && !confirmar)
+            {
+                int tramo=Mathf.Clamp((seleccion-1)/PuertosPorTramo+(horizontal>0?1:-1),0,tramos.Length-1);
+                Seleccionar(Mathf.Min(tramo*PuertosPorTramo+(seleccion-1)%PuertosPorTramo+1,filas.Length));
+            }
+            flanco=true; return;
+        }
         if (Mathf.Abs(eje)<0.45f) { flanco=false; return; }
         if (!flanco && !confirmar) Seleccionar(Mathf.Clamp(seleccion+(eje>0?-1:1),1,filas.Length));
         flanco=true;
