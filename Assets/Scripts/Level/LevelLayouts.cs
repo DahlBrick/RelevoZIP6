@@ -5,7 +5,7 @@
 /// </summary>
 public static class LevelLayouts
 {
-    public const int Cantidad = 8;
+    public const int Cantidad = 10;
     public const float TamanoTile = 2f;
 
     public static LevelLayout Obtener(int indice)
@@ -20,6 +20,8 @@ public static class LevelLayouts
             case 6: return Nivel6();
             case 7: return Nivel7();
             case 8: return Nivel8();
+            case 9: return Nivel9();
+            case 10: return Nivel10();
             default: return null;
         }
     }
@@ -200,5 +202,35 @@ public static class LevelLayouts
             "###o##w#####www####v",
             "#v####wv####www#####",
             "mmmwwwwwwwwwwwwwwwmX");
+    }
+
+    public static LevelLayout Nivel9()
+    {
+        return new LevelLayout("Nivel 9 - Astillero de la Maroma", TamanoTile,
+            "v####wwwwwv###wwwww",
+            "##1##wwwww####ww#Xv",
+            "m#####wwww##k##w###",
+            "##F##HwwwwI###uw###",
+            "#####wwwww#####w###",
+            "MYN##wwwww####RR#E#",
+            "#####wwwww####ww###",
+            "mmv##wwwwwv###wwv##");
+    }
+
+    public static LevelLayout Nivel10()
+    {
+        return new LevelLayout("Nivel 10 - Casa de las Dos Guardias", TamanoTile,
+            "v###wwwwwwv#######",
+            "##E#wwwwww##3###X#",
+            "####PPPPPP########",
+            "v###wwwwww#I###v##",
+            "wwwwwwwwwwwwwwwwww",
+            "wwwwwwwwwwwwwwwwww",
+            "wwwwwwwwwwwwwwwwww",
+            "wwwww######H##wwww",
+            "wwwww##2######wwww",
+            "wwwww##v#F###1wwww",
+            "wwwww#m#######wwww",
+            "wwwww#M#NY###vwwww");
     }
 }

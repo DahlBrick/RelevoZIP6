@@ -50,6 +50,26 @@ public class AudioDirector : MonoBehaviour
 
     [Header("Música del canal")]
     [SerializeField, Range(0f, 1f)] float volumenMusica = 0.24f;
+    const string PreferenciaMusica = "relevo_musica";
+    static int escalonMusica = 10;
+    public static int EscalonMusica { get { return escalonMusica; } }
+    public static float MezclaMusica { get { return escalonMusica * 0.1f; } }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void LeerMezcla()
+    {
+        escalonMusica = Mathf.Clamp(PlayerPrefs.GetInt(PreferenciaMusica, 10), 0, 10);
+    }
+
+    public static void AjustarMusica(int paso)
+    {
+        escalonMusica = Mathf.Clamp(paso, 0, 10);
+        PlayerPrefs.SetInt(PreferenciaMusica, escalonMusica);
+        PlayerPrefs.Save();
+        if (Instancia != null && Instancia.musica != null)
+            Instancia.musica.volume = Instancia.volumenMusica * MezclaMusica;
+    }
+
     AudioSource musica;
     AudioSource fuente;
     readonly Dictionary<Tono, AudioClip> tonosGenerados = new Dictionary<Tono, AudioClip>();
@@ -75,7 +95,7 @@ public class AudioDirector : MonoBehaviour
         musica.spatialBlend = 0f;
         musica.loop = true;
         musica.clip = tema;
-        musica.volume = volumenMusica;
+        musica.volume = volumenMusica * MezclaMusica;
         musica.Play();
     }
 

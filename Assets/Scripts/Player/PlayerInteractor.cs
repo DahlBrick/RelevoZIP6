@@ -99,8 +99,9 @@ public class PlayerInteractor : MonoBehaviour
         if (jugador == null) return;
 
         // Con la pausa o el cierre de nivel abiertos no se interactúa ni se muestra aviso.
-        if (RelevoGame.UI != null && RelevoGame.UI.BloqueaJuego)
+        if ((RelevoGame.UI != null && RelevoGame.UI.BloqueaJuego) || (RelevoGame.Nivel != null && RelevoGame.Nivel.Turno != null && RelevoGame.Nivel.Turno.OcupaInteraccion))
         {
+            actual = null;
             if (ultimoAviso != null)
             {
                 ultimoAviso = null;

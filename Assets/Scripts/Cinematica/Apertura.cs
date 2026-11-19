@@ -128,6 +128,25 @@ public sealed class Apertura : MonoBehaviour
         RelevoGame.Limpiar();
         entrada = acciones != null ? new RelevoInput(acciones) : null;
 
+        // La revisión del director y la grabación del editor entran directamente al plano.
+        bool revision = InicioRevision > 0f;
+#if UNITY_EDITOR
+        revision |= !string.IsNullOrEmpty(UnityEditor.SessionState.GetString("RelevoAperturaRuta", ""));
+#endif
+        if (!revision)
+        {
+            bool empezar = false;
+            var carta = CartaDePuertos.Abrir(entrada, 0, false, puerto =>
+            {
+                if (puerto == 1 && !SaveManager.NivelCompletado(1)) empezar = true;
+                else SceneManager.LoadScene(LevelManager.NombreEscenaNivel(puerto));
+            }, null, () => empezar = true);
+            while (!empezar) yield return null;
+            Time.timeScale = 1f;
+            carta.gameObject.SetActive(false);
+            Destroy(carta.gameObject);
+        }
+
         Ambiente();
         KitRelevo kit = KitRelevo.Activo;
         liria = bloquesLiria.Count > 0
@@ -962,7 +981,7 @@ public sealed class Apertura : MonoBehaviour
         pasaBajos.cutoffFrequency = Mathf.Min(pasaBajos.cutoffFrequency, Mathf.Lerp(22000f, 1600f, deformar));
         if (t >= CorteUltimo) vol = 0f;
         if (Cruza(previo, t, CorteUltimo)) musica.Stop();
-        musica.volume = vol;
+        musica.volume = vol * AudioDirector.MezclaMusica;
 
         // Estática al principio, sobre negro.
         if (Cruza(previo, t, 0.01f) || (t < A_Panoramica + 2f && !estatica.isPlaying && t > 0f)) estatica.Play();
@@ -998,7 +1017,7 @@ public sealed class Apertura : MonoBehaviour
             pasaBajos.cutoffFrequency = 2600f;
             distorsion.distortionLevel = 0.25f;
             float fragmento = S(Tramo(t, B_Radio + 1.2f, B_Radio + 1.9f)) * (1f - S(Tramo(t, B_Radio + 3.4f, B_Radio + 4.4f)));
-            musica.volume = 0.45f * fragmento * (Mathf.PerlinNoise(t * 3f, 9f) > 0.3f ? 1f : 0.3f);
+            musica.volume = AudioDirector.MezclaMusica * 0.45f * fragmento * (Mathf.PerlinNoise(t * 3f, 9f) > 0.3f ? 1f : 0.3f);
             if (t > B_Radio + 4.5f && musica.isPlaying) musica.Stop();
         }
     }

@@ -54,6 +54,23 @@ public static class ActorFactory
         }
     }
 
+    /// <summary>La tarde avanza por el canal. El cielo conserva relleno en las zonas de puzle.</summary>
+    public static void LuzDelPuerto(int indice, Light sol)
+    {
+        if (sol == null) return;
+        float tarde = Mathf.InverseLerp(1, 8, indice);
+        float azul = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(5, 8, indice));
+        Color ocaso = Color.Lerp(new Color(1f, 0.94f, 0.81f), new Color(1f, 0.79f, 0.59f), tarde);
+        sol.color = Color.Lerp(ocaso, new Color(0.80f, 0.84f, 1f), azul);
+        sol.intensity = Mathf.Lerp(1.62f, 1.23f, tarde);
+        sol.shadowStrength = Mathf.Lerp(0.52f, 0.62f, tarde);
+        sol.transform.rotation = Quaternion.Euler(Mathf.Lerp(48f, 29f, tarde), Mathf.Lerp(-32f, -61f, tarde), 0);
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+        RenderSettings.ambientSkyColor = Color.Lerp(new Color(0.73f,0.80f,0.87f),new Color(0.60f,0.68f,0.86f),tarde);
+        RenderSettings.ambientEquatorColor = Color.Lerp(new Color(0.65f,0.61f,0.52f),new Color(0.53f,0.52f,0.63f),tarde);
+        RenderSettings.ambientGroundColor = Color.Lerp(new Color(0.38f,0.31f,0.23f),new Color(0.30f,0.31f,0.43f),tarde);
+    }
+
     public static Light CrearSol(Transform padre)
     {
         GameObject go = new GameObject("Sol");

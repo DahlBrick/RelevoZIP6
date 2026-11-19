@@ -149,6 +149,28 @@ public static class DefinicionesPorDefecto
                 d.reservaCasillas = 22;
                 break;
 
+            case 9:
+                d.nombre = "Nivel 9 - Astillero de la Maroma";
+                d.tituloIntro = "Astillero de la Maroma";
+                d.textoIntro = "Los tablones del astillero siguen gastados por dos pares de botas. Un par de huellas acaba en el torno. El otro, en una placa con un solo trazo. En la cabina espera un carrete vacío.";
+                d.pistaMaia = "Graba una espera en la placa I y ve al torno cuando la cinta vuelva a empezar.";
+                d.textoCierre = "El pontón vuelve a rozar la grada. Entre las tablillas aparece un destino tachado del registro: Casa de las Dos Guardias.";
+                d.recuerdoIdentificador = "nivel9_recuerdo";
+                d.recuerdoTitulo = "Ficha de embarque partida";
+                d.recuerdoTexto = "Una mitad lleva un trazo y la otra un número de turno. Al juntarlas se lee a lápiz: «Hoy cruzó mi hermano. Yo me quedé en el torno».";
+                break;
+
+            case 10:
+                d.nombre = "Nivel 10 - Casa de las Dos Guardias";
+                d.tituloIntro = "Casa de las Dos Guardias";
+                d.textoIntro = "En las dos orillas hay sendas placas con dos trazos. En el libro de guardia de la noche de la crecida solo figura una firma. La segunda casilla tiene una mancha circular, del tamaño de un carrete.";
+                d.pistaMaia = "Graba primero la señal de embarque en I. Termina sobre II y busca su gemela en la otra orilla.";
+                d.textoCierre = "Al cerrarse los dos contactos, la radio deja pasar el final de la cinta. Después de las buenas noches de Maia se oye una silla arrastrándose. Alguien se quedó hasta que llegó la última barca.";
+                d.recuerdoIdentificador = "nivel10_recuerdo";
+                d.recuerdoTitulo = "Papel carbón del segundo turno";
+                d.recuerdoTexto = "Al trasluz aparece el renglón que faltaba del registro. En vez de una firma dice «Guardé tu sitio». La letra es la misma que en la ficha del astillero.";
+                break;
+
             default:
                 d.nombre = "Nivel 1 - Muelle de Cobre";
                 d.tituloIntro = "Muelle de Cobre";

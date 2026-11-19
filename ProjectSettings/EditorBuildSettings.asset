@@ -33,6 +33,12 @@ EditorBuildSettings:
     path: Assets/Scenes/Juego/Nivel8_ArchivoDeLaFrecuencia.unity
     guid: 9347bc9940ee82549ae68b6ce9754853
   - enabled: 1
+    path: Assets/Scenes/Juego/Nivel9_AstilleroDeLaMaroma.unity
+    guid: d68365dec7a2a8f42ae938cc8b150822
+  - enabled: 1
+    path: Assets/Scenes/Juego/Nivel10_CasaDeLasDosGuardias.unity
+    guid: 526eb298b0a7bd0458396c9741d3a5bc
+  - enabled: 1
     path: Assets/Scenes/PipePruebas/cuadernoRelevo.unity
     guid: e354e4c990ba55b4e923802679e51255
   m_configObjects:

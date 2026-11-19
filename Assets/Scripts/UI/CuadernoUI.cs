@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -537,16 +537,16 @@ public class CuadernoUI : MonoBehaviour
         for (int i = 0; i < Niveles; i++)
         {
             pestanas[i] = RelevoUI.Panel(hoja, "Pestana " + (i + 1), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(4f, 255f - i * 72f), new Vector2(88f, 58f), PapelClaro).GetComponent<Image>();
+                new Vector2(4f, 255f - i * 56f), new Vector2(88f, 52f), PapelClaro).GetComponent<Image>();
             pestanas[i].rectTransform.localRotation = Quaternion.Euler(0f, 0f, 1.6f);
 
             pestanasTexto[i] = RelevoUI.Texto(hoja, "Pestana texto " + (i + 1), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(4f, 255f - i * 72f), new Vector2(88f, 58f), 22, TextAnchor.MiddleCenter, TintaSuave);
+                new Vector2(4f, 255f - i * 56f), new Vector2(88f, 52f), 22, TextAnchor.MiddleCenter, TintaSuave);
             pestanasTexto[i].font = RelevoUI.FuenteTitulo();
             pestanasTexto[i].text = Romano(i + 1);
 
             pestanasFilo[i] = RelevoUI.Franja(hoja, "Pestana filo " + (i + 1), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(-80f, 255f - i * 72f), new Vector2(5f, 52f), ColorDeNivel(i + 1));
+                new Vector2(-80f, 255f - i * 56f), new Vector2(5f, 52f), ColorDeNivel(i + 1));
         }
     }
 
@@ -563,6 +563,8 @@ public class CuadernoUI : MonoBehaviour
             case 6: return "VI";
             case 7: return "VII";
             case 8: return "VIII";
+            case 9: return "IX";
+            case 10: return "X";
             default: return numero.ToString();
         }
     }
@@ -906,11 +908,11 @@ public class CuadernoUI : MonoBehaviour
         {
             bool elegida = i == seleccion;
             Color acento = ColorDeNivel(i + 1);
-            float y = 255f - i * 72f;
+            float y = 255f - i * 56f;
 
             pestanas[i].color = elegida ? PapelClaro : RelevoUI.ConAlfa(PapelSombra, 0.95f);
             pestanas[i].rectTransform.anchoredPosition = new Vector2(elegida ? 14f : 4f, y);
-            pestanas[i].rectTransform.sizeDelta = new Vector2(elegida ? 104f : 88f, elegida ? 68f : 58f);
+            pestanas[i].rectTransform.sizeDelta = new Vector2(elegida ? 104f : 88f, elegida ? 55f : 50f);
 
             pestanasTexto[i].color = elegida ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.85f);
             pestanasTexto[i].fontStyle = elegida ? FontStyle.Bold : FontStyle.Normal;

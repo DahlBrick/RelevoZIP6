@@ -2,15 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Subpanel de Opciones de la pausa: volumen general, pantalla completa y volver.
-///
-/// Igual que el resto de la interfaz, no crea Canvas ni EventSystem ni se hace persistente: lo
-/// construye UIManager DENTRO del lienzo del HUD (encima del panel de pausa) y es UIManager quien
-/// le pasa la entrada, así que en la escena sigue habiendo un solo lector del asset de entrada.
-///
-/// Los ajustes se guardan en PlayerPrefs con claves propias del juego. No toca AudioDirector ni
-/// ningún script de audio: el volumen general se aplica a AudioListener, que es el nivel maestro
-/// por encima de las fuentes concretas.
+/// Opciones de audio y pantalla compartidas por los niveles.
 /// </summary>
 public class OpcionesUI : MonoBehaviour
 {
@@ -18,7 +10,7 @@ public class OpcionesUI : MonoBehaviour
     const string ClavePantalla = "relevo_pantalla";
 
     const float AnchoTarjeta = 820f;
-    const float AltoTarjeta = 520f;
+    const float AltoTarjeta = 550f;
 
     const int PasosVolumen = 10;
 
@@ -27,7 +19,7 @@ public class OpcionesUI : MonoBehaviour
 
     public bool Abierto { get; private set; }
 
-    static readonly string[] Nombres = { "Volumen general", "Pantalla", "Volver" };
+    static readonly string[] Nombres = { "Volumen general", "Música", "Pantalla", "Volver" };
 
     class Fila
     {
@@ -46,7 +38,17 @@ public class OpcionesUI : MonoBehaviour
     bool pantallaCompleta;
     bool flanco;
 
-    enum Opcion { Volumen = 0, Pantalla = 1, Volver = 2 }
+    enum Opcion { Volumen, Musica, Pantalla, Volver }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void AplicarPreferencias()
+    {
+        if (PlayerPrefs.HasKey(ClaveVolumen))
+            AudioListener.volume = Mathf.Clamp(PlayerPrefs.GetInt(ClaveVolumen), 0, PasosVolumen) / (float)PasosVolumen;
+#if !UNITY_EDITOR
+        if (PlayerPrefs.HasKey(ClavePantalla)) Screen.fullScreen = PlayerPrefs.GetInt(ClavePantalla) == 1;
+#endif
+    }
 
     // ------------------------------------------------------------------ API
 
@@ -186,6 +188,9 @@ public class OpcionesUI : MonoBehaviour
                 PlayerPrefs.Save();
                 break;
 
+            case Opcion.Musica:
+                AudioDirector.AjustarMusica(AudioDirector.EscalonMusica + paso);
+                break;
             case Opcion.Pantalla:
                 pantallaCompleta = !pantallaCompleta;
                 Screen.fullScreen = pantallaCompleta;
@@ -213,6 +218,9 @@ public class OpcionesUI : MonoBehaviour
             ? RelevoUI.Ambar
             : RelevoUI.ConAlfa(RelevoUI.Ambar, 0.7f);
 
+        filas[(int)Opcion.Musica].valor.text = AudioDirector.EscalonMusica * 10 + " %";
+        filas[(int)Opcion.Musica].valor.color = seleccion == (int)Opcion.Musica
+            ? RelevoUI.Ambar : RelevoUI.ConAlfa(RelevoUI.Ambar, 0.7f);
         filas[(int)Opcion.Pantalla].valor.text = pantallaCompleta ? "completa" : "ventana";
         filas[(int)Opcion.Pantalla].valor.color = seleccion == (int)Opcion.Pantalla
             ? RelevoUI.Ambar

@@ -34,6 +34,7 @@ public class LevelManager : MonoBehaviour
     public ExitInteractable Salida;
     public MemoryInteractable Recuerdo;
     public MaiaTerminal Maia;
+    public EcoDeTurno Turno { get; private set; }
 
     public bool Completado { get; private set; }
     public int RecuerdosEncontrados { get; private set; }
@@ -130,6 +131,7 @@ public class LevelManager : MonoBehaviour
         Salida = salida;
         Recuerdo = recuerdo;
         Maia = maia;
+        Turno = FindFirstObjectByType<EcoDeTurno>();
 
         Bases.Clear();
         Puentes.Clear();
@@ -159,6 +161,7 @@ public class LevelManager : MonoBehaviour
         if (IndiceNivel >= 4 && bateria != null)
         {
             if (bateria.Estado == EstadoBateria.EnSuelo) Publicar("Recoge la batería.");
+            else if (Turno != null) Publicar(Turno.Objetivo);
             else if (IndiceNivel == 7 && RamalLonja == DestinoCorriente.Ninguno)
                 Publicar(RelevoGame.Jugador != null && RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position).x <= 2
                     ? "Carga el condensador y cruza con la batería." : "Elige a quién dar corriente. Mercado al norte, emisora al sur.");
@@ -449,6 +452,7 @@ public class LevelManager : MonoBehaviour
         if (IndiceNivel < 4 || IndiceNivel > LevelLayouts.Cantidad || bateria == null || RelevoGame.Jugador == null)
             return Definicion != null ? Definicion.pistaMaia : "";
         if (Completado) return Definicion.textoCierre;
+        if (Turno != null) return Turno.Pista;
         if (bateria.Estado == EstadoBateria.EnSuelo) return "Recoge la batería junto al punto de llegada. Nilo recarga su reserva cuando la lleva encima.";
 
         var casilla = RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position);
@@ -590,6 +594,8 @@ public class LevelManager : MonoBehaviour
             case 6: return "Nivel6_EsclusaDeLasDosLlaves";
             case 7: return "Nivel7_LonjaDeLasDosVoces";
             case 8: return "Nivel8_ArchivoDeLaFrecuencia";
+            case 9: return "Nivel9_AstilleroDeLaMaroma";
+            case 10: return "Nivel10_CasaDeLasDosGuardias";
             default: return "Nivel1_MuelleDeCobre";
         }
     }

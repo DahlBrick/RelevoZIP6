@@ -39,6 +39,39 @@ public static class TutorialMaia
         });
     }
 
+    public static void ExplicarEco()
+    {
+        Decir("Nilo, pon en marcha el magnetófono y camina hasta la placa de un trazo. Quédate allí un rato. Cuando se acabe la cinta volverás al carrete y tu eco repetirá hasta tus pausas.", IlustracionTutorial.Tipo.Eco);
+    }
+
+    public static void ExplicarMaroma()
+    {
+        Decir("Mira el piloto del torno, Nilo. Cuando tu eco pisa la placa I, se enciende. Usa el torno en ese momento y el pontón te llevará con la batería. Para volver, el otro torno tiene contrapeso.", IlustracionTutorial.Tipo.Maroma);
+    }
+
+    public static void ExplicarDobleGuardia()
+    {
+        Decir("En esta guardia había dos relevos, Nilo. El trazo I daba salida al pontón. Para tender la pasarela, los dos puestos marcados II tenían que contestar juntos. La cinta puede cubrir el de esta orilla.", IlustracionTutorial.Tipo.DobleGuardia);
+    }
+
+    public static void MenuGuardia()
+    {
+        if (Dialogo == null) return;
+        bool doble = RelevoGame.Nivel.IndiceNivel == 10;
+        Dialogo.Encolar(new DialogoUI.Mensaje {
+            titulo = "Maia", texto = "Aquí la cabina de guardia. ¿Qué indicación quieres escuchar?",
+            acento = RelevoUI.Verde,
+            opciones = doble ? new[] { "El magnetófono", "El transbordador", "La doble guardia", "Una pista", "Cerrar la radio" }
+                : new[] { "El magnetófono", "El transbordador", "Una pista para este turno", "Cerrar la radio" },
+            alElegir = delegate(int i) {
+                if (i == 0) ExplicarEco();
+                if (i == 1) ExplicarMaroma();
+                if (doble && i == 2) ExplicarDobleGuardia();
+                if (i == (doble ? 3 : 2)) Decir(RelevoGame.Nivel.PistaActual(),IlustracionTutorial.Tipo.Ninguna);
+            }
+        });
+    }
+
     static void ExplicarReserva()
     {
         Decir("Nilo, aquí tu reserva es limitada. Cerca de la batería te recargas. Lejos de ella, cada casilla que caminas gasta un segmento.",

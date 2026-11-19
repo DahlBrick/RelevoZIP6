@@ -2,22 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 /// <summary>
-/// Menú de exploración (Tab): el cuaderno de viaje abierto ENCIMA del nivel, con pestañas físicas.
-///
-/// No crea Canvas propio, ni EventSystem, ni se hace persistente: lo construye UIManager DENTRO del
-/// mismo lienzo del HUD y es UIManager quien le pasa la entrada, de modo que en toda la escena hay
-/// un solo lector del asset de entrada y un solo Canvas de juego.
-///
-/// Identidad opuesta a la pausa: aquí todo es papel, tinta y memoria (cálido y artesanal), frente al
-/// panel técnico de radio y energía de la pausa. Cada pestaña es un pliego de dos páginas: a la
-/// izquierda el índice, a la derecha la entrada abierta. El cuaderno (CUADERNO) y ESTADO leen datos
-/// reales; INVENTARIO, SKILLS y EQUIPAMIENTO quedan preparados con su estructura completa.
-///
-/// Nada de lo que hay aquí consulta o modifica el gameplay: SaveManager solo se lee (los recuerdos
-/// ya leídos los marca la escena cuadernoRelevo, no este panel) y del nivel solo se leen estados
-/// públicos (batería, reserva, puentes, compuertas, palancas).
+/// Atlas de Liria. Reúne las fichas de recuerdos, los mecanismos del tramo y la carta
+/// de navegación. UIManager conserva la pausa y gestiona el cambio de puerto.
 /// </summary>
 public class MenuExploracionUI : MonoBehaviour
 {
@@ -26,6 +15,7 @@ public class MenuExploracionUI : MonoBehaviour
 
     /// <summary>Lo engancha UIManager para cerrar el overlay y devolver el tiempo.</summary>
     public System.Action AlCerrar;
+    public System.Action AlAbrirCarta;
 
     public bool Abierto { get; private set; }
 
@@ -44,30 +34,13 @@ public class MenuExploracionUI : MonoBehaviour
 
     const int Niveles = LevelLayouts.Cantidad;
     static readonly Vector2[] HitosCanal = {
-        new Vector2(-195f, 77f), new Vector2(-65f, 64f), new Vector2(65f, 83f), new Vector2(195f, 70f),
-        new Vector2(195f, -17f), new Vector2(65f, -35f), new Vector2(-65f, -22f), new Vector2(-195f, -40f)
+        new Vector2(-205,77), new Vector2(-102,64), new Vector2(0,83), new Vector2(102,70), new Vector2(205,76),
+        new Vector2(205,-20), new Vector2(102,-35), new Vector2(0,-22), new Vector2(-102,-38), new Vector2(-205,-22)
     };
-    static readonly string[] Muelles = { "muelle", "patio", "faro", "aduana", "dársena", "esclusa", "lonja", "archivo" };
+    static readonly string[] Muelles = { "muelle", "patio", "faro", "aduana", "dársena", "esclusa", "lonja", "archivo", "astillero", "guardias" };
 
-    // Geometría del árbol de skills: la comparten el dibujo (PaginaSkills) y el refresco de la
-    // selección (RefrescarSkills), que necesita saber dónde ha quedado el nodo elegido.
-    const float SkX0 = -420f;
-    const float SkPaso = 120f;
-    const float SkYBus = 170f;
-    const float SkYNivel1 = 60f;
-    const float SkYNivel2 = -50f;
-    const float SkPanelTope = -127f;   // borde superior del panel de descripción (centro -192, alto 130)
-
-    static readonly string[] Nombres = { "TRAVESÍA", "INVENTARIO", "TALLER", "EQUIPAMIENTO", "ESTADO" };
-
-    static readonly string[] Pies =
-    {
-        "recuerdos, mapas y anotaciones",
-        "lo que Nilo lleva encima",
-        "lo que Nilo ha aprendido",
-        "lo que Nilo puede equipar",
-        "cómo está el tramo ahora mismo"
-    };
+    static readonly string[] Nombres = { "RECUERDOS", "TALLER", "MAPA Y ESTADO" };
+    static readonly string[] Pies = { "el cuaderno de Nilo", "mecanismos del tramo", "carta de navegación de Liria" };
 
     // Paleta del cuaderno: papel cálido, tinta marrón, sello rojo. Nada de azul tecnológico.
     static readonly Color Papel = new Color(0.898f, 0.843f, 0.714f, 1f);
@@ -81,159 +54,17 @@ public class MenuExploracionUI : MonoBehaviour
     static readonly Color Dorado = new Color(0.788f, 0.647f, 0.322f, 1f);
     static readonly Color Esmalte = new Color(0.129f, 0.263f, 0.271f, 1f);
 
-    enum Seccion { Cuaderno = 0, Inventario = 1, Skills = 2, Equipamiento = 3, Estado = 4 }
+    enum Seccion { Cuaderno, Taller, Estado }
 
-    // ------------------------------------------------------------------ contenido preparado
-
-    static readonly string[] CategoriasInv =
+    static readonly string[] Mecanismos = { "Batería", "Puentes eléctricos", "Palancas", "Cajas y placas", "Condensadores", "Red de conductores" };
+    static readonly string[] Notas =
     {
-        "Herramientas", "Repuestos", "Cables y fusibles",
-        "Objetos de memoria", "Carga de la batería", "Notas de campo"
-    };
-
-    static readonly string[] DetalleInv =
-    {
-        "Llaves, destornilladores y piezas de mano. Nilo todavía no lleva ninguna encima.",
-        "Muelles, juntas y remaches del canal. El primer repuesto llegará con el siguiente tramo.",
-        "Bobinas de cobre, fusibles y empalmes. Aquí se guardará lo que Nilo recoja del suelo.",
-        "Los objetos que devuelven un recuerdo. Se ordenan aquí, no en el cuaderno.",
-        "Celdas sueltas y cargas a medias. La batería buena no cuenta como objeto de inventario.",
-        "Hojas arrancadas con medidas, nombres y dibujos de Maia."
-    };
-
-    static readonly string[] Equipo =
-    {
-        "Batería portátil", "Arnés de cable", "Botas de muelle",
-        "Farol de mano", "Llave de paso", "Insignia de Liria"
-    };
-
-    static readonly string[] DetalleEquipo =
-    {
-        "La celda que Nilo puede llevar al hombro. Cambia quién mueve la energía del tramo.",
-        "Correa con gancho para arrastrar cable sin soltar las manos.",
-        "Suelas de ballesta: el primer salto sobre las compuertas abiertas.",
-        "Luz corta de mantenimiento para los túneles sin faro.",
-        "La llave cuadrada de las compuertas del Patio de Bombas.",
-        "La insignia de quien vuelve a encender Liria. No se compra: se gana."
-    };
-
-    const int RamasNum = 8;
-    const int NodosRama = 3;
-
-    /// <summary>Una rama del árbol de habilidades: nombre, color, sus tres nodos y su estado.</summary>
-    class Rama
-    {
-        public string nombre;
-        public Color color;
-        public string[] nodos;
-        public string[] detalle;
-        public int[] estado;   // 0 = bloqueado, 1 = disponible, 2 = desbloqueado
-    }
-
-    /// <summary>
-    /// Andamiaje visual del árbol. Todavía NO hay sistema de habilidades: estos estados existen solo
-    /// para que el árbol se lea completo (bloqueado, disponible y desbloqueado) y para calcular el
-    /// porcentaje de cada rama. Cuando exista el sistema real, esta tabla se sustituye por datos y
-    /// ni la navegación ni el dibujo tienen que cambiar.
-    /// </summary>
-    static readonly Rama[] Ramas =
-    {
-        new Rama
-        {
-            nombre = "Energía", color = RelevoUI.Ambar,
-            nodos = new[] { "Empalme", "Circuito en serie", "Sobrecarga" },
-            detalle = new[]
-            {
-                "Nilo aprende a cerrar un circuito con las manos y a no soltar el cable antes de tiempo.",
-                "Dos fuentes encadenadas: la segunda solo entrega lo que la primera no se queda.",
-                "Aguantar un pico de tensión sin que la reserva se vacíe de golpe."
-            },
-            estado = new[] { 2, 1, 0 }
-        },
-        new Rama
-        {
-            nombre = "Circuitos", color = RelevoUI.Turquesa,
-            nodos = new[] { "Giro de tramos", "Lectura de puertos", "Tramo estable" },
-            detalle = new[]
-            {
-                "Girar un tramo en pasos de noventa grados, sin forzarlo nunca.",
-                "Leer a qué puerto cardinal apunta cada pieza antes de girarla.",
-                "Dejar un tramo conectado sin que la corriente se pierda por el desvío muerto."
-            },
-            estado = new[] { 2, 2, 1 }
-        },
-        new Rama
-        {
-            nombre = "Agua", color = RelevoUI.ConAlfa(RelevoUI.Turquesa, 1f),
-            nodos = new[] { "Paso inundado", "Compuertas", "Corriente a favor" },
-            detalle = new[]
-            {
-                "Cruzar un tramo anegado sin resbalar con la batería en brazos.",
-                "Abrir la compuerta correcta: la del norte vacía el patio.",
-                "Usar la corriente del canal para llegar antes al siguiente muelle."
-            },
-            estado = new[] { 2, 1, 0 }
-        },
-        new Rama
-        {
-            nombre = "Exploración", color = RelevoUI.Cobre,
-            nodos = new[] { "Paso firme", "Atajo del muelle", "Ruta del canal" },
-            detalle = new[]
-            {
-                "Caminar por las pasarelas manuales sin perder el equilibrio.",
-                "El desvío que ahorra la vuelta entera del muelle.",
-                "Recordar de memoria el trazado completo del canal de Liria."
-            },
-            estado = new[] { 2, 0, 0 }
-        },
-        new Rama
-        {
-            nombre = "Memoria", color = Dorado,
-            nodos = new[] { "Orbe recordado", "Voz de Liria", "Página completa" },
-            detalle = new[]
-            {
-                "Recoger un recuerdo del suelo y guardarlo en el cuaderno.",
-                "Reconocer la voz de quien escribió el recuerdo antes de leerlo entero.",
-                "Cerrar una entrada del cuaderno con su ilustración y su lugar."
-            },
-            estado = new[] { 2, 1, 0 }
-        },
-        new Rama
-        {
-            nombre = "Radio", color = RelevoUI.Cobre,
-            nodos = new[] { "Frecuencia de Maia", "Señal limpia", "Llamada a Liria" },
-            detalle = new[]
-            {
-                "Encontrar la frecuencia en la que Maia sigue transmitiendo.",
-                "Separar su voz de la interferencia del faro.",
-                "Pedir ayuda a Liria desde cualquier punto del canal."
-            },
-            estado = new[] { 2, 0, 0 }
-        },
-        new Rama
-        {
-            nombre = "Cajas", color = RelevoUI.AmbarSuave,
-            nodos = new[] { "Empuje firme", "Peso equilibrado", "Cadena de cajas" },
-            detalle = new[]
-            {
-                "Empujar una caja hasta la placa sin que se desvíe por el borde.",
-                "Calcular cuánto peso aguanta una placa antes de ceder.",
-                "Mover dos cajas seguidas para mantener dos mecanismos abiertos."
-            },
-            estado = new[] { 2, 1, 0 }
-        },
-        new Rama
-        {
-            nombre = "Reserva", color = RelevoUI.Ambar,
-            nodos = new[] { "Autonomía", "Reserva larga", "Recarga en marcha" },
-            detalle = new[]
-            {
-                "Medir cuántas casillas aguanta Nilo lejos de la batería.",
-                "Estirar la autonomía sin apagarse a medio patio.",
-                "Recuperar carga mientras camina, dentro de la zona de la batería."
-            },
-            estado = new[] { 1, 0, 0 }
-        }
+        "Una base ámbar recibe la batería. Puedes recuperarla al regresar. Cerca de ella, Nilo repone la reserva que gasta al alejarse.",
+        "El puente necesita corriente en su orilla. Si retiras la fuente, busca un paso de regreso o comprueba si queda carga en el condensador.",
+        "Una palanca despliega una pasarela fija. Puedes retirar la batería y regresar con ella por el nuevo paso.",
+        "Para empujar, ponte detrás de la caja y camina recto contra ella. Déjala sobre el rombo para que la placa siga activa cuando te alejes.",
+        "Espera a que se llenen las barras antes de retirar la batería. La carga mantiene el puente unos segundos mientras cruzas con ella.",
+        "Sigue el cobre desde la fuente. Gira los discos junto a Nilo hasta que los contactos se encuentren y la corriente llegue al borne del puente."
     };
 
     // ------------------------------------------------------------------ referencias
@@ -292,76 +123,17 @@ public class MenuExploracionUI : MonoBehaviour
         public Text cuenta;
     }
 
-    readonly FilaInv[] categorias = new FilaInv[CategoriasInv.Length];
+    readonly FilaInv[] categorias = new FilaInv[Mecanismos.Length];
     Text invTitulo;
     Text invNota;
     Text invCuenta;
-    readonly Image[] huecos = new Image[3];
-    readonly Text[] huecosTexto = new Text[3];
-    int inventarioSel;
-
-    // --- SKILLS
-    readonly Image[,] nodoRelleno = new Image[RamasNum, NodosRama];
-    readonly Image[,] nodoAnillo = new Image[RamasNum, NodosRama];
-    readonly Image[,] nodoGlow = new Image[RamasNum, NodosRama];
-    readonly Text[,] nodoTexto = new Text[RamasNum, NodosRama];
-
-    // Selección del nodo activo. No basta con cambiar el texto del panel: el nodo elegido lleva
-    // halo, borde claro, escala aumentada, marcador en rombo y un cable que baja hasta el panel de
-    // descripción. Solo un nodo los tiene encendidos a la vez.
-    readonly Image[,] nodoHalo = new Image[RamasNum, NodosRama];
-    readonly Image[,] nodoMarco = new Image[RamasNum, NodosRama];
-    readonly Image[,] nodoPunta = new Image[RamasNum, NodosRama];
-    Image cableSeleccion;
-    Image puntaPanel;
-    List<Image> skPanelBordes;
-    readonly Image[] bus = new Image[RamasNum];
-    readonly Image[,] vertical = new Image[RamasNum, NodosRama - 1];
-    readonly Text[] ramaEtiqueta = new Text[RamasNum];
-    readonly Text[] ramaProgreso = new Text[RamasNum];
-
-    Image raizRelleno;
-    Image raizAnillo;
-    Text raizTexto;
-    Text raizEtiqueta;
-
-    Text skTitulo;
-    Image skChip;
-    Text skChipTexto;
-    Text skRama;
-    Text skDesc;
-    Text skRequisito;
-    Text skCoste;
-    Image skBarraFondo;
-    Image skBarra;
-    Image skFilo;
-    Text skBarraTexto;
-
-    int ramaSel;
-    int nivelSel;
-
-    // --- EQUIPAMIENTO
-    class Slot
-    {
-        public Image fondo;
-        public Image[] filetes;
-        public Image anillo;
-        public Text nombre;
-        public Text estado;
-    }
-
-    readonly Slot[] equipo = new Slot[Equipo.Length];
-    Text eqTitulo;
-    Text eqEstado;
-    Text eqDesc;
-    Text eqRequisito;
-    Image eqAnillo;
-    int equipoSel;
+    PostalDeLiria postalTaller;
+    int mecanismoSel;
 
     // --- ESTADO
     readonly Text[] estadoValor = new Text[8];
     readonly Image[] estadoFilo = new Image[8];
-    Image hitoActual;
+    Image hitoActual, botonCarta;
     Text hitoActualTexto;
 
     int seccion;
@@ -403,9 +175,7 @@ public class MenuExploracionUI : MonoBehaviour
             new Vector2(0f, -60f), new Vector2(1180f, 520f), new Color(0f, 0f, 0f, 0f)).rectTransform;
 
         paginas[(int)Seccion.Cuaderno] = PaginaCuaderno();
-        paginas[(int)Seccion.Inventario] = PaginaInventario();
-        paginas[(int)Seccion.Skills] = PaginaSkills();
-        paginas[(int)Seccion.Equipamiento] = PaginaEquipamiento();
+        paginas[(int)Seccion.Taller] = PaginaTaller();
         paginas[(int)Seccion.Estado] = PaginaEstado();
 
         Pestanas();
@@ -420,10 +190,7 @@ public class MenuExploracionUI : MonoBehaviour
 
         seccion = 0;
         entradaSel = Mathf.Clamp(RelevoGame.Nivel != null ? RelevoGame.Nivel.IndiceNivel - 1 : 0, 0, Niveles - 1);
-        inventarioSel = 0;
-        ramaSel = 0;
-        nivelSel = 0;
-        equipoSel = 0;
+        mecanismoSel = 0;
         zonaPestanas = false;
         flanco = false;
 
@@ -450,6 +217,7 @@ public class MenuExploracionUI : MonoBehaviour
     public void Manejar(RelevoInput entrada)
     {
         if (entrada == null || !Abierto) return;
+        if (ManejarRaton()) return;
 
         if (entrada.Pulsado(entrada.Cuaderno) || entrada.Pulsado(entrada.Pausa) || entrada.Pulsado(entrada.Cancelar))
         {
@@ -467,6 +235,7 @@ public class MenuExploracionUI : MonoBehaviour
             }
 
             if (seccion == (int)Seccion.Cuaderno && AlAbrirCuaderno != null) AlAbrirCuaderno(entradaSel + 1);
+            if (seccion == (int)Seccion.Estado && AlAbrirCarta != null) AlAbrirCarta();
             return;
         }
 
@@ -494,28 +263,6 @@ public class MenuExploracionUI : MonoBehaviour
             return;
         }
 
-        if (seccion == (int)Seccion.Skills)
-        {
-            if (horizontal)
-            {
-                ramaSel += eje > 0f ? 1 : -1;
-                if (ramaSel < 0) ramaSel = RamasNum - 1;
-                if (ramaSel >= RamasNum) ramaSel = 0;
-            }
-            else if (eje > 0f)
-            {
-                if (nivelSel == 0) zonaPestanas = true;
-                else nivelSel--;
-            }
-            else if (nivelSel < NodosRama - 1)
-            {
-                nivelSel++;
-            }
-
-            Refrescar();
-            return;
-        }
-
         if (seccion == (int)Seccion.Estado)
         {
             if (eje > 0f) zonaPestanas = true;
@@ -538,39 +285,80 @@ public class MenuExploracionUI : MonoBehaviour
             return;
         }
 
-        if (seccion == (int)Seccion.Inventario)
+        if (seccion == (int)Seccion.Taller)
         {
             if (horizontal) return;
 
             if (eje > 0f)
             {
-                if (inventarioSel == 0) zonaPestanas = true;
-                else inventarioSel--;
+                if (mecanismoSel == 0) zonaPestanas = true;
+                else mecanismoSel--;
             }
-            else if (inventarioSel < CategoriasInv.Length - 1) inventarioSel++;
+            else if (mecanismoSel < Mecanismos.Length - 1) mecanismoSel++;
 
             Refrescar();
             return;
         }
 
-        // EQUIPAMIENTO: rejilla de 3 x 2.
-        if (horizontal)
-        {
-            equipoSel += eje > 0f ? 1 : -1;
-            if (equipoSel < 0) equipoSel = Equipo.Length - 1;
-            if (equipoSel >= Equipo.Length) equipoSel = 0;
-        }
-        else if (eje > 0f)
-        {
-            if (equipoSel < 3) zonaPestanas = true;
-            else equipoSel -= 3;
-        }
-        else if (equipoSel < 3)
-        {
-            equipoSel += 3;
-        }
+    }
 
-        Refrescar();
+    bool ManejarRaton()
+    {
+        var raton = Mouse.current;
+        if (raton == null) return false;
+        var posicion = raton.position.ReadValue();
+        bool pulsado = raton.leftButton.wasPressedThisFrame;
+        if (pulsado)
+        {
+            for (int i = 0; i < pestanas.Length; i++)
+            {
+                if (!RectTransformUtility.RectangleContainsScreenPoint(pestanas[i].rectTransform, posicion)) continue;
+                zonaPestanas = false;
+                if (i != seccion) CambiarSeccion(i - seccion);
+                else Refrescar();
+                return true;
+            }
+        }
+        float rueda = raton.scroll.y.ReadValue();
+        if (seccion == (int)Seccion.Cuaderno)
+        {
+            if (Mathf.Abs(rueda) > 0.01f)
+            {
+                entradaSel = Mathf.Clamp(entradaSel + (rueda < 0 ? 1 : -1), 0, Niveles - 1);
+                Refrescar();
+                return true;
+            }
+            if (!pulsado) return false;
+            if (RectTransformUtility.RectangleContainsScreenPoint(detCta.rectTransform, posicion))
+            {
+                AlAbrirCuaderno?.Invoke(entradaSel + 1);
+                return true;
+            }
+            for (int i = 0; i < entradas.Length; i++)
+                if (entradas[i].raiz.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(entradas[i].fondo.rectTransform, posicion))
+                {
+                    entradaSel = i;
+                    Refrescar();
+                    return true;
+                }
+        }
+        else if (pulsado && seccion == (int)Seccion.Taller)
+        {
+            for (int i = 0; i < categorias.Length; i++)
+                if (RectTransformUtility.RectangleContainsScreenPoint(categorias[i].fondo.rectTransform, posicion))
+                {
+                    mecanismoSel = i;
+                    Refrescar();
+                    return true;
+                }
+        }
+        else if (pulsado && seccion == (int)Seccion.Estado &&
+                 RectTransformUtility.RectangleContainsScreenPoint(botonCarta.rectTransform, posicion))
+        {
+            AlAbrirCarta?.Invoke();
+            return true;
+        }
+        return false;
     }
 
     void CambiarSeccion(int paso)
@@ -663,9 +451,7 @@ public class MenuExploracionUI : MonoBehaviour
     {
         switch ((Seccion)indice)
         {
-            case Seccion.Inventario: return RelevoUI.Cobre;
-            case Seccion.Skills: return RelevoUI.Turquesa;
-            case Seccion.Equipamiento: return RelevoUI.Cobre;
+            case Seccion.Taller: return RelevoUI.Cobre;
             case Seccion.Estado: return RelevoUI.Verde;
             default: return RelevoUI.Ambar;
         }
@@ -893,13 +679,13 @@ public class MenuExploracionUI : MonoBehaviour
 
     // ------------------------------------------------------------------ página INVENTARIO
 
-    GameObject PaginaInventario()
+    GameObject PaginaTaller()
     {
         GameObject p = NuevaPagina("Pagina inventario");
 
         Text cabecera = RelevoUI.Texto(p.transform, "Cabecera", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColIzq, 232f), new Vector2(AnchoPagina, 24f), 14, TextAnchor.MiddleLeft, TintaSuave);
-        cabecera.text = "CATEGORÍAS · SEIS CAJONES";
+        cabecera.text = "MECANISMOS DEL TRAMO";
 
         for (int i = 0; i < categorias.Length; i++)
         {
@@ -916,13 +702,14 @@ public class MenuExploracionUI : MonoBehaviour
                 new Vector2(20f, 0f), new Vector2(38f, 38f), RelevoUI.Cobre, false);
 
             fila.nombre = RelevoUI.Texto(fila.fondo.transform, "Nombre", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(72f, 8f), new Vector2(300f, 26f), 18, TextAnchor.MiddleLeft, Tinta);
-            fila.nombre.text = CategoriasInv[i];
+                new Vector2(72f, 12f), new Vector2(420f, 30f), 21, TextAnchor.MiddleLeft, Tinta);
+            fila.nombre.font = RelevoUI.Fuente();
+            fila.nombre.text = Mecanismos[i];
 
             fila.cuenta = RelevoUI.Texto(fila.fondo.transform, "Cuenta", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(72f, -14f), new Vector2(360f, 20f), 13, TextAnchor.MiddleLeft,
+                new Vector2(72f, -15f), new Vector2(420f, 25f), 17, TextAnchor.MiddleLeft,
                 RelevoUI.ConAlfa(TintaSuave, 0.9f));
-            fila.cuenta.text = "0 de 3 espacios · sin descubrir";
+
 
             categorias[i] = fila;
         }
@@ -931,470 +718,76 @@ public class MenuExploracionUI : MonoBehaviour
         invTitulo = RelevoUI.Texto(p.transform, "Inv titulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 210f), new Vector2(AnchoPagina, 34f), 24, TextAnchor.MiddleLeft, Tinta);
         invTitulo.font = RelevoUI.FuenteTitulo();
-        invTitulo.fontStyle = FontStyle.Bold;
+        invTitulo.fontStyle = FontStyle.Normal;
 
         invCuenta = RelevoUI.Texto(p.transform, "Inv cuenta", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 180f), new Vector2(AnchoPagina, 22f), 14, TextAnchor.MiddleLeft, Sello);
-        invCuenta.text = "0 objetos · categoría preparada";
-
-        for (int i = 0; i < 3; i++)
-        {
-            float x = ColDer - 170f + i * 170f;
-
-            huecos[i] = RelevoUI.Franja(p.transform, "Hueco " + i, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(x, 40f), new Vector2(150f, 150f), RelevoUI.ConAlfa(PapelSombra, 0.55f));
-            RelevoUI.Marco(huecos[i].transform, RelevoUI.ConAlfa(PapelHondo, 0.85f), 1f);
-            RelevoUI.Esquinas(huecos[i].transform, 16f, 1f, RelevoUI.ConAlfa(PapelHondo, 0.85f));
-
-            RelevoUI.Hexagono(huecos[i].transform, "Vacio", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(0f, 14f), new Vector2(66f, 66f), RelevoUI.ConAlfa(TintaSuave, 0.28f), false);
-
-            huecosTexto[i] = RelevoUI.Texto(huecos[i].transform, "Etiqueta", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 18f), new Vector2(140f, 34f), 13, TextAnchor.LowerCenter,
-                RelevoUI.ConAlfa(TintaSuave, 0.85f));
-            huecosTexto[i].text = "ESPACIO " + (i + 1) + "\nsin descubrir";
-        }
+        var soporte = RelevoUI.Franja(p.transform, "Vista del tramo", Vector2.one * 0.5f, Vector2.one * 0.5f,
+            new Vector2(ColDer, 60f), new Vector2(AnchoPagina, 170f), Esmalte);
+        postalTaller = PostalDeLiria.Crear(soporte);
 
         invNota = RelevoUI.Texto(p.transform, "Inv nota", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -96f), new Vector2(AnchoPagina, 120f), 16, TextAnchor.UpperLeft, TintaSuave);
+            new Vector2(ColDer, -96f), new Vector2(AnchoPagina, 120f), 21, TextAnchor.UpperLeft, TintaSuave);
 
         RelevoUI.Franja(p.transform, "Inv filete", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, -172f), new Vector2(AnchoPagina, 1f), RelevoUI.ConAlfa(PapelHondo, 0.8f));
 
-        RelevoUI.Texto(p.transform, "Inv pie", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -196f), new Vector2(AnchoPagina, 40f), 14, TextAnchor.UpperLeft,
-            RelevoUI.ConAlfa(TintaSuave, 0.85f)).text =
-            "Los huecos vacíos son intencionados: cada cajón espera a su primer objeto.\nNada de esta página cambia el juego.";
-
         return p;
     }
 
-    void RefrescarInventario()
+    void RefrescarTaller()
     {
-        // Los tres huecos del cajón abierto se tiñen con el acento del tramo, para que se lean como
-        // espacios reservados y no como un fallo de carga.
-        for (int i = 0; i < huecos.Length; i++)
+        var nivel = RelevoGame.Nivel;
+        if (nivel == null) return;
+        var bateria = RelevoGame.Bateria;
+        var reservas = RelevoGame.Reserva;
+        int puentes = nivel.Puentes.FindAll(x => x != null && x.Desplegado).Count;
+        int palancas = nivel.Palancas.FindAll(x => x != null && x.Accionada).Count;
+        int placas = PlacaPresion.Todas.FindAll(x => x != null && x.Presionada).Count;
+        int torres = 0, carga = 0;
+        foreach (var toma in nivel.Bases)
         {
-            huecos[i].color = RelevoUI.ConAlfa(PapelSombra, 0.55f + inventarioSel * 0.04f);
-            huecosTexto[i].color = RelevoUI.ConAlfa(TintaSuave, 0.75f + inventarioSel * 0.03f);
+            if (toma == null || toma.Condensador == null) continue;
+            torres++;
+            carga = Mathf.Max(carga, Mathf.RoundToInt(100f * toma.Condensador.Carga));
         }
-
+        int discos = RelevoGame.Layout != null && RelevoGame.Layout.TieneCasilla('t')
+            ? Object.FindObjectsByType<PruebaCircuitoPieza>(FindObjectsSortMode.None).Length : 0;
+        string[] lecturas =
+        {
+            bateria == null ? "Sin batería" : (bateria.EnManos ? "Nilo la lleva" : (bateria.BaseActual != null ? "En la base " + bateria.BaseActual.Identificador : "En el suelo")),
+            puentes + " de " + nivel.Puentes.Count + " desplegados",
+            palancas + " de " + nivel.Palancas.Count + " accionadas",
+            CajaEmpujable.Todas.Count + " cajas · " + placas + " de " + PlacaPresion.Todas.Count + " placas activas",
+            torres == 0 ? "Ausentes en este puerto" : (torres == 1 ? "Carga actual " : "Mayor carga del tramo ") + carga + " %",
+            discos == 0 ? "Sin discos en este tramo" : discos + " discos giratorios"
+        };
+        postalTaller.Mostrar(nivel.Definicion);
         for (int i = 0; i < categorias.Length; i++)
         {
-            bool elegida = i == inventarioSel;
+            bool elegida = i == mecanismoSel;
             categorias[i].fondo.color = elegida ? PapelClaro : RelevoUI.ConAlfa(PapelSombra, 0.85f);
             for (int f = 0; f < categorias[i].filetes.Length; f++)
                 categorias[i].filetes[f].color = elegida ? Sello : PapelHondo;
 
             categorias[i].icono.color = elegida ? Sello : RelevoUI.Cobre;
-            categorias[i].nombre.color = elegida ? Tinta : RelevoUI.ConAlfa(Tinta, 0.85f);
+            categorias[i].cuenta.text = lecturas[i];
+            if (elegida) categorias[i].fondo.color = Esmalte;
+            categorias[i].nombre.color = elegida ? PapelClaro : Tinta;
+            categorias[i].cuenta.color = elegida ? PapelClaro : TintaSuave;
+            categorias[i].icono.color = elegida ? RelevoUI.Ambar : RelevoUI.Cobre;
         }
 
-        invTitulo.text = CategoriasInv[inventarioSel];
-        invNota.text = DetalleInv[inventarioSel];
-    }
-
-    // ------------------------------------------------------------------ página SKILLS
-
-    GameObject PaginaSkills()
-    {
-        GameObject p = NuevaPagina("Pagina skills");
-
-        const float yBus = SkYBus;
-        const float yNivel1 = SkYNivel1;
-        const float yNivel2 = SkYNivel2;
-        const float paso = SkPaso;
-        const float x0 = SkX0;
-
-        // Raíz: Nilo, el nodo del que cuelga todo el árbol.
-        raizRelleno = RelevoUI.Hexagono(p.transform, "Raiz", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-505f, yBus), new Vector2(62f, 62f), RelevoUI.ConAlfa(Esmalte, 0.92f), true);
-        raizAnillo = RelevoUI.Hexagono(p.transform, "Raiz anillo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-505f, yBus), new Vector2(62f, 62f), RelevoUI.Ambar, false);
-        raizTexto = RelevoUI.Texto(p.transform, "Raiz texto", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-505f, yBus), new Vector2(62f, 62f), 22, TextAnchor.MiddleCenter, RelevoUI.Ambar);
-        raizTexto.font = RelevoUI.FuenteTitulo();
-        raizTexto.text = "N";
-
-        raizEtiqueta = RelevoUI.Texto(p.transform, "Raiz etiqueta", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-505f, 128f), new Vector2(120f, 20f), 13, TextAnchor.MiddleCenter, TintaSuave);
-        raizEtiqueta.text = "NILO";
-
-        // Conexión con el panel de descripción: se dibuja ANTES que los nodos para quedar detrás de
-        // ellos, y se recoloca en cada refresco sobre la columna del nodo elegido.
-        cableSeleccion = RelevoUI.Franja(p.transform, "Cable seleccion", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-380f, 20f), new Vector2(2f, 10f), RelevoUI.ConAlfa(RelevoUI.Ambar, 0.35f));
-
-        puntaPanel = RelevoUI.Capsula(p.transform, "Punta panel", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-380f, SkPanelTope + 5f), new Vector2(12f, 12f), RelevoUI.Ambar);
-        puntaPanel.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
-
-        for (int i = 0; i < RamasNum; i++)
-        {
-            Rama rama = Ramas[i];
-            float x = x0 + i * paso;
-
-            // Etiqueta de la rama, encima del bus.
-            ramaEtiqueta[i] = RelevoUI.Texto(p.transform, "Rama " + rama.nombre, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(x, 226f), new Vector2(paso - 2f, 22f), 13, TextAnchor.MiddleCenter, TintaSuave);
-            ramaEtiqueta[i].text = rama.nombre;
-
-            // Bus: del nodo anterior (o de la raíz) a este.
-            float desde = i == 0 ? -474f : x0 + (i - 1) * paso + 26f;
-            bus[i] = Enlace(p.transform, "Bus " + i, new Vector2(desde, yBus), new Vector2(x - 26f, yBus), 2f,
-                RelevoUI.ConAlfa(TintaSuave, 0.3f));
-
-            for (int j = 0; j < NodosRama; j++)
-            {
-                float y = j == 0 ? yBus : (j == 1 ? yNivel1 : yNivel2);
-
-                if (j > 0)
-                {
-                    vertical[i, j - 1] = Enlace(p.transform, "Vertical " + i + "_" + j,
-                        new Vector2(x, (j == 1 ? yBus : yNivel1) - 26f),
-                        new Vector2(x, y + 26f), 2f, RelevoUI.ConAlfa(TintaSuave, 0.3f));
-                }
-
-                nodoGlow[i, j] = RelevoUI.Hexagono(p.transform, "Glow " + i + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                    new Vector2(x, y), new Vector2(78f, 78f), RelevoUI.ConAlfa(RelevoUI.Ambar, 0.35f), false);
-                nodoGlow[i, j].gameObject.SetActive(false);
-
-                nodoRelleno[i, j] = RelevoUI.Hexagono(p.transform, "Nodo " + i + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                    new Vector2(x, y), new Vector2(52f, 52f), RelevoUI.ConAlfa(Gris, 0.5f), true);
-
-                nodoAnillo[i, j] = RelevoUI.Hexagono(p.transform, "Nodo anillo " + i + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                    new Vector2(x, y), new Vector2(52f, 52f), RelevoUI.ConAlfa(Gris, 0.8f), false);
-
-                // Tres piezas de selección, apagadas hasta que el nodo recibe el foco.
-                nodoHalo[i, j] = RelevoUI.Hexagono(p.transform, "Halo " + i + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                    new Vector2(x, y), new Vector2(88f, 88f), RelevoUI.Ambar, false);
-                nodoHalo[i, j].gameObject.SetActive(false);
-
-                nodoMarco[i, j] = RelevoUI.Hexagono(p.transform, "Marco " + i + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                    new Vector2(x, y), new Vector2(64f, 64f), PapelClaro, false);
-                nodoMarco[i, j].gameObject.SetActive(false);
-
-                nodoPunta[i, j] = RelevoUI.Capsula(p.transform, "Punta " + i + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                    new Vector2(x, y + 38f), new Vector2(12f, 12f), RelevoUI.Ambar);
-                nodoPunta[i, j].rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
-                nodoPunta[i, j].gameObject.SetActive(false);
-
-                nodoTexto[i, j] = RelevoUI.Texto(p.transform, "Nodo texto " + i + "_" + j, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                    new Vector2(x, y), new Vector2(52f, 52f), 15, TextAnchor.MiddleCenter, RelevoUI.ConAlfa(Gris, 0.95f));
-                nodoTexto[i, j].font = RelevoUI.FuenteTitulo();
-                nodoTexto[i, j].text = Romanos(j);
-            }
-
-            ramaProgreso[i] = RelevoUI.Texto(p.transform, "Progreso " + rama.nombre, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(x, -96f), new Vector2(paso - 2f, 20f), 13, TextAnchor.MiddleCenter,
-                RelevoUI.ConAlfa(TintaSuave, 0.9f));
-        }
-
-        // ---------------- panel de descripción del nodo
-        Image panel = RelevoUI.Franja(p.transform, "Panel nodo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, -192f), new Vector2(AnchoDoble, 130f), RelevoUI.ConAlfa(PapelSombra, 0.92f));
-        skPanelBordes = new List<Image>();
-        RelevoUI.Marco(panel.transform, PapelHondo, 2f, skPanelBordes);
-        RelevoUI.Esquinas(panel.transform, 16f, 2f, PapelHondo);
-
-        skFilo = RelevoUI.Franja(panel.transform, "Filo", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-            Vector2.zero, new Vector2(5f, 130f), RelevoUI.Ambar);
-
-        skTitulo = RelevoUI.Texto(panel.transform, "Titulo", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(24f, -14f), new Vector2(420f, 28f), 22, TextAnchor.UpperLeft, Tinta);
-        skTitulo.font = RelevoUI.FuenteTitulo();
-        skTitulo.fontStyle = FontStyle.Bold;
-
-        skChip = RelevoUI.Capsula(panel.transform, "Chip", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(24f, -50f), new Vector2(150f, 24f), RelevoUI.Ambar);
-
-        skChipTexto = RelevoUI.Texto(panel.transform, "Chip texto", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(24f, -50f), new Vector2(150f, 24f), 12, TextAnchor.MiddleCenter, Esmalte);
-        skChipTexto.fontStyle = FontStyle.Bold;
-
-        skRama = RelevoUI.Texto(panel.transform, "Rama texto", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(190f, -50f), new Vector2(260f, 24f), 14, TextAnchor.MiddleLeft, TintaSuave);
-
-        skDesc = RelevoUI.Texto(panel.transform, "Descripcion", new Vector2(0f, 1f), new Vector2(0f, 1f),
-            new Vector2(455f, -12f), new Vector2(330f, 100f), 15, TextAnchor.UpperLeft, TintaSuave);
-
-        skRequisito = RelevoUI.Texto(panel.transform, "Requisito", new Vector2(1f, 1f), new Vector2(1f, 1f),
-            new Vector2(-24f, -12f), new Vector2(320f, 22f), 14, TextAnchor.UpperRight, TintaSuave);
-
-        skCoste = RelevoUI.Texto(panel.transform, "Coste", new Vector2(1f, 1f), new Vector2(1f, 1f),
-            new Vector2(-24f, -38f), new Vector2(320f, 22f), 14, TextAnchor.UpperRight,
-            RelevoUI.ConAlfa(TintaSuave, 0.85f));
-
-        skBarraFondo = RelevoUI.Franja(panel.transform, "Barra fondo", new Vector2(1f, 1f), new Vector2(1f, 1f),
-            new Vector2(-24f, -70f), new Vector2(320f, 10f), RelevoUI.ConAlfa(PapelHondo, 0.85f));
-
-        skBarra = RelevoUI.Franja(skBarraFondo.transform, "Barra", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-            Vector2.zero, new Vector2(320f, 10f), RelevoUI.Ambar);
-
-        skBarraTexto = RelevoUI.Texto(panel.transform, "Barra texto", new Vector2(1f, 1f), new Vector2(1f, 1f),
-            new Vector2(-24f, -88f), new Vector2(320f, 20f), 13, TextAnchor.UpperRight, TintaSuave);
-
-        return p;
-    }
-
-    static string Romanos(int indice)
-    {
-        switch (indice)
-        {
-            case 1: return "II";
-            case 2: return "III";
-            default: return "I";
-        }
-    }
-
-    void RefrescarSkills()
-    {
-        Rama seleccionada = Ramas[ramaSel];
-
-        for (int i = 0; i < RamasNum; i++)
-        {
-            Rama rama = Ramas[i];
-            int progreso = ProgresoDeRama(rama);
-
-            ramaEtiqueta[i].color = rama.estado[0] == 2
-                ? RelevoUI.ConAlfa(rama.color, 0.95f)
-                : RelevoUI.ConAlfa(TintaSuave, 0.8f);
-
-            ramaProgreso[i].text = progreso + "%";
-            ramaProgreso[i].color = progreso > 0 ? RelevoUI.ConAlfa(rama.color, 0.95f) : RelevoUI.ConAlfa(Gris, 0.9f);
-
-            // El bus se ilumina hasta la primera rama bloqueada y sigue el color de su rama.
-            bus[i].color = ColorDeEnlace(rama, 0);
-
-            for (int j = 0; j < NodosRama; j++)
-            {
-                int estado = rama.estado[j];
-                Color relleno, anillo, texto;
-
-                if (estado == 2)
-                {
-                    relleno = RelevoUI.ConAlfa(rama.color, 0.9f);
-                    anillo = RelevoUI.Aclarar(rama.color, 0.35f);
-                    texto = Esmalte;
-                }
-                else if (estado == 1)
-                {
-                    relleno = RelevoUI.ConAlfa(rama.color, 0.22f);
-                    anillo = RelevoUI.ConAlfa(rama.color, 0.9f);
-                    texto = RelevoUI.Aclarar(rama.color, 0.15f);
-                }
-                else
-                {
-                    relleno = RelevoUI.ConAlfa(Gris, 0.30f);
-                    anillo = RelevoUI.ConAlfa(Gris, 0.75f);
-                    texto = RelevoUI.ConAlfa(Gris, 0.95f);
-                }
-
-                nodoRelleno[i, j].color = relleno;
-                nodoAnillo[i, j].color = anillo;
-                nodoTexto[i, j].color = texto;
-
-                bool elegido = i == ramaSel && j == nivelSel;
-                Color filo = RelevoUI.Aclarar(rama.color, 0.5f);
-
-                // Halo suave + borde claro + rombo + escala: cuatro señales que se suman a la
-                // posición, para que el nodo elegido se distinga aunque haya vecinos cerca.
-                nodoGlow[i, j].color = RelevoUI.ConAlfa(rama.color, elegido ? 0.55f : 0.30f);
-                nodoGlow[i, j].gameObject.SetActive(elegido);
-
-                nodoHalo[i, j].color = RelevoUI.ConAlfa(filo, 0.95f);
-                nodoHalo[i, j].gameObject.SetActive(elegido);
-
-                nodoMarco[i, j].color = RelevoUI.ConAlfa(PapelClaro, 0.95f);
-                nodoMarco[i, j].gameObject.SetActive(elegido);
-
-                nodoPunta[i, j].color = filo;
-                nodoPunta[i, j].gameObject.SetActive(elegido);
-
-                float escala = elegido ? 1.12f : 1f;
-                nodoRelleno[i, j].rectTransform.localScale = new Vector3(escala, escala, 1f);
-                nodoAnillo[i, j].rectTransform.localScale = new Vector3(escala, escala, 1f);
-                nodoTexto[i, j].rectTransform.localScale = new Vector3(escala, escala, 1f);
-
-                if (j > 0) vertical[i, j - 1].color = ColorDeEnlace(rama, j);
-            }
-        }
-
-        // Cable del nodo elegido hasta el panel de descripción, con su punta en el borde del panel:
-        // así se ve de qué nodo habla el texto de abajo.
-        float ySel = nivelSel == 0 ? SkYBus : (nivelSel == 1 ? SkYNivel1 : SkYNivel2);
-        float xSel = SkX0 + ramaSel * SkPaso + 40f;
-        float largo = Mathf.Max(8f, ySel - SkPanelTope);
-
-        if (cableSeleccion != null)
-        {
-            cableSeleccion.rectTransform.sizeDelta = new Vector2(2f, largo);
-            cableSeleccion.rectTransform.anchoredPosition = new Vector2(xSel, SkPanelTope + largo * 0.5f);
-            cableSeleccion.color = RelevoUI.ConAlfa(seleccionada.color, 0.4f);
-        }
-
-        if (puntaPanel != null)
-        {
-            puntaPanel.rectTransform.anchoredPosition = new Vector2(xSel, SkPanelTope + 5f);
-            puntaPanel.color = seleccionada.color;
-        }
-
-        if (skPanelBordes != null)
-        {
-            Color borde = RelevoUI.ConAlfa(seleccionada.color, 0.9f);
-            for (int b = 0; b < skPanelBordes.Count; b++) if (skPanelBordes[b] != null) skPanelBordes[b].color = borde;
-        }
-
-        // Raíz: siempre desbloqueada, se ilumina cuando el foco está en el primer nodo.
-        bool enRaiz = ramaSel == 0 && nivelSel == 0;
-        raizAnillo.color = enRaiz ? RelevoUI.Ambar : RelevoUI.ConAlfa(RelevoUI.Ambar, 0.35f);
-        raizEtiqueta.color = enRaiz ? Tinta : RelevoUI.ConAlfa(TintaSuave, 0.8f);
-
-        // ---- descripción del nodo elegido
-        int estadoSel = seleccionada.estado[nivelSel];
-
-        skTitulo.text = seleccionada.nodos[nivelSel];
-        skDesc.text = seleccionada.detalle[nivelSel];
-        skRama.text = "Rama " + seleccionada.nombre + " · " + ProgresoDeRama(seleccionada) + "%";
-
-        skChipTexto.text = estadoSel == 2 ? "DESBLOQUEADO" : (estadoSel == 1 ? "DISPONIBLE" : "BLOQUEADO");
-        skChip.color = estadoSel == 2 ? RelevoUI.ConAlfa(seleccionada.color, 0.95f)
-            : (estadoSel == 1 ? RelevoUI.ConAlfa(seleccionada.color, 0.45f) : RelevoUI.ConAlfa(Gris, 0.7f));
-        skChipTexto.color = estadoSel == 2 ? Esmalte : Tinta;
-
-        skRequisito.text = nivelSel == 0
-            ? "Requiere · raíz NILO"
-            : "Requiere · " + seleccionada.nodos[nivelSel - 1];
-
-        skCoste.text = "Coste · — (por definir)";
-
-        float fraccion = ProgresoDeRama(seleccionada) / 100f;
-        skBarra.rectTransform.sizeDelta = new Vector2(320f * fraccion, 10f);
-        skBarra.color = seleccionada.color;
-        skBarraTexto.text = "Progreso de la rama · " + ProgresoDeRama(seleccionada) + "%";
-
-        if (skBarraFondo != null) skBarraFondo.color = RelevoUI.ConAlfa(PapelHondo, 0.85f);
-
-        // El filo del panel y la etiqueta de la rama toman su color.
-        if (skFilo != null) skFilo.color = seleccionada.color;
-    }
-
-    static int ProgresoDeRama(Rama rama)
-    {
-        int hechos = 0;
-        for (int i = 0; i < rama.estado.Length; i++) if (rama.estado[i] == 2) hechos++;
-        return Mathf.RoundToInt(hechos * 100f / rama.estado.Length);
-    }
-
-    static Color ColorDeEnlace(Rama rama, int nivel)
-    {
-        int estado = rama.estado[nivel];
-        if (estado == 2) return RelevoUI.ConAlfa(rama.color, 0.9f);
-        if (estado == 1) return RelevoUI.ConAlfa(rama.color, 0.45f);
-        return RelevoUI.ConAlfa(TintaSuave, 0.25f);
-    }
-
-    // ------------------------------------------------------------------ página EQUIPAMIENTO
-
-    GameObject PaginaEquipamiento()
-    {
-        GameObject p = NuevaPagina("Pagina equipamiento");
-
-        Text cabecera = RelevoUI.Texto(p.transform, "Cabecera", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColIzq, 232f), new Vector2(AnchoPagina, 24f), 14, TextAnchor.MiddleLeft, TintaSuave);
-        cabecera.text = "SEIS PIEZAS · NINGUNA EQUIPADA";
-
-        for (int i = 0; i < equipo.Length; i++)
-        {
-            int columna = i % 3;
-            int fila = i / 3;
-
-            float x = ColIzq + (columna - 1) * 185f;
-            float y = fila == 0 ? 96f : -104f;
-
-            Slot slot = new Slot();
-            slot.fondo = RelevoUI.Franja(p.transform, "Slot " + i, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                new Vector2(x, y), new Vector2(170f, 176f), RelevoUI.ConAlfa(PapelSombra, 0.9f));
-
-            // Cada recorte está pegado un poco torcido, como en una libreta de campo.
-            slot.fondo.rectTransform.localRotation = Quaternion.Euler(0f, 0f, (i % 2 == 0 ? -1.6f : 1.6f));
-
-            List<Image> filetes = new List<Image>();
-            RelevoUI.Marco(slot.fondo.transform, PapelHondo, 1f, filetes);
-            slot.filetes = filetes.ToArray();
-
-            RelevoUI.Franja(slot.fondo.transform, "Celo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, 4f), new Vector2(64f, 16f), RelevoUI.ConAlfa(RelevoUI.Tinta, 0.10f));
-
-            slot.anillo = RelevoUI.Hexagono(slot.fondo.transform, "Anillo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0f, -54f), new Vector2(66f, 66f), RelevoUI.ConAlfa(TintaSuave, 0.35f), false);
-
-            slot.nombre = RelevoUI.Texto(slot.fondo.transform, "Nombre", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 42f), new Vector2(154f, 40f), 15, TextAnchor.LowerCenter, Tinta);
-            slot.nombre.text = Equipo[i];
-
-            slot.estado = RelevoUI.Texto(slot.fondo.transform, "Estado", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 18f), new Vector2(154f, 20f), 12, TextAnchor.LowerCenter,
-                RelevoUI.ConAlfa(TintaSuave, 0.85f));
-            slot.estado.text = "sin equipar";
-
-            equipo[i] = slot;
-        }
-
-        // ---------------- página derecha: la pieza elegida
-        eqAnillo = RelevoUI.Hexagono(p.transform, "Eq anillo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, 130f), new Vector2(110f, 110f), RelevoUI.ConAlfa(TintaSuave, 0.5f), false);
-
-        Enlace(p.transform, "Eq cable", new Vector2(ColDer - 190f, 130f), new Vector2(ColDer + 190f, 130f), 2f,
-            RelevoUI.ConAlfa(PapelHondo, 0.9f));
-
-        eqTitulo = RelevoUI.Texto(p.transform, "Eq titulo", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, 40f), new Vector2(AnchoPagina, 32f), 23, TextAnchor.MiddleLeft, Tinta);
-        eqTitulo.font = RelevoUI.FuenteTitulo();
-        eqTitulo.fontStyle = FontStyle.Bold;
-
-        eqEstado = RelevoUI.Texto(p.transform, "Eq estado", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, 12f), new Vector2(AnchoPagina, 22f), 14, TextAnchor.MiddleLeft, Sello);
-        eqEstado.text = "sin equipar · ranura preparada";
-
-        RelevoUI.Franja(p.transform, "Eq filete", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -6f), new Vector2(AnchoPagina, 1f), RelevoUI.ConAlfa(PapelHondo, 0.8f));
-
-        eqDesc = RelevoUI.Texto(p.transform, "Eq desc", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -70f), new Vector2(AnchoPagina, 100f), 16, TextAnchor.UpperLeft, TintaSuave);
-
-        eqRequisito = RelevoUI.Texto(p.transform, "Eq requisito", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -150f), new Vector2(AnchoPagina, 22f), 14, TextAnchor.MiddleLeft,
-            RelevoUI.ConAlfa(TintaSuave, 0.85f));
-        eqRequisito.text = "Requisito · — (por definir)";
-
-        RelevoUI.Texto(p.transform, "Eq pie", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(ColDer, -196f), new Vector2(AnchoPagina, 44f), 14, TextAnchor.UpperLeft,
-            RelevoUI.ConAlfa(TintaSuave, 0.75f)).text =
-            "Ninguna pieza está implementada todavía: la ranura existe, el objeto llegará después.\nNo hay bonificaciones activas.";
-
-        return p;
-    }
-
-    void RefrescarEquipamiento()
-    {
-        for (int i = 0; i < equipo.Length; i++)
-        {
-            bool elegido = i == equipoSel;
-
-            equipo[i].fondo.color = elegido ? PapelClaro : RelevoUI.ConAlfa(PapelSombra, 0.9f);
-            for (int f = 0; f < equipo[i].filetes.Length; f++)
-                equipo[i].filetes[f].color = elegido ? Sello : PapelHondo;
-
-            equipo[i].anillo.color = elegido ? RelevoUI.ConAlfa(Sello, 0.9f) : RelevoUI.ConAlfa(TintaSuave, 0.35f);
-            equipo[i].estado.color = elegido ? Sello : RelevoUI.ConAlfa(TintaSuave, 0.85f);
-            equipo[i].fondo.rectTransform.localRotation = Quaternion.Euler(0f, 0f,
-                elegido ? 0f : (i % 2 == 0 ? -1.6f : 1.6f));
-        }
-
-        eqTitulo.text = Equipo[equipoSel];
-        eqDesc.text = DetalleEquipo[equipoSel];
-        eqAnillo.color = RelevoUI.ConAlfa(Sello, 0.55f);
+        invTitulo.text = Mecanismos[mecanismoSel];
+        invCuenta.text = lecturas[mecanismoSel];
+        invNota.font = RelevoUI.Fuente();
+        invNota.text = Notas[mecanismoSel];
+        if (mecanismoSel == 0 && (reservas == null || reservas.Maximo <= 0))
+            invNota.text = "Recoge la batería y colócala en una base ámbar para alimentar el puente. Vuelve por ella cuando el camino de regreso esté abierto.";
+        if (mecanismoSel == 2 && nivel.IndiceNivel == 7)
+            invNota.text = nivel.RamalLonja == DestinoCorriente.Ninguno
+                ? "Solo una palanca recibirá corriente. El mercado queda al norte y la emisora al sur."
+                : HuellaDelCanal.Anotacion(nivel.RamalLonja);
     }
 
     // ------------------------------------------------------------------ página ESTADO
@@ -1445,6 +838,11 @@ public class MenuExploracionUI : MonoBehaviour
                      "«Un tramo en contra corta el camino entero.»\n\n" +
                      "Transcripción de la radio del faro. La fecha quedó bajo una mancha de sal.";
 
+        botonCarta = RelevoUI.Capsula(p.transform, "Elegir puerto", Vector2.one * 0.5f, Vector2.one * 0.5f,
+            new Vector2(ColIzq, -232f), new Vector2(AnchoPagina, 44f), Esmalte);
+        RelevoUI.Texto(botonCarta.transform, "Etiqueta", Vector2.one * 0.5f, Vector2.one * 0.5f,
+            Vector2.zero, new Vector2(AnchoPagina, 42f), 20, TextAnchor.MiddleCenter, PapelClaro).text = "Elegir puerto";
+
         // ---------------- página derecha: el parte del tramo
         Text cabecera = RelevoUI.Texto(p.transform, "Cabecera", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(ColDer, 232f), new Vector2(AnchoPagina, 24f), 14, TextAnchor.MiddleLeft, TintaSuave);
@@ -1490,7 +888,7 @@ public class MenuExploracionUI : MonoBehaviour
         int indice = nivel != null ? Mathf.Clamp(nivel.IndiceNivel, 1, Niveles) : 1;
         Vector2 hito = new Vector2(ColIzq, 92f) + HitosCanal[indice - 1];
         if (hitoActual != null) hitoActual.rectTransform.anchoredPosition = hito;
-        if (hitoActualTexto != null) hitoActualTexto.rectTransform.anchoredPosition = hito + new Vector2(0f, -24f);
+        if (hitoActualTexto != null) hitoActualTexto.rectTransform.anchoredPosition = hito + new Vector2(0f, 23f);
 
         if (bateria == null)
         {
@@ -1583,6 +981,8 @@ public class MenuExploracionUI : MonoBehaviour
             : (palancas == 0
                 ? "en curso · sin palancas en este tramo"
                 : "en curso · " + accionadas + " de " + palancas + " palancas accionadas");
+        if (nivel != null && nivel.IndiceNivel == 7 && nivel.RamalLonja != DestinoCorriente.Ninguno && !completado)
+            estadoValor[7].text = "Corriente hacia " + (nivel.RamalLonja == DestinoCorriente.Mercado ? "el mercado" : "la emisora");
         estadoFilo[7].color = completado ? RelevoUI.Verde : RelevoUI.Coral;
     }
 
@@ -1594,6 +994,9 @@ public class MenuExploracionUI : MonoBehaviour
 
         cabTitulo.text = "ATLAS DEL CANAL";
         cabPie.text = Pies[seccion];
+        pieTexto.text = zonaPestanas ? "← →  Cambiar de pestaña      ·      ↓  Entrar      ·      Esc / Tab  Volver"
+            : (seccion == (int)Seccion.Estado ? "Enter  Elegir puerto      ·      ↑  Pestañas      ·      Esc / Tab  Volver"
+            : "↑ ↓  Elegir      ·      ↑ desde el inicio  Pestañas      ·      Esc / Tab  Volver" + (seccion == (int)Seccion.Cuaderno ? "      ·      Enter  Abrir recuerdo      ·      Rueda  Pasar página" : ""));
 
         for (int i = 0; i < Nombres.Length; i++)
         {
@@ -1624,16 +1027,14 @@ public class MenuExploracionUI : MonoBehaviour
         switch ((Seccion)seccion)
         {
             case Seccion.Cuaderno: RefrescarCuaderno(); break;
-            case Seccion.Inventario: RefrescarInventario(); break;
-            case Seccion.Skills: RefrescarSkills(); break;
-            case Seccion.Equipamiento: RefrescarEquipamiento(); break;
+            case Seccion.Taller: RefrescarTaller(); break;
             case Seccion.Estado: RefrescarEstado(); break;
         }
     }
 
     static float PestanaX(int indice)
     {
-        return -PasoPestana * 2f + indice * PasoPestana;
+        return -PasoPestana * (Nombres.Length - 1) * 0.5f + indice * PasoPestana;
     }
 
     // ------------------------------------------------------------------ transición de página

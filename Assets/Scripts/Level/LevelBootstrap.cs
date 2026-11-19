@@ -60,7 +60,13 @@ public class LevelBootstrap : MonoBehaviour
     /// <summary>Estilo cómic de Liria en todo el nivel: materiales, tinta, cielo, bruma y post.</summary>
     void AplicarEstiloComic(Camera camara)
     {
-        foreach (GameObject raiz in gameObject.scene.GetRootGameObjects()) EstiloComic.Aplicar(raiz.transform);
+        Color? tinta = null;
+        if (gameObject.scene.name == LevelManager.NombreEscenaNivel(indiceNivel))
+        {
+            float tarde = Mathf.InverseLerp(1, 8, indiceNivel);
+            tinta = Color.Lerp(new Color(0.64f,0.66f,0.74f), new Color(0.47f,0.50f,0.69f), tarde);
+        }
+        foreach (GameObject raiz in gameObject.scene.GetRootGameObjects()) EstiloComic.Aplicar(raiz.transform, tinta);
         if (camara != null)
         {
             EstiloComic.RendererTinta(camara);
@@ -130,6 +136,8 @@ public class LevelBootstrap : MonoBehaviour
         raizNivel.AddComponent<AmbienteRelevo>();
 
         Bounds limites = DioramaBuilder.Construir(layout, raizNivel.transform);
+        if (gameObject.scene.name == LevelManager.NombreEscenaNivel(indiceNivel))
+            EmbarcacionesDeLiria.Montar(indiceNivel, layout, raizNivel.transform);
 
         GameObject raizCamara = new GameObject("Camara");
         raizCamara.AddComponent<ContenidoHorneado>();
@@ -143,7 +151,9 @@ public class LevelBootstrap : MonoBehaviour
     {
         GameObject raizActores = new GameObject("Actores");
         raizActores.AddComponent<ContenidoHorneado>();
-        ActorFactory.CrearSol(raizActores.transform);
+        var sol = ActorFactory.CrearSol(raizActores.transform);
+        if (gameObject.scene.name == LevelManager.NombreEscenaNivel(indiceNivel))
+            ActorFactory.LuzDelPuerto(indiceNivel, sol);
         CrearActores(layout, def, raizActores.transform, camara);
         return raizActores.transform;
     }
@@ -262,6 +272,11 @@ public class LevelBootstrap : MonoBehaviour
             ActorFactory.CrearMaia(raizActores, posMaia, def);
         }
 
+        if (layout.TieneCasilla('F'))
+        {
+            var cabina = DioramaBuilder.CrearAncla("Guardia de la maroma",raizActores,Vector3.zero);
+            cabina.gameObject.AddComponent<EcoDeTurno>().ConstruirCampana(indiceNivel,layout,nilo,pasarela);
+        }
         CrearPiezasDelPatio(layout, raizActores, baseA, puente, indiceNivel);
         HuellaDelCanal.Montar(indiceNivel, layout, raizActores);
     }
@@ -414,6 +429,11 @@ public class LevelBootstrap : MonoBehaviour
         bool reintento = LevelManager.ReinicioPendiente;
         LevelManager.ReinicioPendiente = false;
 
+        if (gameObject.scene.name == LevelManager.NombreEscenaNivel(indiceNivel))
+        {
+            var sol = GameObject.Find("Actores/Sol");
+            if (sol != null) ActorFactory.LuzDelPuerto(indiceNivel, sol.GetComponent<Light>());
+        }
         RelevoPalette.FijarComic(estiloComic);
         if (estiloComic) AplicarEstiloComic(camara != null ? camara.Camara : null);
 
@@ -424,6 +444,8 @@ public class LevelBootstrap : MonoBehaviour
                 string huella = indiceNivel == 8 ? HuellaDelCanal.Anotacion(SaveManager.Datos.ramalLonja) : "";
                 GameEvents.RaiseMensajeMostrado(def.tituloIntro, string.IsNullOrEmpty(huella) ? def.textoIntro : huella + "\n\n" + def.textoIntro);
             }
+            if (indiceNivel == 10 && !reintento && TutorialMaia.PrimeraVez(10)) TutorialMaia.ExplicarDobleGuardia();
+            if (indiceNivel == 9 && !reintento && TutorialMaia.PrimeraVez(9)) TutorialMaia.ExplicarEco();
             if (def != null && !reintento && (def.tutorialPatio || def.tutorialCondensadores) && TutorialMaia.PrimeraVez(indiceNivel))
             {
                 if (def.tutorialCondensadores) TutorialMaia.PresentacionCondensadores();

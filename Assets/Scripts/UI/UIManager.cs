@@ -26,9 +26,9 @@ public class UIManager : MonoBehaviour
         "Reiniciar nivel",
         "Cuaderno de viaje",
         "Opciones",
-        "Volver al menú principal"
+        "Carta de puertos"
     };
-    static readonly string[] OpcionesCierreCanal = { "Volver al muelle", "Reiniciar nivel", "Cuaderno de viaje" };
+    static readonly string[] OpcionesCierreCanal = { "Elegir puerto", "Reiniciar nivel", "Cuaderno de viaje" };
     static readonly string[] OpcionesFinal = { "Siguiente nivel", "Reiniciar nivel", "Cuaderno de viaje" };
     static readonly string[] OpcionesConfirmar = { "Sí, reiniciar", "No, continuar" };
 
@@ -121,6 +121,8 @@ public class UIManager : MonoBehaviour
     bool enExploracion;
     bool enOpciones;
     bool cuadernoAbierto;
+    CartaDePuertos cartaPuertos;
+    int fotogramaCierreCarta = -1;
 
     public bool BloqueaJuego
     {
@@ -229,6 +231,7 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
+        if (cartaPuertos != null || Time.frameCount == fotogramaCierreCarta) return;
         // El cuaderno es una escena aparte cargada ENCIMA del nivel: mientras esté delante manda
         // él. Aquí solo se detecta su cierre para devolver el tiempo y el bloqueo al nivel.
         bool cuaderno = CuadernoUI.Abierto;
@@ -460,11 +463,7 @@ public class UIManager : MonoBehaviour
                 break;
 
             case 5:
-                // Todavía no hay escena de menú principal en el proyecto (Build Settings arranca
-                // en el nivel). Se avisa con el mismo mensaje de "siguiente fase" que usa el
-                // propio juego y la pausa sigue abierta, sin inventar una mecánica nueva.
-                GameEvents.RaiseMensajeMostrado("Menú principal",
-                    "El menú principal todavía no existe como escena. Tu progreso ya está guardado.");
+                AbrirCarta();
                 break;
         }
     }
@@ -491,8 +490,7 @@ public class UIManager : MonoBehaviour
             case 0:
                 if (nivel.IndiceNivel == LevelLayouts.Cantidad)
                 {
-                    Time.timeScale = 1f;
-                    UnityEngine.SceneManagement.SceneManager.LoadScene(LevelManager.NombreEscenaNivel(1));
+                    AbrirCarta();
                 }
                 else nivel.IrASiguienteNivel();
                 break;
@@ -570,6 +568,36 @@ public class UIManager : MonoBehaviour
     /// Tab: menú de exploración del cuaderno, encima del nivel. Congela el tiempo igual que la
     /// pausa, porque el nivel no debe seguir avanzando con un menú delante.
     /// </summary>
+    void AbrirCarta()
+    {
+        if (cartaPuertos != null || nivel == null) return;
+        cartaPuertos = CartaDePuertos.Abrir(entrada, nivel.IndiceNivel, completado, ElegirPuerto, CerrarCarta);
+    }
+
+    void CerrarCarta()
+    {
+        fotogramaCierreCarta = Time.frameCount;
+        if (cartaPuertos == null) return;
+        cartaPuertos.gameObject.SetActive(false);
+        Destroy(cartaPuertos.gameObject);
+        cartaPuertos = null;
+    }
+
+    void ElegirPuerto(int puerto)
+    {
+        if (!completado && puerto == nivel.IndiceNivel)
+        {
+            CerrarCarta();
+            if (enExploracion) CerrarExploracion();
+            else if (enPausa) CerrarPausa();
+            return;
+        }
+        CerrarCarta();
+        Time.timeScale = 1f;
+        GameEvents.Limpiar();
+        UnityEngine.SceneManagement.SceneManager.LoadScene(LevelManager.NombreEscenaNivel(puerto));
+    }
+
     void AbrirExploracion()
     {
         if (enExploracion || enPausa || enOpciones || completado || exploracion == null) return;
@@ -692,7 +720,7 @@ public class UIManager : MonoBehaviour
             int encontrados = SaveManager.RecuerdosDelNivel(indice);
             textoFinalRecuerdos.text = encontrados > 0
                 ? "Recuerdos encontrados en este tramo: " + encontrados + " de 1."
-                : "Sin recuerdo en este tramo: el orbe ámbar sigue esperando.";
+                : "Queda un recuerdo por encontrar. Puedes volver desde la carta de puertos.";
         }
 
         RefrescarFilas(filasFinal, nivel != null && nivel.IndiceNivel == LevelLayouts.Cantidad ? OpcionesCierreCanal : OpcionesFinal, seleccionFinal);
@@ -997,6 +1025,7 @@ public class UIManager : MonoBehaviour
             AbrirCuaderno();
         };
         exploracion.AlCerrar = CerrarExploracion;
+        exploracion.AlAbrirCarta = AbrirCarta;
 
         opciones = gameObject.AddComponent<OpcionesUI>();
         opciones.Construir(raiz);

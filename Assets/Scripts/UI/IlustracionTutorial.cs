@@ -14,7 +14,7 @@ using UnityEngine.UI;
 /// </summary>
 public sealed class IlustracionTutorial : MonoBehaviour
 {
-    public enum Tipo { Ninguna, Reserva, Apagado, Cajas }
+    public enum Tipo { Ninguna, Reserva, Apagado, Cajas, Eco, Maroma, DobleGuardia }
 
     const float Ancho = 540f, Alto = 300f;
 
@@ -37,7 +37,9 @@ public sealed class IlustracionTutorial : MonoBehaviour
     CanvasGroup grupo;
 
     // Piezas comunes.
-    Nilo nilo;
+    Nilo nilo, copia;
+    Image tablon, piloto, remoto;
+    CanvasGroup transparenciaEco;
     Image[] segmentos;
     RectTransform barra;
     Image bateria, aro;
@@ -113,6 +115,9 @@ public sealed class IlustracionTutorial : MonoBehaviour
             case Tipo.Reserva: ConstruirReserva(); break;
             case Tipo.Apagado: ConstruirApagado(); break;
             case Tipo.Cajas: ConstruirCajas(); break;
+            case Tipo.Eco: ConstruirTurno(false); break;
+            case Tipo.Maroma: ConstruirTurno(true); break;
+            case Tipo.DobleGuardia: ConstruirTurno(true); PrepararDobleGuardia(); break;
         }
 
         gameObject.SetActive(true);
@@ -129,6 +134,89 @@ public sealed class IlustracionTutorial : MonoBehaviour
     void Suelo(float y)
     {
         Image s = Img(lienzo, "Suelo", null, new Vector2(0f, y), new Vector2(Ancho - 70f, 3f), new Color(ColCobre.r, ColCobre.g, ColCobre.b, 0.5f));
+    }
+
+    void ConstruirTurno(bool maroma)
+    {
+        titulo.text = maroma ? "TRANSBORDADOR DE MAROMA" : "ECO DE TURNO";
+        leyenda.text = maroma ? "I encendida · usa el torno para embarcar" : "Graba el camino y la espera sobre I";
+        var baseY = new Vector2(-146,-58);
+        Img(lienzo,"Orilla de partida",null,baseY,new Vector2(178,7),ColCobre);
+        Img(lienzo,"Orilla de llegada",null,new Vector2(155,-58),new Vector2(145,7),ColCobre);
+        piloto = Img(lienzo,"Placa I",null,new Vector2(maroma ? -156 : -60,-53),new Vector2(50,9),ColCobre);
+        Etiqueta("I",new Vector2(maroma ? -156 : -60,-76),ColTurquesa);
+        if (maroma)
+        {
+            Img(lienzo,"Maroma",null,new Vector2(17,-44),new Vector2(205,3),ColCobre);
+            tablon=Img(lienzo,"Pontón",Formas.Redondeado(),new Vector2(-65,-46),new Vector2(76,14),ColMadera);
+            Etiqueta(tipo == Tipo.DobleGuardia ? "cabina" : "torno",new Vector2(-54,67),ColAmbar);
+            Etiqueta("otra orilla",new Vector2(157,67),ColTurquesa);
+        }
+        else
+        {
+            Img(lienzo,"Platina",null,new Vector2(-171,-31),new Vector2(73,33),ColMadera);
+            for (int i=0;i<2;i++) Img(lienzo,"Carrete",Formas.Anillo(),new Vector2(-188+i*33,-19),new Vector2(29,29),ColAmbar);
+            Etiqueta("magnetófono",new Vector2(-170,67),ColAmbar);
+            Etiqueta("torno",new Vector2(157,67),ColTurquesa);
+            Img(lienzo,"Muelle",null,new Vector2(20,-58),new Vector2(176,7),ColCobre);
+        }
+        var sombra = new GameObject("Eco en tinta turquesa",typeof(RectTransform),typeof(CanvasGroup));
+        sombra.transform.SetParent(lienzo,false);
+        transparenciaEco = sombra.GetComponent<CanvasGroup>();
+        copia = new Nilo((RectTransform)sombra.transform,Vector2.zero);
+        copia.TenirEco();
+        copia.Antena(ColTurquesa,1);
+        nilo = new Nilo(lienzo,Vector2.zero);
+    }
+
+    void PrepararDobleGuardia()
+    {
+        titulo.text = "LA DOBLE GUARDIA";
+        cable = Img(lienzo,"Contacto gemelo",null,new Vector2(-75,-53),new Vector2(45,9),ColCobre);
+        remoto = Img(lienzo,"Contacto de la otra orilla",null,new Vector2(154,-53),new Vector2(45,9),ColCobre);
+        Etiqueta("II",new Vector2(-75,-76),ColTurquesa);
+        Etiqueta("II",new Vector2(154,-76),ColTurquesa);
+    }
+
+    void AnimarDobleGuardia()
+    {
+        float t = reloj % 8f;
+        float cruce = Mathf.SmoothStep(0,1,Mathf.InverseLerp(1,4.5f,t));
+        float relevo = Mathf.SmoothStep(0,1,Mathf.InverseLerp(3.5f,5,t));
+        float x = Mathf.Lerp(-55,154,cruce);
+        transparenciaEco.alpha = 0.7f;
+        copia.Colocar(new Vector2(Mathf.Lerp(-156,-75,relevo),-48),relevo>0 && relevo<1 ? reloj : 0,false);
+        nilo.Colocar(new Vector2(x,-38),0,false);
+        tablon.rectTransform.anchoredPosition = new Vector2(Mathf.Lerp(-55,120,cruce),-46);
+        piloto.color = relevo<0.1f ? ColTurquesa : ColCobre;
+        cable.color = relevo>0.95f ? ColTurquesa : ColCobre;
+        remoto.color = cruce>0.99f ? ColTurquesa : ColCobre;
+        leyenda.text = t<3.5f ? "El eco sostiene I mientras Nilo embarca." : "Un guardia sobre cada II. La pasarela queda abierta.";
+    }
+
+    void AnimarTurno(bool maroma)
+    {
+        float t = reloj % 7f;
+        if (maroma)
+        {
+            float avance = Mathf.SmoothStep(0,1,Mathf.InverseLerp(2,5,t));
+            float x = Mathf.Lerp(-60,125,avance);
+            transparenciaEco.alpha = 0.56f;
+            copia.Colocar(new Vector2(Mathf.Lerp(-208,-156,Mathf.Clamp01(t)), -48), t < 1 ? reloj : 0,false);
+            piloto.color = t < 1 ? ColCobre : ColTurquesa;
+            tablon.rectTransform.anchoredPosition = new Vector2(x,-46);
+            nilo.Colocar(new Vector2(x + Mathf.Lerp(0,45,Mathf.InverseLerp(5,6,t)),-38),0,false);
+            return;
+        }
+        bool reproduce = t >= 3f;
+        float camino = Mathf.Clamp01((reproduce ? t-3f : t)/1.4f);
+        float pie = Mathf.Lerp(-161,-60,camino);
+        transparenciaEco.alpha = reproduce ? 0.54f : 0f;
+        copia.Colocar(new Vector2(pie,-47),camino<1 ? reloj : 0,false);
+        float vivo = reproduce ? Mathf.Lerp(-161,147,Mathf.Clamp01((t-3)/2.7f)) : pie;
+        nilo.Colocar(new Vector2(vivo,-47),(reproduce ? t<5.7f : camino<1) ? reloj : 0,false);
+        piloto.color = camino>=1 ? ColTurquesa : ColCobre;
+        leyenda.text = reproduce ? "El eco repite la espera. Nilo puede ir al torno." : "Graba el camino y la espera sobre I.";
     }
 
     void ConstruirReserva()
@@ -254,6 +342,9 @@ public sealed class IlustracionTutorial : MonoBehaviour
             case Tipo.Reserva: AnimarReserva(); break;
             case Tipo.Apagado: AnimarApagado(); break;
             case Tipo.Cajas: AnimarCajas(); break;
+            case Tipo.Eco: AnimarTurno(false); break;
+            case Tipo.Maroma: AnimarTurno(true); break;
+            case Tipo.DobleGuardia: AnimarDobleGuardia(); break;
         }
 
         for (int i = huellas.Count - 1; i >= 0; i--)
@@ -424,6 +515,12 @@ public sealed class IlustracionTutorial : MonoBehaviour
             float rebote = fase > 0f ? Mathf.Abs(Mathf.Sin(fase * 9f)) * 3f : 0f;
             raiz.anchoredPosition = pie + Vector2.up * rebote;
             raiz.localScale = new Vector3(mirarIzquierda ? -Escala : Escala, Escala, 1f);
+        }
+
+        public void TenirEco()
+        {
+            foreach (Image pieza in raiz.GetComponentsInChildren<Image>())
+                pieza.color = Color.Lerp(pieza.color,ColTurquesa,0.56f);
         }
 
         public void Antena(Color c, float luz)

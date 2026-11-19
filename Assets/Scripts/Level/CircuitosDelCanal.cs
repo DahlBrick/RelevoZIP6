@@ -52,6 +52,7 @@ public static class CircuitosDelCanal
             var tramo = pieza.gameObject.AddComponent<PruebaCircuitoPieza>();
             int giro = recta ? 1 : 1 + (casilla.x + casilla.y) % 3;
             tramo.Configurar(casilla, recta, mascara, giro, new[] { nodo, Brazo(pieza, entrada, cobre), Brazo(pieza, puerto, cobre) });
+            VestirDisco(tramo);
             piezas.Add(tramo);
         }
 
@@ -71,6 +72,29 @@ public static class CircuitosDelCanal
         var receptor = borne.gameObject.AddComponent<PruebaCircuitoReceptor>();
         receptor.Configurar(puente, casilla, entradaBorne);
         raiz.gameObject.AddComponent<PruebaCircuitoControlador>().Configurar(fuente, receptor, piezas);
+    }
+
+    // Las bandas cerámicas dibujan la dirección incluso cuando el cobre está apagado.
+    public static Transform VestirDisco(PruebaCircuitoPieza pieza)
+    {
+        if (pieza.transform.Find("Aisladores") != null || pieza.Trazos == null) return null;
+        var raiz = DioramaBuilder.CrearAncla("Aisladores", pieza.transform, Vector3.zero);
+        var loza = RelevoPalette.MaterialDe(ClaveMaterial.PiedraCrema);
+        var hierro = RelevoPalette.MaterialDe(ClaveMaterial.NiloExtremidades);
+        DioramaBuilder.CrearCilindro("Plinto", raiz, Vector3.up * 0.055f, 0.72f, 0.05f, hierro);
+        DioramaBuilder.CrearCilindro("Bisel", raiz, Vector3.up * 0.082f, 0.68f, 0.017f, loza);
+        foreach (var r in pieza.Trazos)
+        {
+            if (r == null) continue;
+            var eje = r.transform.localPosition;
+            eje.y = 0;
+            if (eje.sqrMagnitude < 0.04f) continue;
+            eje.Normalize();
+            var zapata = DioramaBuilder.CrearCaja("Guía cerámica", raiz, eje * 0.60f + Vector3.up * 0.143f,
+                new Vector3(0.34f, 0.04f, 0.70f), loza, false);
+            zapata.transform.localRotation = Quaternion.LookRotation(eje);
+        }
+        return raiz;
     }
 
     static Renderer Brazo(Transform padre, int puerto, Material cobre)

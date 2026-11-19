@@ -39,41 +39,65 @@ public static class SaveManager
 
     public static void Cargar()
     {
+        datos = LeerProgreso(RutaArchivo);
+    }
+
+    static bool IntentarLeer(string ruta, out SaveData progreso)
+    {
+        progreso = null;
+        if (!File.Exists(ruta)) return false;
         try
         {
-            if (File.Exists(RutaArchivo))
-            {
-                string texto = File.ReadAllText(RutaArchivo);
-                datos = JsonUtility.FromJson<SaveData>(texto);
-                Debug.Log("RELEVO: progreso cargado desde " + RutaArchivo);
-            }
+            string json = File.ReadAllText(ruta);
+            if (string.IsNullOrWhiteSpace(json) || !json.TrimStart().StartsWith("{") ||
+                (!json.Contains("\"nivelesCompletados\"") && !json.Contains("\"recuerdos\""))) return false;
+            progreso = JsonUtility.FromJson<SaveData>(json);
+            if (progreso == null || (progreso.nivelesCompletados == null && progreso.recuerdos == null)) return false;
+            if (progreso.nivelesCompletados == null) progreso.nivelesCompletados = new List<string>();
+            if (progreso.recuerdos == null) progreso.recuerdos = new List<string>();
+            if (progreso.recuerdosLeidos == null) progreso.recuerdosLeidos = new List<string>();
+            return true;
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning("RELEVO: no se pudo leer el progreso (" + e.Message + "). Se empieza de cero.");
+            Debug.LogWarning("RELEVO: no se pudo leer " + Path.GetFileName(ruta) + " (" + e.Message + ").");
+            return false;
         }
+    }
 
-        if (datos == null)
-        {
-            datos = new SaveData();
-        }
-
-        if (datos.nivelesCompletados == null) datos.nivelesCompletados = new List<string>();
-        if (datos.recuerdos == null) datos.recuerdos = new List<string>();
-        if (datos.recuerdosLeidos == null) datos.recuerdosLeidos = new List<string>();
+    static SaveData LeerProgreso(string ruta)
+    {
+        SaveData progreso;
+        if (IntentarLeer(ruta, out progreso) || IntentarLeer(ruta + ".bak", out progreso)) return progreso;
+        return new SaveData();
     }
 
     public static void Guardar()
     {
+        try { EscribirProgreso(RutaArchivo, Datos); }
+        catch (System.Exception e) { Debug.LogWarning("RELEVO: no se pudo guardar el progreso (" + e.Message + ")."); }
+    }
+
+    static void EscribirProgreso(string ruta, SaveData progreso)
+    {
+        string temporal = ruta + "." + System.Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            File.WriteAllText(RutaArchivo, JsonUtility.ToJson(Datos, true));
-            Debug.Log("RELEVO: progreso guardado en " + RutaArchivo);
+            File.WriteAllText(temporal, JsonUtility.ToJson(progreso, true));
+            if (!File.Exists(ruta))
+            {
+                File.Move(temporal, ruta);
+                if (!File.Exists(ruta + ".bak")) File.Copy(ruta, ruta + ".bak");
+            }
+            else
+            {
+                // Si recuperamos la partida desde .bak, conservamos esa copia válida.
+                SaveData anterior;
+                string respaldo = IntentarLeer(ruta, out anterior) ? ruta + ".bak" : null;
+                File.Replace(temporal, ruta, respaldo);
+            }
         }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning("RELEVO: no se pudo guardar el progreso (" + e.Message + ").");
-        }
+        finally { if (File.Exists(temporal)) File.Delete(temporal); }
     }
 
     static string ClaveNivel(int indice)
@@ -98,8 +122,15 @@ public static class SaveManager
 
     public static bool NivelDesbloqueado(int indice)
     {
-        if (indice <= 1) return true;
-        return NivelCompletado(indice - 1);
+        return indice >= 1 && indice <= LevelLayouts.Cantidad &&
+            (indice == 1 || NivelCompletado(indice) || NivelCompletado(indice - 1));
+    }
+
+    public static int PuertoParaContinuar()
+    {
+        for (int i = LevelLayouts.Cantidad; i > 1; i--)
+            if (NivelDesbloqueado(i)) return i;
+        return 1;
     }
 
     public static void RegistrarRecuerdo(string identificador)
