@@ -31,6 +31,7 @@ public sealed class RecorridoPrueba : MonoBehaviour
     public static string Empezar(string ruta)
     {
         Estado = "en curso";
+        SaveManager.SinGuardar = true;
         Registro = "";
         MinReserva = 999f;
         var go = new GameObject("Recorrido de prueba");

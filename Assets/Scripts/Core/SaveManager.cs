@@ -72,8 +72,12 @@ public static class SaveManager
         return new SaveData();
     }
 
+    /// <summary>Las herramientas de prueba lo activan para no dejar niveles abiertos en la partida real.</summary>
+    public static bool SinGuardar;
+
     public static void Guardar()
     {
+        if (SinGuardar) return;
         try { EscribirProgreso(RutaArchivo, Datos); }
         catch (System.Exception e) { Debug.LogWarning("RELEVO: no se pudo guardar el progreso (" + e.Message + ")."); }
     }

@@ -496,21 +496,7 @@ public sealed class Apertura : MonoBehaviour
 #if UNITY_EDITOR
         if (grabado) return;
 #endif
-        if (SaveManager.NivelCompletado(1))
-        {
-            // Partida empezada: la carta de puertos deja continuar o elegir puerto.
-            CartaDePuertos.Abrir(entrada, 0, false, puerto =>
-            {
-                Time.timeScale = 1f;
-                SceneManager.LoadScene(LevelManager.NombreEscenaNivel(puerto));
-            }, null, () =>
-            {
-                Time.timeScale = 1f;
-                SceneManager.LoadScene(gameObject.scene.name);
-            });
-            return;
-        }
-
+        // Terminar o saltar la apertura lleva siempre al primer puerto.
         if (!string.IsNullOrEmpty(escenaSiguiente) && Application.CanStreamedLevelBeLoaded(escenaSiguiente))
             SceneManager.LoadScene(escenaSiguiente);
     }
