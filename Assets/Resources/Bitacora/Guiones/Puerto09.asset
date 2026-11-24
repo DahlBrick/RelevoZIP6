@@ -18,15 +18,15 @@ MonoBehaviour:
   textoIntro: "Los tablones del astillero siguen gastados por dos pares de botas.
     Un par de huellas acaba en el torno. El otro, en una placa con un solo trazo.
     En la cabina espera un carrete vac\xEDo."
-  pistaMaia: Graba una espera en la placa I y ve al torno cuando la cinta vuelva
-    a empezar.
+  pistaMaia: "Deja la bater\xEDa en la base A para llegar a la placa I. Graba una
+    espera all\xED y, durante el eco, recupera la bater\xEDa y embarca."
   textoCierre: "El pont\xF3n vuelve a rozar la grada. Entre las tablillas aparece
     un destino tachado del registro: Casa de las Dos Guardias."
   recuerdoIdentificador: nivel9_recuerdo
   recuerdoTitulo: Ficha de embarque partida
   recuerdoTexto: "Una mitad lleva un trazo y la otra un n\xFAmero de turno. Al juntarlas
     se lee a l\xE1piz: \xABHoy cruz\xF3 mi hermano. Yo me qued\xE9 en el torno\xBB."
-  reservaCasillas: 0
+  reservaCasillas: 10
   tutorialPatio: 0
   tutorialCondensadores: 0
   salidaEsFaro: 0

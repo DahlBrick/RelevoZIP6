@@ -18,8 +18,8 @@ MonoBehaviour:
   textoIntro: "En las dos orillas hay sendas placas con dos trazos. En el libro de
     guardia de la noche de la crecida solo figura una firma. La segunda casilla tiene
     una mancha circular, del tama\xF1o de un carrete."
-  pistaMaia: "Graba primero la se\xF1al de embarque en I. Termina sobre II y busca
-    su gemela en la otra orilla."
+  pistaMaia: "Graba primero la se\xF1al de embarque en I. Termina sobre II. En la
+    otra orilla, coloca la bater\xEDa en la base A y cruza a la placa gemela."
   textoCierre: "Al cerrarse los dos contactos, la radio deja pasar el final de la
     cinta. Despu\xE9s de las buenas noches de Maia se oye una silla arrastr\xE1ndose.
     Alguien se qued\xF3 hasta que lleg\xF3 la \xFAltima barca."
@@ -28,7 +28,7 @@ MonoBehaviour:
   recuerdoTexto: "Al trasluz aparece el rengl\xF3n que faltaba del registro. En vez
     de una firma dice \xABGuard\xE9 tu sitio\xBB. La letra es la misma que en la
     ficha del astillero."
-  reservaCasillas: 0
+  reservaCasillas: 8
   tutorialPatio: 0
   tutorialCondensadores: 0
   salidaEsFaro: 0

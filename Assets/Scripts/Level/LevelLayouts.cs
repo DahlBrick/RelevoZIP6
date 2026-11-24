@@ -209,8 +209,8 @@ public static class LevelLayouts
     public static LevelLayout Nivel9()
     {
         return new LevelLayout("Nivel 9 - Astillero de la Maroma", TamanoTile,
-            "v####wwwwwv###wwwww",
-            "##1##wwwww####ww#Xv",
+            "v####ww1mwv###wwwww",
+            "####ABBmmw####ww#Xv",
             "m#####wwww##k##w###",
             "##F##HwwwwI###uw###",
             "#####wwwww#####w###",
@@ -222,9 +222,9 @@ public static class LevelLayouts
     public static LevelLayout Nivel10()
     {
         return new LevelLayout("Nivel 10 - Casa de las Dos Guardias", TamanoTile,
-            "v###wwwwwwv#######",
-            "##E#wwwwww##3###X#",
-            "####PPPPPP########",
+            "v###wwwwwwv###wwmX",
+            "##E#wwwwww###ABB3m",
+            "####PPPPPP####wwww",
             "v###wwwwww#I###v##",
             "wwwwwwwwwwwwwwwwww",
             "wwwwwwwwwwwwwwwwww",

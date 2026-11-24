@@ -91,6 +91,16 @@ public sealed class RecorridoPrueba : MonoBehaviour
             {
                 yield return new WaitForSeconds(0.34f);
             }
+            else if (p[0] == 't' && p.Length > 1 && char.IsDigit(p[1]))
+            {
+                // Espera en segundos ("t2.5"), comprobando fallos mientras tanto.
+                float fin = Time.time + float.Parse(p.Substring(1), System.Globalization.CultureInfo.InvariantCulture);
+                while (Time.time < fin)
+                {
+                    if (Fallo()) { Estado = "FALLO en paso " + i + " (" + p + "): " + Motivo(); yield break; }
+                    yield return null;
+                }
+            }
             else
             {
                 IInteractable objetivo = Buscar(p);
@@ -100,7 +110,8 @@ public sealed class RecorridoPrueba : MonoBehaviour
                 if (!objetivo.Disponible) { Estado = "NO DISPONIBLE " + p + ": " + objetivo.Motivo; yield break; }
                 objetivo.Interactuar(nilo);
                 Log(p + " ok, objetivo: " + (RelevoGame.UI != null ? RelevoGame.UI.ObjetivoActual : ""));
-                if (p.StartsWith("ins")) yield return new WaitForSeconds(0.45f);
+                if (p == "ida" || p == "vuelta") { yield return new WaitForSeconds(2.9f); nilo.Colocar(nilo.transform.position); }
+                else if (p.StartsWith("ins")) yield return new WaitForSeconds(0.45f);
                 else yield return new WaitForSeconds(0.15f);
             }
         }
@@ -134,6 +145,12 @@ public sealed class RecorridoPrueba : MonoBehaviour
             string id = p.Substring(3);
             foreach (EnergySocket b in FindObjectsByType<EnergySocket>(FindObjectsSortMode.None))
                 if (b.Identificador == id) return b;
+        }
+        if (p == "rec" || p == "ida" || p == "vuelta")
+        {
+            string verbo = p == "rec" ? "Grabar un turno" : p == "ida" ? "Embarcar en el transbordador" : "Volver al magnetófono";
+            foreach (PuestoDeRelevo r in FindObjectsByType<PuestoDeRelevo>(FindObjectsSortMode.None))
+                if (r.Verbo == verbo) return r;
         }
         if (p.StartsWith("pull"))
         {

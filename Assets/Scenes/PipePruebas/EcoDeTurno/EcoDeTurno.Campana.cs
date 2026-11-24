@@ -15,17 +15,30 @@ public sealed partial class EcoDeTurno
     public bool PuedeGrabar { get { return estado != Estado.Grabando && estado != Estado.Abierto && !transbordador.Navegando; } }
     public bool OcupaInteraccion { get { return estado == Estado.Grabando || transbordador.Navegando; } }
     public bool SenalDeSalida { get { return estado == Estado.Abierto || (estado == Estado.Reproduciendo && EnPlaca(eco,placaNorte)); } }
+    static bool BateriaEnBase { get { return RelevoGame.Bateria != null && RelevoGame.Bateria.BaseActual != null; } }
+
     public string Objetivo
     {
         get
         {
+            if ((puerto == 9 || puerto == 10) && RelevoGame.Reserva != null && RelevoGame.Reserva.Fraccion < 0.35f && !RelevoGame.Reserva.EnZona)
+                return "¡La reserva se agota! Vuelve junto a la batería.";
             if (transbordador.Navegando) return "Sujeta la batería mientras cruza el transbordador.";
             if (puerto == 12 && transbordador.EnDestino)
                 return RelevoGame.Layout.Casilla(nilo.transform.position).x >= 18 ? "Lleva la batería al pórtico o abre el regreso." : "Carga la torre D y cruza con la batería.";
-            if (puerto == 10 && estado == Estado.Abierto) return "Cruza la pasarela hacia la casa de señales.";
+            if (puerto == 10 && estado == Estado.Abierto)
+                return BateriaEnBase ? "Retira la batería de la base A y cruza la pasarela." : "Cruza la pasarela hacia la casa de señales.";
+            if (puerto == 10 && transbordador.EnDestino && estado == Estado.Reproduciendo)
+                return BateriaEnBase ? "Cruza al receptor II mientras el eco pisa II." : "Coloca la batería en la base A y cruza al receptor II antes de que acabe la cinta.";
+            if (puerto == 10 && transbordador.EnDestino && BateriaEnBase)
+                return "La cinta se acabó: retira la batería de la base A y vuelve en el pontón.";
             if (transbordador.EnDestino)
                 return puerto == 9 ? (RelevoGame.Nivel.Puentes.Exists(p => p.Desplegado) ? "Lleva la batería por el puente de carga hasta la grada." : "Deja la caja en el rombo para tender el puente de carga.") :
                     estado == Estado.Reproduciendo ? "Pisa II en esta orilla mientras el eco pisa II en la otra." : "Vuelve en el pontón para grabar otro turno.";
+            if (puerto == 9 && estado == Estado.Reproduciendo && BateriaEnBase) return "Recupera la batería de la base A y embarca mientras el eco pisa I.";
+            if (puerto == 9 && estado == Estado.Espera && !BateriaEnBase)
+                return RelevoGame.Bateria != null && RelevoGame.Bateria.EnManos ? "Coloca la batería en la base A: su puente lleva a la placa I." : "Recoge la batería.";
+            if (puerto == 9 && estado == Estado.Espera && BateriaEnBase) return "Graba un turno en el magnetófono y cruza el puente hasta la placa I.";
             if (estado == Estado.Grabando) return puerto != 10 ? "Graba una espera sobre I." : "Graba una espera en I y termina sobre II.";
             if (estado == Estado.Reproduciendo) return "Embarca cuando se encienda el torno.";
             return "Busca el magnetófono de dos carretes.";
@@ -41,9 +54,9 @@ public sealed partial class EcoDeTurno
                 : "Deja que la cinta espere sobre I. Durante la repetición, toma el torno del norte con la batería.";
             if (estado == Estado.Abierto) return "El cerrojo ya cayó, Nilo. La pasarela de la casa de señales se queda tendida.";
             if (puerto == 9 && transbordador.EnDestino) return "En la grada empujábamos el cajón sobre el rombo. Así el puente de carga se quedaba tendido hasta acabar el turno.";
-            if (puerto == 10 && transbordador.EnDestino) return "¿Ves los dos trazos? Quédate en esta placa mientras la cinta pisa su gemela. Si oyes el clic final demasiado pronto, el torno de vuelta tiene contrapeso.";
-            return puerto == 9 ? "Al oír girar los carretes, camina hasta el trazo I y espera. Cuando vuelvas al magnetófono, ve tú al torno. Tu eco seguirá de guardia en la placa." :
-                "Dale tiempo al primer relevo, Nilo. Cuenta cuatro sobre I antes de ir a II. Deja que la cinta se termine allí. Así tendrás tiempo de embarcar y buscar los dos trazos al otro lado.";
+            if (puerto == 10 && transbordador.EnDestino) return "El receptor gemelo está en el islote, Nilo. Su puente solo se tiende con la batería en la base A. Si la cinta se acaba, recupera la batería antes de volver. ¿Ves los dos trazos? Quédate en esta placa mientras la cinta pisa su gemela. Si oyes el clic final demasiado pronto, el torno de vuelta tiene contrapeso.";
+            return puerto == 9 ? "La placa I está en el islote: deja la batería en la base A para tender su puente. Graba tu paseo hasta la placa y espera allí. La cinta te devuelve al magnetófono: corre a por la batería y embarca mientras el eco pisa I. La cinta es corta." :
+                "Dale tiempo al primer relevo, Nilo. Cuenta cuatro sobre I antes de ir a II y deja que la cinta se termine allí. Al otro lado tendrás que colocar la batería en la base A y cruzar al receptor antes de que el eco se vaya de II.";
         }
     }
 
@@ -52,7 +65,7 @@ public sealed partial class EcoDeTurno
     public void ConstruirCampana(int numero, LevelLayout plano, PlayerController jugador, PermanentWalkway pasarela)
     {
         puerto = numero;
-        capacidad = numero == 10 ? 13f : 8f;
+        capacidad = numero == 10 ? 11f : numero == 9 ? 6f : 8f;
         nilo = jugador;
         puente = pasarela;
         consola = DioramaBuilder.CrearAncla("Magnetófono de guardia",transform,plano.PrimerMarcador('F',Vector3.zero));
