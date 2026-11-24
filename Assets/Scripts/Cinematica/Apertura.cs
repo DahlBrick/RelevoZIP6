@@ -128,24 +128,8 @@ public sealed class Apertura : MonoBehaviour
         RelevoGame.Limpiar();
         entrada = acciones != null ? new RelevoInput(acciones) : null;
 
-        // La revisión del director y la grabación del editor entran directamente al plano.
-        bool revision = InicioRevision > 0f;
-#if UNITY_EDITOR
-        revision |= !string.IsNullOrEmpty(UnityEditor.SessionState.GetString("RelevoAperturaRuta", ""));
-#endif
-        if (!revision)
-        {
-            bool empezar = false;
-            var carta = CartaDePuertos.Abrir(entrada, 0, false, puerto =>
-            {
-                if (puerto == 1 && !SaveManager.NivelCompletado(1)) empezar = true;
-                else SceneManager.LoadScene(LevelManager.NombreEscenaNivel(puerto));
-            }, null, () => empezar = true);
-            while (!empezar) yield return null;
-            Time.timeScale = 1f;
-            carta.gameObject.SetActive(false);
-            Destroy(carta.gameObject);
-        }
+        // El juego siempre empieza con la cinemática. La carta de puertos aparece al terminarla
+        // (ver Terminar) si ya hay puertos restaurados.
 
         Ambiente();
         KitRelevo kit = KitRelevo.Activo;
@@ -512,6 +496,21 @@ public sealed class Apertura : MonoBehaviour
 #if UNITY_EDITOR
         if (grabado) return;
 #endif
+        if (SaveManager.NivelCompletado(1))
+        {
+            // Partida empezada: la carta de puertos deja continuar o elegir puerto.
+            CartaDePuertos.Abrir(entrada, 0, false, puerto =>
+            {
+                Time.timeScale = 1f;
+                SceneManager.LoadScene(LevelManager.NombreEscenaNivel(puerto));
+            }, null, () =>
+            {
+                Time.timeScale = 1f;
+                SceneManager.LoadScene(gameObject.scene.name);
+            });
+            return;
+        }
+
         if (!string.IsNullOrEmpty(escenaSiguiente) && Application.CanStreamedLevelBeLoaded(escenaSiguiente))
             SceneManager.LoadScene(escenaSiguiente);
     }
