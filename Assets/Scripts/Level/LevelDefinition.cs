@@ -181,6 +181,7 @@ public static class DefinicionesPorDefecto
                 d.textoIntro = "Todavía queda sal en los bordes de las mesas. La reja del mercado está echada y el montacargas espera al otro lado del canal.";
                 d.pistaMaia = "El cajón sostiene la reja. Deja la batería en la base del mercado y busca la palanca al otro lado. Cuando vuelvas a por ella, la pasarela seguirá tendida.";
                 d.textoCierre = "La balanza recupera el equilibrio. Un hilo de agua vuelve a correr entre los bancales.";
+                d.reservaCasillas = 20;
                 d.recuerdoIdentificador = "nivel11_recuerdo";
                 d.recuerdoTitulo = "Pesa de media arroba";
                 d.recuerdoTexto = "En el asa quedan granos de sal. La base está gastada por un lado. Alguien encajó un trocito de cobre debajo para que la balanza volviera a marcar lo justo.";
@@ -192,6 +193,7 @@ public static class DefinicionesPorDefecto
                 d.textoIntro = "Las campanas del varadero avisaban a quienes trabajaban de espaldas al agua. Una cuelga junto al puente de carga. La otra, frente al horno.";
                 d.pistaMaia = "Deja el cajón en el rombo del taller. La campana anuncia que puedes cruzar. En la cabina, graba una espera sobre I y embarca cuando el eco tome el relevo.";
                 d.textoCierre = "Las dos campanas vuelven a distinguirse desde el agua. Sobre el banco de fundición queda espacio para la próxima pieza.";
+                d.reservaCasillas = 18;
                 d.recuerdoIdentificador = "nivel12_recuerdo";
                 d.recuerdoTitulo = "Badajo de repuesto";
                 d.recuerdoTexto = "Alguien envolvió la cuerda con un trozo de manga. En la punta del badajo asoma el bronce claro. Lo probaron muchas veces antes de colgarlo.";

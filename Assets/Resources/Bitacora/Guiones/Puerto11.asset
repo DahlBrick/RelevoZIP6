@@ -27,7 +27,7 @@ MonoBehaviour:
   recuerdoTexto: "En el asa quedan granos de sal. La base est\xE1 gastada por un
     lado. Alguien encaj\xF3 un trocito de cobre debajo para que la balanza volviera
     a marcar lo justo."
-  reservaCasillas: 0
+  reservaCasillas: 20
   tutorialPatio: 0
   tutorialCondensadores: 0
   salidaEsFaro: 0

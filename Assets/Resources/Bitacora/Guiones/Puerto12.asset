@@ -26,7 +26,7 @@ MonoBehaviour:
   recuerdoTitulo: Badajo de repuesto
   recuerdoTexto: "Alguien envolvi\xF3 la cuerda con un trozo de manga. En la punta
     del badajo asoma el bronce claro. Lo probaron muchas veces antes de colgarlo."
-  reservaCasillas: 0
+  reservaCasillas: 18
   tutorialPatio: 0
   tutorialCondensadores: 0
   salidaEsFaro: 0
