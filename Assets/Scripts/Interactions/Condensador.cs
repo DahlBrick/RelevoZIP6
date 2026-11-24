@@ -59,6 +59,9 @@ public sealed class Condensador : MonoBehaviour
         return true;
     }
 
+    /// <summary>El pulso del Eco del Apagón le roba carga.</summary>
+    public void Drenar(float fraccion) { Carga = Mathf.Max(0f, Carga - fraccion); }
+
     /// <summary>La batería vuelve a la base: deja de descargarse y vuelve a cargarse.</summary>
     public void AlInsertarBateria()
     {

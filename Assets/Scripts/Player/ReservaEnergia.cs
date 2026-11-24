@@ -23,6 +23,9 @@ public sealed class ReservaEnergia : MonoBehaviour
 
     public float Maximo { get; private set; }
     public float Actual { get; private set; }
+    /// <summary>Multiplica el gasto según dónde pisa Nilo (la sombra del Eco del Apagón gasta el doble).</summary>
+    public static System.Func<Vector3, float> MultiplicadorGasto;
+
     public bool EnZona { get; private set; }
     public bool Apagado { get; private set; }
     public float Fraccion { get { return Maximo > 0f ? Mathf.Clamp01(Actual / Maximo) : 1f; } }
@@ -343,7 +346,8 @@ public sealed class ReservaEnergia : MonoBehaviour
         }
         else if (!bloqueado && recorrido > 0.0005f && recorrido < 2f)
         {
-            Actual = Mathf.Max(0f, Actual - recorrido / tamanoCasilla);
+            float multiplicador = MultiplicadorGasto != null ? MultiplicadorGasto(pos) : 1f;
+            Actual = Mathf.Max(0f, Actual - multiplicador * recorrido / tamanoCasilla);
         }
 
         ActualizarAntena();

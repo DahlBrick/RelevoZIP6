@@ -163,6 +163,7 @@ public class LevelManager : MonoBehaviour
             if (bateria.Estado == EstadoBateria.EnSuelo) Publicar("Recoge la batería.");
             else if (IndiceNivel == 11) Publicar(MercadoDeSal(false));
             else if (IndiceNivel == 12 && !PuenteActivo("R")) Publicar("Empuja el cajón hasta el rombo del taller.");
+            else if (JefeEcoApagon.Activo != null) Publicar(JefeEcoApagon.Activo.Objetivo);
             else if (Turno != null) Publicar(Turno.Objetivo);
             else if (IndiceNivel == 7 && RamalLonja == DestinoCorriente.Ninguno)
                 Publicar(RelevoGame.Jugador != null && RelevoGame.Layout.Casilla(RelevoGame.Jugador.transform.position).x <= 2
@@ -616,6 +617,7 @@ public class LevelManager : MonoBehaviour
             case 10: return "Nivel10_CasaDeLasDosGuardias";
             case 11: return "Nivel11_MercadoDeLaSal";
             case 12: return "Nivel12_VaraderoDeLasCampanas";
+            case 13: return "Nivel13_LaSalaDelRelevo";
             default: return "Nivel1_MuelleDeCobre";
         }
     }

@@ -417,6 +417,9 @@ public class LevelBootstrap : MonoBehaviour
             reserva.Configurar(def.reservaCasillas, layout.TamanoTile);
         }
 
+        // Jefe final: el Eco del Apagón vive solo en ejecución.
+        if (indiceNivel == 13 && Application.isPlaying) JefeEcoApagon.Montar(layout, transform);
+
         MaiaTerminal maia = Object.FindFirstObjectByType<MaiaTerminal>(FindObjectsInactive.Include);
 
         if (maia != null && def != null && gameObject.scene.name == LevelManager.NombreEscenaNivel(indiceNivel))

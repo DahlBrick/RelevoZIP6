@@ -5,7 +5,7 @@
 /// </summary>
 public static class LevelLayouts
 {
-    public const int Cantidad = 12;
+    public const int Cantidad = 13;
     public const float TamanoTile = 2f;
 
     public static LevelLayout Obtener(int indice)
@@ -24,6 +24,7 @@ public static class LevelLayouts
             case 10: return Nivel10();
             case 11: return Nivel11();
             case 12: return Nivel12();
+            case 13: return Nivel13();
             default: return null;
         }
     }
@@ -269,5 +270,30 @@ public static class LevelLayouts
             "M###u#www#F#####wwwww",
             "#NY###www#####1#wwwww",
             "v###bhwww#ab###vwwwww");
+    }
+
+    /// <summary>
+    /// Nivel 13 - La Sala del Relevo. Jefe final: el Eco del Apagón (JefeEcoApagon) recorre la sala.
+    /// Oeste: caja a la placa (compuerta g), base A con condensador y puente B al islote de la Torre
+    /// de Cobre (L abre la pasarela P al centro). Centro: base D y puente C al este; la Torre de Sal
+    /// (K) queda lejos de la batería y abre la pasarela Q. Este: cajón a la placa u, que tiende el
+    /// puente R al núcleo (E).
+    /// </summary>
+    public static LevelLayout Nivel13()
+    {
+        return new LevelLayout("Nivel 13 - La Sala del Relevo", TamanoTile,
+            "w#####wwmmmwwwwwwwwwwwww",
+            "w##z#ABBmLmwwwwwwwwwwwww",
+            "w#####wwmmmwwwwwwwwwwwww",
+            "w#####wwwwwwwwwwwwwwwwww",
+            "wwwgwwwwwwwwwwwwwwwwwwww",
+            "w#####ww######wwwwwwwwww",
+            "wo####ww#####DCC####wwmm",
+            "w#####ww######ww####RR#E",
+            "wk####PP######ww##k#wwmm",
+            "w#####ww######ww###uwwww",
+            "w##NY#ww######QQ####wwww",
+            "wM####ww######ww###Kwwww",
+            "wwwwwwwwwwwwwwwwwwwwwwww");
     }
 }
