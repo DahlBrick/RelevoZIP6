@@ -51,6 +51,9 @@ EditorBuildSettings:
     path: Assets/Scenes/PipePruebas/cuadernoRelevo.unity
     guid: e354e4c990ba55b4e923802679e51255
   - enabled: 1
+    path: Assets/Scenes/Juego/Cinematica_Fundicion.unity
+    guid: e5aed00c8c6346e4da1369c8c6768e0c
+  - enabled: 1
     path: Assets/Scenes/Juego/Nivel13_LaSalaDelRelevo.unity
     guid: 944f966c5b6b8244fb85e5ebb1259bb4
   - enabled: 1

@@ -51,6 +51,10 @@ puede elegir entre la radio y la ciudad.
 
 ## 2 · El banco de fundición (decisión 2, tras el puerto 12)
 
+> **Hecha (2026-11-24):** `Assets/Scripts/Cinematica/CinematicaFundicion.cs`, escena
+> `Cinematica_Fundicion`. Dura unos 78 s. Mantener Esc salta hasta la elección, que no se puede
+> saltar. Desde el editor se revisa con `Revisar(segundo, opcion)`.
+
 **Qué cuenta:** Nilo encuentra el lugar donde se borró a sí mismo y puede volver a hacerlo. Es la
 decisión moral del juego.
 
