@@ -15,17 +15,21 @@ MonoBehaviour:
   indice: 12
   nombre: Nivel 12 - Varadero de las Campanas
   tituloIntro: Varadero de las Campanas
-  textoIntro: Las campanas del varadero avisaban a quienes trabajaban de espaldas
-    al agua. Una cuelga junto al puente de carga. La otra, frente al horno.
+  textoIntro: "Las campanas del varadero avisaban a quienes trabajaban de espaldas
+    al agua. Una cuelga junto al puente de carga. La otra, frente al horno. Al fondo,
+    el banco de fundici\xF3n sigue templado. Nilo ha estado aqu\xED antes."
   pistaMaia: "Deja el caj\xF3n en el rombo del taller. La campana anuncia que puedes
     cruzar. En la cabina, graba una espera sobre I y embarca cuando el eco tome el
     relevo."
   textoCierre: "Las dos campanas vuelven a distinguirse desde el agua. Sobre el banco
-    de fundici\xF3n queda espacio para la pr\xF3xima pieza."
+    de fundici\xF3n queda espacio para la pr\xF3xima pieza. M\xE1s all\xE1 del varadero,
+    en la subestaci\xF3n, algo enorme se pone en pie."
   recuerdoIdentificador: nivel12_recuerdo
-  recuerdoTitulo: Badajo de repuesto
-  recuerdoTexto: "Alguien envolvi\xF3 la cuerda con un trozo de manga. En la punta
-    del badajo asoma el bronce claro. Lo probaron muchas veces antes de colgarlo."
+  recuerdoTitulo: "Recuerdo 12 \xB7 El disco fundido"
+  recuerdoTexto: "En el banco de fundici\xF3n queda un molde con la forma de un disco
+    de memoria. El metal se enfri\xF3 a medias. Nilo vino aqu\xED despu\xE9s de la
+    crecida, a olvidar. En el borde del molde, raspado con una pinza: \xABLa esclusa
+    nunca se abri\xF3\xBB."
   reservaCasillas: 18
   tutorialPatio: 0
   tutorialCondensadores: 0

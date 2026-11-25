@@ -16,15 +16,17 @@ MonoBehaviour:
   nombre: "Nivel 5 - D\xE1rsena del Torno"
   tituloIntro: "D\xE1rsena del Torno"
   textoIntro: "El torno sigue amarrado en la punta oeste. Si Nilo suelta el cable,
-    las dos mitades de la d\xE1rsena volver\xE1n a comunicarse."
+    las dos mitades de la d\xE1rsena volver\xE1n a comunicarse. Maia le pide que
+    no se entretenga con los avisos clavados en el torno."
   pistaMaia: "Cruza con la carga de D. Desde el taller, manda corriente hacia el
     peque\xF1o muelle del oeste. Su torno abre el camino a la otra orilla."
   textoCierre: "Vuelve a o\xEDrse el torno. Alguien del otro lado responde con tres
-    golpes de remo."
+    golpes de remo. Maia tarda un poco en volver a hablar."
   recuerdoIdentificador: nivel5_recuerdo
-  recuerdoTitulo: Las marcas del torno
-  recuerdoTexto: "\xABUna raya en la baranda por cada vuelta de manivela. Las de
-    abajo las hice cuando apenas llegaba al torno.\xBB"
+  recuerdoTitulo: "Recuerdo 5 \xB7 El cierre de la emisora"
+  recuerdoTexto: "Un aviso clavado en el torno: \xABRadio Liria dejar\xE1 de emitir
+    a fin de mes por falta de energ\xEDa\xBB. El papel tiene tres marcas de \xF3xido,
+    como si una pinza de metal lo hubiera apretado demasiado."
   reservaCasillas: 20
   tutorialPatio: 0
   tutorialCondensadores: 0

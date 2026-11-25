@@ -15,18 +15,20 @@ MonoBehaviour:
   indice: 2
   nombre: Nivel 2 - Patio de Bombas
   tituloIntro: Patio de Bombas
-  textoIntro: "Las bombas que drenaban Liria est\xE1n paradas. Aqu\xED la bater\xEDa
-    no solo abre caminos: tambi\xE9n es lo que mantiene a Nilo en pie. Cada paso
-    lejos de ella cuenta."
+  textoIntro: "Las bombas que drenaban Liria est\xE1n paradas desde la noche de la
+    crecida. Maia dice que Nilo sabe c\xF3mo funcionan, aunque no lo recuerde. Aqu\xED
+    la bater\xEDa no solo abre caminos: tambi\xE9n es lo que mantiene a Nilo en pie.
+    Cada paso lejos de ella cuenta."
   pistaMaia: "La caja del suroeste va a su placa empuj\xE1ndola primero al este.
     Desde la base A, ve directo a la palanca y vuelve. En el muelle este no hace
     falta hacerlo todo de un viaje: ac\xE9rcate a la base D para recargar."
-  textoCierre: "Las bombas vuelven a girar y el patio se vac\xEDa. El faro espera
-    al final del canal."
+  textoCierre: "Las bombas vuelven a girar y el patio se vac\xEDa. En el panel de
+    mando, alguien dej\xF3 pegada con cinta la programaci\xF3n de la radio."
   recuerdoIdentificador: nivel2_recuerdo
-  recuerdoTitulo: Recuerdo de Liria - El aprendiz de bombas
-  recuerdoTexto: "\"Aprend\xED a leer los cables antes que las letras. Turquesa es
-    manual; \xE1mbar, prestado.\""
+  recuerdoTitulo: "Recuerdo 2 \xB7 El horario de la emisora"
+  recuerdoTexto: "En el panel de las bombas est\xE1 la programaci\xF3n de Radio Liria.
+    A las 00:00, Maia. A las 00:15, la revisi\xF3n de las bombas. Una mano de metal
+    tach\xF3 las 00:15 y escribi\xF3 encima: \xABdespu\xE9s\xBB."
   reservaCasillas: 12
   tutorialPatio: 1
   tutorialCondensadores: 0

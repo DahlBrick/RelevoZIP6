@@ -21,13 +21,13 @@ MonoBehaviour:
   pistaMaia: "Graba primero la se\xF1al de embarque en I. Termina sobre II. En la
     otra orilla, coloca la bater\xEDa en la base A y cruza a la placa gemela."
   textoCierre: "Al cerrarse los dos contactos, la radio deja pasar el final de la
-    cinta. Despu\xE9s de las buenas noches de Maia se oye una silla arrastr\xE1ndose.
-    Alguien se qued\xF3 hasta que lleg\xF3 la \xFAltima barca."
+    cinta. El libro de guardia queda abierto en la p\xE1gina de la crecida. Maia
+    no dice nada. Por primera vez, su radio se apaga sola."
   recuerdoIdentificador: nivel10_recuerdo
-  recuerdoTitulo: "Papel carb\xF3n del segundo turno"
-  recuerdoTexto: "Al trasluz aparece el rengl\xF3n que faltaba del registro. En vez
-    de una firma dice \xABGuard\xE9 tu sitio\xBB. La letra es la misma que en la
-    ficha del astillero."
+  recuerdoTitulo: "Recuerdo 10 \xB7 El rengl\xF3n del operador"
+  recuerdoTexto: "Al trasluz aparece el rengl\xF3n que faltaba del registro: \xAB00:17.
+    Carga de las bombas desviada a la emisora. Operador de guardia: NILO\xBB. No
+    hay firma. Hay un c\xF3digo. Nilo lo reconoce: es el suyo."
   reservaCasillas: 8
   tutorialPatio: 0
   tutorialCondensadores: 0

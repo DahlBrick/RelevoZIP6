@@ -258,6 +258,9 @@ public sealed class DialogoUI : MonoBehaviour
 
         string t = m.titulo != null ? m.titulo.ToLowerInvariant() : "";
         bool hablaMaia = t.Contains("maia");
+        // La radio pierde la señal a medida que Nilo recuerda (ver Historia.InterferenciaMaia).
+        if (hablaMaia && RelevoGame.Nivel != null)
+            m.texto = Historia.InterferenciaMaia(m.texto, Mathf.Min(RelevoGame.Nivel.IndiceNivel, 12));
         hablaNilo = t.Contains("aviso") || t.Contains("salida");
 
         // Retratos: Maia a la izquierda cuando habla; Nilo siempre a la derecha, atenuado si escucha.

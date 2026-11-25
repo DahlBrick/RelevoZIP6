@@ -16,17 +16,20 @@ MonoBehaviour:
   nombre: Nivel 11 - Mercado de la Sal
   tituloIntro: Mercado de la Sal
   textoIntro: "Todav\xEDa queda sal en los bordes de las mesas. La reja del mercado
-    est\xE1 echada y el montacargas espera al otro lado del canal."
+    est\xE1 echada y el montacargas espera al otro lado del canal. Ahora Nilo sabe
+    por qu\xE9 se inund\xF3 el mercado. La radio de Maia suena a ratos, entre ruido."
   pistaMaia: "El caj\xF3n sostiene la reja. Deja la bater\xEDa en la base del mercado
     y busca la palanca al otro lado. Cuando vuelvas a por ella, la pasarela seguir\xE1
     tendida."
-  textoCierre: La balanza recupera el equilibrio. Un hilo de agua vuelve a correr
-    entre los bancales.
+  textoCierre: "La balanza recupera el equilibrio. Un hilo de agua vuelve a correr
+    entre los bancales. \xABNo fue culpa tuya\xBB, dice la radio. La voz ya no se
+    parece a la de Maia."
   recuerdoIdentificador: nivel11_recuerdo
-  recuerdoTitulo: Pesa de media arroba
-  recuerdoTexto: "En el asa quedan granos de sal. La base est\xE1 gastada por un
-    lado. Alguien encaj\xF3 un trocito de cobre debajo para que la balanza volviera
-    a marcar lo justo."
+  recuerdoTitulo: "Recuerdo 11 \xB7 Nada que pesar"
+  recuerdoTexto: "Las mesas guardan las marcas de lo que pesaban: redes, sal, pan.
+    En la \xFAltima, una nota para nadie: \xABVolvimos cuando baj\xF3 el agua. No
+    quedaba nada que pesar\xBB. Debajo de la balanza, un trocito de cobre para que
+    volviera a marcar lo justo."
   reservaCasillas: 20
   tutorialPatio: 0
   tutorialCondensadores: 0

@@ -16,15 +16,18 @@ MonoBehaviour:
   nombre: Nivel 3 - Faro de Liria
   tituloIntro: Faro de Liria
   textoIntro: "El faro necesita la \xFAltima bater\xEDa. Aqu\xED los puentes tienen
-    condensadores: guardan un poco de energ\xEDa cuando la bater\xEDa se va."
+    condensadores: guardan un poco de energ\xEDa cuando la bater\xEDa se va. Mientras
+    Nilo trabaja, Maia tararea. Es la misma canci\xF3n que sonaba en el muelle."
   pistaMaia: "Carga el condensador del todo antes de retirar la bater\xEDa. La caja
     del pasillo va al norte, no al fondo. La palanca est\xE1 demasiado lejos de D:
     ll\xE9vale la bater\xEDa en la mano."
-  textoCierre: "El faro vuelve a se\xF1alar la ruta segura. Los primeros botes cruzan
-    el canal."
+  textoCierre: "El faro vuelve a se\xF1alar la ruta segura. Durante un segundo, su
+    luz parpadea al ritmo de la canci\xF3n."
   recuerdoIdentificador: nivel3_recuerdo
-  recuerdoTitulo: Recuerdo de Liria - El farero
-  recuerdoTexto: "\"Si la luz se apaga, esperen. Alguien siempre vuelve con la energ\xEDa.\""
+  recuerdoTitulo: "Recuerdo 3 \xB7 El faro que bailaba"
+  recuerdoTexto: "Los barqueros se quejaban: de noche, el faro parpadeaba al comp\xE1s
+    de la radio. Nadie supo qui\xE9n mov\xEDa la luz. En el cuaderno del farero se
+    lee: \xABParece que alguien est\xE1 bailando con ella\xBB."
   reservaCasillas: 10
   tutorialPatio: 0
   tutorialCondensadores: 1

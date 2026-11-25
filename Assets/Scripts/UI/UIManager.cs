@@ -1,3 +1,4 @@
+using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,9 +27,10 @@ public class UIManager : MonoBehaviour
         "Reiniciar nivel",
         "Cuaderno de viaje",
         "Opciones",
-        "Carta de puertos"
+        "Carta de puertos",
+        "Volver al título"
     };
-    static readonly string[] OpcionesCierreCanal = { "Elegir puerto", "Reiniciar nivel", "Cuaderno de viaje" };
+    static readonly string[] OpcionesCierreCanal = { "Ver los créditos", "Elegir puerto", "Cuaderno de viaje" };
     static readonly string[] OpcionesFinal = { "Siguiente nivel", "Reiniciar nivel", "Cuaderno de viaje" };
     static readonly string[] OpcionesConfirmar = { "Sí, reiniciar", "No, continuar" };
 
@@ -465,6 +467,12 @@ public class UIManager : MonoBehaviour
             case 5:
                 AbrirCarta();
                 break;
+
+            case 6:
+                Time.timeScale = 1f;
+                GameEvents.Limpiar();
+                SceneManager.LoadScene(Application.CanStreamedLevelBeLoaded(TituloRelevo.Escena) ? TituloRelevo.Escena : LevelManager.NombreEscenaNivel(1));
+                break;
         }
     }
 
@@ -485,18 +493,53 @@ public class UIManager : MonoBehaviour
     {
         if (nivel == null) return;
 
+        if (nivel.IndiceNivel == LevelLayouts.Cantidad)
+        {
+            // Último puerto: el juego termina en los créditos.
+            switch (indice)
+            {
+                case 0: Time.timeScale = 1f; GameEvents.Limpiar(); SceneManager.LoadScene(Creditos.Escena); break;
+                case 1: AbrirCarta(); break;
+                case 2: AbrirCuaderno(); break;
+            }
+            return;
+        }
+
         switch (indice)
         {
             case 0:
-                if (nivel.IndiceNivel == LevelLayouts.Cantidad)
-                {
-                    AbrirCarta();
-                }
+                int punto = Historia.DecisionTrasPuerto(nivel.IndiceNivel);
+                if (punto > 0 && dialogo != null) OfrecerDecision(punto);
                 else nivel.IrASiguienteNivel();
                 break;
             case 1: nivel.ReiniciarNivel(); break;
             case 2: AbrirCuaderno(); break;
         }
+    }
+
+    /// <summary>
+    /// Decisión provisional tras los puertos 6 y 12. Las cinemáticas de decisión la sustituirán
+    /// (docs/narrativa/plan_cinematicas.md) y guardarán con el mismo SaveManager.Decidir.
+    /// </summary>
+    void OfrecerDecision(int punto)
+    {
+        bool decidido = false;
+        OcultarMenu(panelFinal);
+        dialogo.Encolar(new DialogoUI.Mensaje
+        {
+            titulo = Historia.TituloDecision(punto),
+            texto = Historia.TextoDecision(punto),
+            acento = RelevoUI.Ambar,
+            opciones = Historia.OpcionesDecision(punto),
+            alElegir = i =>
+            {
+                decidido = true;
+                SaveManager.Decidir(punto, Historia.ValorDecision(punto, i));
+                nivel.IrASiguienteNivel();
+            },
+            alCerrar = () => { if (!decidido) MostrarMenu(panelFinal, tarjetaFinal); }
+        });
+        AplicarBloqueo();
     }
 
     void AplicarBloqueo()
@@ -702,13 +745,16 @@ public class UIManager : MonoBehaviour
         if (textoFinal == null) return;
 
         bool faro = EsFaro();
-        string titulo = faro ? "EL FARO VUELVE A BRILLAR" : "NIVEL RESTAURADO";
+        bool ultimo = nivel != null && nivel.IndiceNivel == LevelLayouts.Cantidad;
+        string titulo = ultimo ? Historia.TituloFinal(Historia.FinalActual).ToUpperInvariant()
+            : faro ? "EL FARO VUELVE A BRILLAR" : "NIVEL RESTAURADO";
         textoFinal.text = titulo;
         textoFinal.color = RelevoUI.Ambar;
 
         if (textoFinalMensaje != null)
         {
-            string cierre = definicion != null ? definicion.textoCierre : "";
+            string cierre = ultimo ? Historia.TextoFinal(Historia.FinalActual)
+                : definicion != null ? definicion.textoCierre : "";
             textoFinalMensaje.text = string.IsNullOrEmpty(cierre)
                 ? "Liria vuelve a tener energía en este tramo del canal."
                 : cierre;

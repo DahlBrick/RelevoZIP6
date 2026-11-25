@@ -15,6 +15,11 @@ public class SaveData
     // distinguir los tres estados: bloqueado, descubierto y leído. Campo nuevo y aditivo: los
     // archivos antiguos se leen igual porque Cargar() lo deja en lista vacía si falta.
     public List<string> recuerdosLeidos = new List<string>();
+
+    // Las dos decisiones de la historia (tras el Puerto 6 y tras el 12). Vacías hasta que se toman.
+    // "ciudad" o "maia"; "recordar" o "borrar".
+    public string decisionEnergia = "";
+    public string decisionMemoria = "";
 }
 
 /// <summary>Progreso local en JSON (Application.persistentDataPath/relevo_save.json).</summary>
@@ -176,6 +181,19 @@ public static class SaveManager
         }
         return total;
     }
+
+    public static string DecisionEnergia { get { return Datos.decisionEnergia ?? ""; } }
+    public static string DecisionMemoria { get { return Datos.decisionMemoria ?? ""; } }
+
+    public static void Decidir(int punto, string eleccion)
+    {
+        if (punto == 1) Datos.decisionEnergia = eleccion;
+        else Datos.decisionMemoria = eleccion;
+        Guardar();
+    }
+
+    /// <summary>Hay partida empezada: algún puerto completado o alguna decisión tomada.</summary>
+    public static bool HayProgreso { get { return Datos.nivelesCompletados.Count > 0; } }
 
     public static void ReiniciarProgreso()
     {

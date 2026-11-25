@@ -23,10 +23,10 @@ MonoBehaviour:
   textoCierre: En la taquilla queda una llave del archivo. El papel que la envuelve
     lleva la fecha de la crecida.
   recuerdoIdentificador: nivel7_recuerdo
-  recuerdoTitulo: Las dos etiquetas
+  recuerdoTitulo: "Recuerdo 7 \xB7 Las dos etiquetas"
   recuerdoTexto: "En el tablero, la etiqueta \xABRADIO\xBB se despega por una esquina.
     Debajo todav\xEDa se lee \xABBOMBA DE LA LONJA\xBB. Las dos tienen los mismos
-    agujeros."
+    agujeros. Alguien cambi\xF3 un cable por otro."
   reservaCasillas: 22
   tutorialPatio: 0
   tutorialCondensadores: 0

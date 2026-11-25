@@ -16,16 +16,19 @@ MonoBehaviour:
   nombre: Nivel 6 - Esclusa de las Dos Llaves
   tituloIntro: Esclusa de las Dos Llaves
   textoIntro: "La esclusa tiene dos llaves de presi\xF3n. Los estibadores se llevaron
-    todas las cajas menos una."
+    todas las cajas menos una. Maia est\xE1 contenta: dice que aqu\xED, la noche
+    de la crecida, Nilo fue un h\xE9roe."
   pistaMaia: "Empieza por el panel del oeste. Cuando la palanca abra el paso sur,
     recupera la misma caja para los barrotes. En la sala de m\xE1quinas hay otro
     camino de vuelta."
-  textoCierre: Las dos hojas de la esclusa se abren a la vez. Por primera vez desde
-    la crecida, una barca recorre el canal entero.
+  textoCierre: "Las dos hojas de la esclusa se abren a la vez. \xAB\xBFLo ves? Siempre
+    fuiste bueno en esto\xBB, dice Maia. Nilo no recuerda haberlo hecho nunca."
   recuerdoIdentificador: nivel6_recuerdo
-  recuerdoTitulo: El turno de noche
-  recuerdoTexto: "\xABMi hermana abr\xEDa la primera hoja. Yo esperaba el golpe de
-    su llave para abrir la segunda.\xBB"
+  recuerdoTitulo: "Recuerdo 6 \xB7 El h\xE9roe de la esclusa"
+  recuerdoTexto: "Aquella noche Nilo abri\xF3 las dos hojas de la esclusa y todas
+    las barcas salieron antes de la crecida. Nadie se qued\xF3 atr\xE1s. Liria entera
+    le dio las gracias. (El recuerdo es n\xEDtido, c\xE1lido y perfecto. Demasiado
+    perfecto.)"
   reservaCasillas: 22
   tutorialPatio: 0
   tutorialCondensadores: 0

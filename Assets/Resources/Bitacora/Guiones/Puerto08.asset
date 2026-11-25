@@ -24,10 +24,10 @@ MonoBehaviour:
     a dar las buenas noches. En la etiqueta alguien escribi\xF3 \xABconservar el
     original\xBB."
   recuerdoIdentificador: nivel8_recuerdo
-  recuerdoTitulo: Cinta de las 00:17
+  recuerdoTitulo: "Recuerdo 8 \xB7 Cinta de las 00:17"
   recuerdoTexto: "El carrete dice \xABEmisi\xF3n de la noche de la crecida\xBB. Antes
-    de la voz de Maia se oyen dos golpes secos. En la tapa, donde ir\xEDa la firma
-    del operador, queda un rect\xE1ngulo m\xE1s claro."
+    de la voz de Maia se oyen dos golpes secos: dos interruptores al bajar. En la
+    tapa, donde ir\xEDa la firma del operador, queda un rect\xE1ngulo m\xE1s claro."
   reservaCasillas: 22
   tutorialPatio: 0
   tutorialCondensadores: 0

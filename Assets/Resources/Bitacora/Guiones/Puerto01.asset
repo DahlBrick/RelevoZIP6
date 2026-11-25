@@ -16,16 +16,18 @@ MonoBehaviour:
   nombre: Nivel 1 - Muelle de Cobre
   tituloIntro: Muelle de Cobre
   textoIntro: "\xABBuenas noches a quienes siguen de turno\xBB. La voz sale de una
-    radio junto al muelle. Tras la crecida, los puentes siguen bajo el agua. Junto
-    a Nilo queda una bater\xEDa compatible con el faro."
+    radio junto al muelle. Se llama Maia y dice que llevaba mucho tiempo esperando
+    a alguien. Liria est\xE1 a oscuras y los puentes siguen bajo el agua. Junto a
+    Nilo queda una bater\xEDa: encaja en su pecho como si siempre hubiera sido suya."
   pistaMaia: "La bater\xEDa abre el paso, pero la palanca abre el regreso. En el
     muelle hay dos orillas que cruzar: haz lo mismo dos veces."
-  textoCierre: Las tres orillas del Muelle vuelven a estar conectadas. El Patio de
-    Bombas sigue anegado.
+  textoCierre: Las tres orillas del Muelle vuelven a estar conectadas. Maia le da
+    las gracias a Nilo como si hubiera vuelto de un viaje muy largo.
   recuerdoIdentificador: nivel1_recuerdo
-  recuerdoTitulo: Recuerdo de Liria - La barquera
-  recuerdoTexto: "\"Remaba al amanecer con las redes llenas. Si el faro vuelve a
-    encenderse, volver\xE9 a cruzar el canal.\""
+  recuerdoTitulo: "Recuerdo 1 \xB7 La primera canci\xF3n"
+  recuerdoTexto: "Entre el zumbido de las subestaciones, una noche, algo cant\xF3.
+    No era una alarma ni una aver\xEDa. Era una voz que dec\xEDa: \xABBuenas noches
+    a quienes siguen de turno\xBB. Nilo dej\xF3 de contar voltios para escucharla."
   reservaCasillas: 0
   tutorialPatio: 0
   tutorialCondensadores: 0

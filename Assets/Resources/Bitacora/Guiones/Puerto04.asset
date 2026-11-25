@@ -16,15 +16,17 @@ MonoBehaviour:
   nombre: Nivel 4 - Aduana de la Marea
   tituloIntro: Aduana de la Marea
   textoIntro: El agua ya lame los sellos de la aduana. Al otro lado del canal queda
-    una puerta abierta para los botes del correo.
+    una puerta abierta para los botes del correo. En el mostrador se apilan cartas
+    dirigidas a la emisora.
   pistaMaia: "Lleva la caja al rombo y gira los discos con E hasta que el turquesa
     alcance la orilla. En el taller, sigue el \xE1mbar hasta la pasarela de la galer\xEDa."
   textoCierre: El primer saco de cartas sale en la barca de la tarde. En el mostrador
     queda un sobre para la emisora. El matasellos es de la noche de la crecida.
   recuerdoIdentificador: nivel4_recuerdo
-  recuerdoTitulo: "La \xFAltima saca"
-  recuerdoTexto: "\xABGuard\xE1bamos arriba las cartas sin due\xF1o. Cuando bajaba
-    la marea, alguien siempre ven\xEDa a preguntar.\xBB"
+  recuerdoTitulo: "Recuerdo 4 \xB7 Cartas a la emisora"
+  recuerdoTexto: "Un sobre para Radio Liria, sin enviar: \xABCada noche, cuando empieza
+    su programa, las farolas de la calle bajan. Las bombas tambi\xE9n. \xBFEs casualidad?\xBB.
+    Alguien lo guard\xF3 en el caj\xF3n de las cartas sin due\xF1o."
   reservaCasillas: 18
   tutorialPatio: 0
   tutorialCondensadores: 0

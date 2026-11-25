@@ -57,7 +57,7 @@ public class PlayerInteractor : MonoBehaviour
         if (colorMarco != tinta)
         {
             colorMarco = tinta;
-            foreach (var esquina in esquinas) esquina.sharedMaterial = tinta;
+            foreach (var esquina in esquinas) if (esquina != null) esquina.sharedMaterial = tinta;
         }
     }
 

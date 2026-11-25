@@ -19,6 +19,46 @@ public class MaiaTerminal : MonoBehaviour, IInteractable
     public string Verbo { get { return "Hablar con Maia"; } }
     public string Motivo { get { return ""; } }
 
+    // La radio se apaga poco a poco a medida que Nilo recuerda (ver Historia.Interferencia):
+    // sus luces bajan y, desde el Puerto 7, parpadean como una emisora que pierde la señal.
+    Light[] luces;
+    float[] intensidadBase;
+    int interferencia;
+
+    void Start()
+    {
+        int puerto = RelevoGame.Nivel != null ? RelevoGame.Nivel.IndiceNivel : 1;
+        interferencia = Historia.Interferencia(puerto);
+        if (GetComponentInChildren<Light>(true) == null)
+        {
+            var piloto = new GameObject("Piloto de la radio").AddComponent<Light>();
+            piloto.transform.SetParent(transform, false);
+            piloto.transform.position = Ancla.position + Vector3.up * 1.4f;
+            piloto.type = LightType.Point;
+            piloto.color = RelevoUI.Verde;
+            piloto.range = 3.2f;
+            piloto.intensity = 2.2f;
+            piloto.shadows = LightShadows.None;
+        }
+        luces = GetComponentsInChildren<Light>(true);
+        intensidadBase = new float[luces.Length];
+        for (int i = 0; i < luces.Length; i++) intensidadBase[i] = luces[i].intensity;
+    }
+
+    void Update()
+    {
+        if (interferencia == 0 || luces == null) return;
+        float brillo = 1f - 0.17f * interferencia;
+        if (interferencia >= 2)
+        {
+            // Cortes breves y aleatorios, más frecuentes cuanto peor es la señal.
+            float ruido = Mathf.PerlinNoise(Time.time * (2f + interferencia), 0.37f);
+            if (ruido < 0.12f * interferencia) brillo *= 0.15f;
+        }
+        for (int i = 0; i < luces.Length; i++)
+            if (luces[i] != null) luces[i].intensity = intensidadBase[i] * brillo;
+    }
+
     void OnEnable() { PlayerInteractor.Registrar(this); }
     void OnDisable() { PlayerInteractor.Desregistrar(this); }
 

@@ -17,15 +17,20 @@ using UnityEngine.UI;
 /// El reloj es la señal de Maia: baja sola y con cada golpe. Si se apaga, todo vuelve a empezar.
 /// Se monta en ejecución, no se hornea.
 /// </summary>
-public sealed class JefeEcoApagon : MonoBehaviour
+[DefaultExecutionOrder(500)]
+public sealed partial class JefeEcoApagon : MonoBehaviour
 {
     public static JefeEcoApagon Activo { get; private set; }
 
     enum Estado { Persigue, Prepara, Embiste, Aturdido, Vencido }
 
     const int VidaTotal = 3;
-    const float SenalTotal = 240f;
-    const float Golpe = 20f;
+    /// <summary>La señal de Maia aguanta más si en el Puerto 6 se le dio la energía a su antena.</summary>
+    static float SenalTotal
+    {
+        get { string e = SaveManager.DecisionEnergia; return e == "maia" ? 270f : e == "ciudad" ? 225f : 240f; }
+    }
+    const float Golpe = 16f;
     const float RadioContacto = 2f;
     const float RadioPulso = 6.5f;
     const float RadioTorre = 5f;
@@ -63,7 +68,7 @@ public sealed class JefeEcoApagon : MonoBehaviour
     Light brasa;
     Estado estado = Estado.Persigue;
     int vida = VidaTotal;
-    float senal = SenalTotal;
+    float senal;
     float reloj, relojEmbestida, relojPulso, relojSombra, relojFrase, invulnerable, relojOnda, relojDerrota;
     Vector3 direccion, empuje;
     float relojEmpuje, pausa;
@@ -91,10 +96,14 @@ public sealed class JefeEcoApagon : MonoBehaviour
     {
         Activo = this;
         layout = mapa;
+        senal = SenalTotal;
         CrearEco();
         CrearSombra();
         for (int i = 0; i < CasillaTorre.Length; i++) CrearTorre(i);
         CrearPanel();
+        PrepararNoche();
+        CrearFaroles();
+        RecogerFigura();
         ReservaEnergia.MultiplicadorGasto = GastoEnSombra;
         relojEmbestida = EsperaEmbestida[0];
         relojPulso = IntervaloPulso[0];
@@ -109,6 +118,7 @@ public sealed class JefeEcoApagon : MonoBehaviour
     void OnDestroy()
     {
         if (Activo == this) Activo = null;
+        SoltarCamara();
         if (ReservaEnergia.MultiplicadorGasto == GastoEnSombra) ReservaEnergia.MultiplicadorGasto = null;
     }
 
@@ -122,7 +132,7 @@ public sealed class JefeEcoApagon : MonoBehaviour
     void Update()
     {
         float dt = Time.deltaTime;
-        if (estado == Estado.Vencido) { Desvanecer(dt); return; }
+        if (estado == Estado.Vencido) { Desvanecer(dt); Amanecer(dt); AnimarChispas(dt); return; }
 
         bool bloqueado = RelevoGame.UI != null && RelevoGame.UI.BloqueaJuego;
         if (bloqueado || perdido || CaidaAlAgua.Activa) { PintarPanel(); return; }
@@ -133,6 +143,7 @@ public sealed class JefeEcoApagon : MonoBehaviour
         invulnerable -= dt;
         Empujar(nilo, dt);
         Comportamiento(nilo, dt);
+        Animar(dt);
         Pulsos(nilo, dt);
         Torres(dt);
         Sombras(dt);
@@ -247,6 +258,7 @@ public sealed class JefeEcoApagon : MonoBehaviour
         empuje = (d.sqrMagnitude > 0.01f ? d.normalized : -eco.forward) * 7f;
         relojEmpuje = 0.25f;
         destello.color = new Color(0.9f, 0.25f, 0.2f, 0.45f);
+        Sacudir(0.45f);
         Decir(grito);
         if (estado == Estado.Embiste) { reloj = 0f; }
         pausa = 1f;   // tras golpear, el Eco se queda un instante mirando: da tiempo a huir
@@ -254,7 +266,7 @@ public sealed class JefeEcoApagon : MonoBehaviour
 
     void Empujar(PlayerController nilo, float dt)
     {
-        if (destello.color.a > 0f) destello.color = new Color(0.9f, 0.25f, 0.2f, Mathf.Max(0f, destello.color.a - dt * 1.2f));
+        if (destello != null && destello.color.a > 0f) destello.color = new Color(0.9f, 0.25f, 0.2f, Mathf.Max(0f, destello.color.a - dt * 1.2f));
         if (relojEmpuje <= 0f) return;
         relojEmpuje -= dt;
         CharacterController cc = nilo.GetComponent<CharacterController>();
@@ -283,6 +295,7 @@ public sealed class JefeEcoApagon : MonoBehaviour
         avisandoPulso = false;
         relojPulso = IntervaloPulso[Fase];
         relojOnda = 0.35f;
+        Sacudir(0.3f);
         AudioDirector.Pedir(Tono.PuenteRetraido);
 
         foreach (TemporaryBridge p in FindObjectsByType<TemporaryBridge>(FindObjectsSortMode.None))
@@ -371,6 +384,8 @@ public sealed class JefeEcoApagon : MonoBehaviour
 
         vida--;
         linea.enabled = false;
+        Sacudir(0.75f);
+        Destellar();
         if (vida <= 0) { Vencer(); return; }
 
         estado = Estado.Aturdido;
@@ -459,22 +474,36 @@ public sealed class JefeEcoApagon : MonoBehaviour
         ReservaEnergia.MultiplicadorGasto = null;
         AudioDirector.Pedir(Tono.Faro);
         AudioDirector.Musica("MareasDeLiria", 1f);
+        EstallarChispas();
+        Sacudir(1f);
         Decir("Se deshace en la luz…");
     }
 
+    bool cierrePedido;
+
     void Desvanecer(float dt)
     {
-        if (relojDerrota <= 0f) return;
         relojDerrota -= dt;
-        float f = Mathf.Clamp01(relojDerrota / 2.2f);
-        eco.localScale = Vector3.one * f;
-        eco.position += Vector3.up * dt * 1.5f;
-        brasa.intensity = 6f * f;
-        PintarPanel();
-        if (relojDerrota > 0f) return;
-        eco.gameObject.SetActive(false);
-        if (barraVida != null) barraVida.canvas.gameObject.SetActive(false);
-        if (RelevoGame.Nivel != null) RelevoGame.Nivel.CompletarPorJefe();
+        if (relojDerrota > 0f)
+        {
+            float f = Mathf.Clamp01(relojDerrota / 2.2f);
+            eco.localScale = Vector3.one * f;
+            eco.position += Vector3.up * dt * 1.5f;
+            brasa.intensity = 6f * f;
+            PintarPanel();
+            return;
+        }
+        if (eco.gameObject.activeSelf)
+        {
+            eco.gameObject.SetActive(false);
+            if (barraVida != null) barraVida.canvas.gameObject.SetActive(false);
+        }
+        // Se deja ver cómo se enciende Liria antes del cierre.
+        if (!cierrePedido && relojDerrota <= -4.5f)
+        {
+            cierrePedido = true;
+            if (RelevoGame.Nivel != null) RelevoGame.Nivel.CompletarPorJefe();
+        }
     }
 
     // ------------------------------------------------------------------ objetivo
@@ -630,6 +659,9 @@ public sealed class JefeEcoApagon : MonoBehaviour
 
     void Decir(string texto)
     {
+        // La voz se rompe a medida que se pierde su señal: al final solo quedan fragmentos.
+        float s = Senal01;
+        texto = Historia.InterferenciaMaia(texto, s > 0.6f ? 8 : s > 0.3f ? 11 : 13);
         fraseActual = texto;
         relojFrase = 10f;
         if (frase != null) frase.text = texto;

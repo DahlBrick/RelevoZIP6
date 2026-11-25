@@ -17,7 +17,7 @@ public sealed class CartaDePuertos : MonoBehaviour
     readonly Text[] nombres = new Text[LevelLayouts.Cantidad];
     readonly Text[] marcas = new Text[LevelLayouts.Cantidad];
     const int PuertosPorTramo=4;
-    static readonly string[] Tramos={ "Costa de Cobre", "Canales de la Lonja", "Muelles de Guardia" };
+    static readonly string[] Tramos={ "Costa de Cobre", "Canales de la Lonja", "Muelles de Guardia", "El núcleo" };
     readonly Image[] tramos=new Image[Tramos.Length];
     readonly Text[] rotulosTramo=new Text[Tramos.Length];
     Text titulo, leyenda, accion, estado, retorno, instrucciones;
@@ -90,9 +90,12 @@ public sealed class CartaDePuertos : MonoBehaviour
             completos + " de " + filas.Length + " puertos restaurados\n" + recuerdos + " recuerdos en el cuaderno";
         for(int i=0;i<tramos.Length;i++)
         {
-            tramos[i]=Banda(hoja,"Tramo "+(i+1),(i-1)*355,174,345,49,Crema);
-            rotulosTramo[i]=Rotulo(tramos[i].transform,"Nombre",0,0,335,44,21,Tinta,TextAnchor.MiddleCenter);
-            rotulosTramo[i].text=(i*PuertosPorTramo+1).ToString("00")+"–"+Mathf.Min((i+1)*PuertosPorTramo,filas.Length).ToString("00")+"   "+Tramos[i];
+            // Cuatro tramos: los tres canales y el núcleo, donde espera el Eco (Puerto 13).
+            tramos[i]=Banda(hoja,"Tramo "+(i+1),(i-1.5f)*271,174,263,49,Crema);
+            rotulosTramo[i]=Rotulo(tramos[i].transform,"Nombre",0,0,253,44,19,Tinta,TextAnchor.MiddleCenter);
+            rotulosTramo[i].resizeTextForBestFit=true; rotulosTramo[i].resizeTextMinSize=14; rotulosTramo[i].resizeTextMaxSize=19;
+            int desde=i*PuertosPorTramo+1, hasta=Mathf.Min((i+1)*PuertosPorTramo,filas.Length);
+            rotulosTramo[i].text=(desde==hasta?desde.ToString("00"):desde.ToString("00")+"–"+hasta.ToString("00"))+"   "+Tramos[i];
         }
         for (int i=0; i<filas.Length; i++)
         {
@@ -175,6 +178,7 @@ public sealed class CartaDePuertos : MonoBehaviour
         var recuerdo=SaveManager.TieneRecuerdo(ficha.recuerdoIdentificador);
         leyenda.text=confirmar?"Al zarpar dejarás este intento. Los recuerdos recogidos quedan en tu cuaderno."
             :(!abiertoSel?"Restaura "+DefinicionesPorDefecto.FichaDelCuaderno(seleccion-1).tituloIntro+" para abrir este puerto."
+            :string.IsNullOrEmpty(ficha.recuerdoIdentificador)?"Aquí no quedan recuerdos. Solo el Eco de aquella noche."
             :(recuerdo?"En el cuaderno · "+ficha.recuerdoTitulo:"Queda un recuerdo por encontrar en este puerto."));
         if (confirmar) accion.text = "Confirmar viaje";
         else if (!abiertoSel) accion.text = "Puerto cerrado";
