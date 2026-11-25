@@ -1,6 +1,11 @@
 # RELEVO · Plan de cinemáticas
 
-Tres cinemáticas obligatorias, dos de decisión y la final, más dos opcionales. Todas siguen las
+Tres cinemáticas obligatorias, dos de decisión y la final, más dos opcionales.
+
+> **Estado (2026-11-24): todas hechas.** Antena, Fundición, Final (4 variantes) y Renglón tienen
+> escena propia y están en Build Settings. Las nuevas heredan de `CinematicaBase.cs`. La apertura
+> no necesita cambios: su plano del muelle nunca muestra la baranda, así que el bucle de Estática
+> se entiende igual. Todas siguen las
 reglas de la [historia final](historia_final.md):
 
 - Nilo no habla.
@@ -22,6 +27,9 @@ guion por tiempo (`Evaluar(t)`), los subtítulos con `DialogoUI` y la tecla de s
 ---
 
 ## 1 · La antena (decisión 1, tras el puerto 6)
+
+> **Hecha:** `CinematicaAntena.cs`, escena `Cinematica_Antena`, unos 44 s. Se carga desde el panel
+> de cierre del puerto 6 (`Historia.CinematicaTrasPuerto`). Esc salta hasta la elección.
 
 **Qué cuenta:** Maia pide algo para sí por primera vez. Es el primer momento en que el jugador
 puede elegir entre la radio y la ciudad.
@@ -90,6 +98,9 @@ huecos negros en lugar de los recuerdos que le faltan.
 
 ## 3 · El relevo (final, cuatro variantes)
 
+> **Hecha:** `CinematicaFinal.cs`, escena `Cinematica_Final`. `LevelManager.CompletarPorJefe()` la
+> carga al vencer al Eco y al terminar va a `Creditos`. Duración: 56-68 s según la variante.
+
 **Tronco común (0-20 s):**
 
 1. El Eco se deshace en la luz, como en el nivel.
@@ -142,6 +153,8 @@ Después se ramifica según `Historia.FinalActual`:
 
 ## 4 · Revelación (opcional, cierre del puerto 10)
 
+> **Hecha:** `CinematicaRenglon.cs`, escena `Cinematica_Renglon`. Va entre el puerto 10 y el 11.
+
 Dura 30 segundos:
 
 1. El libro de guardia al trasluz y el renglón «Operador de guardia: NILO».
@@ -151,6 +164,8 @@ Dura 30 segundos:
 Refuerza la confirmación del puerto 10 sin quitarle peso al texto del cierre.
 
 ## 5 · Apertura revisada (opcional)
+
+> **Sin cambios:** la apertura no enseña la baranda, así que no contradice las trece rayas.
 
 La apertura actual ya funciona. Solo haría falta un ajuste: que el plano del muelle muestre la
 baranda sin rayas. Así el final Estática se entiende como un bucle.

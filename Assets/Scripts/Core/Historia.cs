@@ -79,6 +79,18 @@ public static class Historia
         return 0;
     }
 
+    /// <summary>Cinemática que se juega al dejar un puerto, o null si no hay.</summary>
+    public static string CinematicaTrasPuerto(int puerto)
+    {
+        switch (puerto)
+        {
+            case 6: return CinematicaAntena.Escena;
+            case 10: return CinematicaRenglon.Escena;
+            case 12: return CinematicaFundicion.Escena;
+            default: return null;
+        }
+    }
+
     public static string TituloDecision(int punto) { return punto == 1 ? "La antena" : "El banco de fundición"; }
 
     public static string TextoDecision(int punto)

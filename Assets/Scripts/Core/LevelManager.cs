@@ -402,7 +402,18 @@ public class LevelManager : MonoBehaviour
     /// <summary>El jefe final no tiene salida: el nivel termina al derrotarlo.</summary>
     public void CompletarPorJefe()
     {
-        if (!Completado) Completar();
+        if (Completado) return;
+        if (Application.CanStreamedLevelBeLoaded(CinematicaFinal.Escena))
+        {
+            // El final se cuenta en su cinemática, que termina en los créditos.
+            Completado = true;
+            SaveManager.MarcarNivelCompletado(IndiceNivel, RamalLonja);
+            Time.timeScale = 1f;
+            GameEvents.Limpiar();
+            SceneManager.LoadScene(CinematicaFinal.Escena);
+            return;
+        }
+        Completar();
     }
 
     void Completar()

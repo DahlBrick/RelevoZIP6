@@ -509,12 +509,14 @@ public class UIManager : MonoBehaviour
         {
             case 0:
                 int punto = Historia.DecisionTrasPuerto(nivel.IndiceNivel);
-                if (punto == 2 && Application.CanStreamedLevelBeLoaded(CinematicaFundicion.Escena))
+                string cinematica = Historia.CinematicaTrasPuerto(nivel.IndiceNivel);
+                if (cinematica != null && Application.CanStreamedLevelBeLoaded(cinematica))
                 {
-                    // La decisión 2 se toma en su cinemática, que termina cargando el Puerto 13.
+                    // Tras los puertos 6, 10 y 12 hay cinemática; las de decisión guardan la
+                    // elección y cada una termina cargando el puerto siguiente.
                     Time.timeScale = 1f;
                     GameEvents.Limpiar();
-                    SceneManager.LoadScene(CinematicaFundicion.Escena);
+                    SceneManager.LoadScene(cinematica);
                 }
                 else if (punto > 0 && dialogo != null) OfrecerDecision(punto);
                 else nivel.IrASiguienteNivel();
