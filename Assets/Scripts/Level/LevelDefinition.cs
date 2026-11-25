@@ -204,9 +204,9 @@ public static class DefinicionesPorDefecto
             case 13:
                 d.nombre = "Nivel 13 - La Sala del Relevo";
                 d.tituloIntro = "La Sala del Relevo";
-                d.textoIntro = "En la subestación todo sigue como aquella noche. Una figura enorme, hecha de tinta y cobre, camina por la sala. Tiene la forma de Nilo y repite una ruta que él ya no recuerda. A su paso, la ciudad se apaga.";
-                d.pistaMaia = "Enciende las tres torres. Cobre: la caja abre la compuerta y el condensador aguanta el pulso. Sal: la palanca está lejos de la batería, evita la sombra. Núcleo: el cajón tiende el puente; cruza entre dos pulsos.";
-                d.textoCierre = "La batería encaja en el núcleo. El Eco se deshace en la luz y, una a una, las ventanas de Liria se encienden. En la radio, la voz de Maia suena muy lejos: «Apagarse también es parte de la canción». Después, solo silencio.";
+                d.textoIntro = "En la subestación todo sigue como aquella noche. Una figura enorme de tinta y cobre se levanta en el centro de la sala. Tiene la forma de Nilo y viene a por él. Mientras exista, Liria seguirá a oscuras.";
+                d.pistaMaia = "No puedes golpearlo, Nilo, pero las torres sí. Pon la batería en una torre, espera a que se cargue y atrae al Eco hasta ella. Esquiva sus embestidas y aléjate cuando brille: su pulso hace daño y repliega los puentes.";
+                d.textoCierre = "El Eco se deshace en la luz y, una a una, las ventanas de Liria se encienden. En la radio, la voz de Maia suena muy lejos: «Apagarse también es parte de la canción». Después, solo silencio.";
                 d.reservaCasillas = 22;
                 break;
 

@@ -396,6 +396,17 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
+        Completar();
+    }
+
+    /// <summary>El jefe final no tiene salida: el nivel termina al derrotarlo.</summary>
+    public void CompletarPorJefe()
+    {
+        if (!Completado) Completar();
+    }
+
+    void Completar()
+    {
         Completado = true;
         SaveManager.MarcarNivelCompletado(IndiceNivel, RamalLonja);
 

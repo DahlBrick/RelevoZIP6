@@ -273,27 +273,28 @@ public static class LevelLayouts
     }
 
     /// <summary>
-    /// Nivel 13 - La Sala del Relevo. Jefe final: el Eco del Apagón (JefeEcoApagon) recorre la sala.
-    /// Oeste: caja a la placa (compuerta g), base A con condensador y puente B al islote de la Torre
-    /// de Cobre (L abre la pasarela P al centro). Centro: base D y puente C al este; la Torre de Sal
-    /// (K) queda lejos de la batería y abre la pasarela Q. Este: cajón a la placa u, que tiende el
-    /// puente R al núcleo (E).
+    /// Nivel 13 - La Sala del Relevo. Jefe final: el Eco del Apagón (JefeEcoApagon) persigue a Nilo
+    /// por la arena central. Las tres torres que lo dañan (las coloca el jefe en ejecución) quedan
+    /// tras un puzzle cada una: oeste (caja a la placa, compuerta g), islote norte (condensador z de
+    /// la base A, puente B; la palanca L tiende la pasarela P de vuelta) e islote sur (la palanca K,
+    /// tras el puente C de la base D, tiende la pasarela Q).
     /// </summary>
     public static LevelLayout Nivel13()
     {
         return new LevelLayout("Nivel 13 - La Sala del Relevo", TamanoTile,
-            "w#####wwmmmwwwwwwwwwwwww",
-            "w##z#ABBmLmwwwwwwwwwwwww",
-            "w#####wwmmmwwwwwwwwwwwww",
-            "w#####wwwwwwwwwwwwwwwwww",
-            "wwwgwwwwwwwwwwwwwwwwwwww",
-            "w#####ww######wwwwwwwwww",
-            "wo####ww#####DCC####wwmm",
-            "w#####ww######ww####RR#E",
-            "wk####PP######ww##k#wwmm",
-            "w#####ww######ww###uwwww",
-            "w##NY#ww######QQ####wwww",
-            "wM####ww######ww###Kwwww",
+            "wwwwwwwwwwwwwwwwwwwwwwww",
+            "w#####ww######z#wwmmLwww",
+            "w#####ww#######ABBmmmwww",
+            "w#####ww########PPmmmwww",
+            "w#####ww########wwwwwwww",
+            "wwwgwwww########wwwwwwww",
+            "w#####ww########wwwwwwww",
+            "wo####ww########ww####Kw",
+            "w#####mm###NY###ww#####w",
+            "wk####ww#######DCC#####w",
+            "w#####ww#M######wwwwwwww",
+            "w#####ww########QQmmmwww",
+            "wwwwwwwwwwwwwwwwwwmmmwww",
             "wwwwwwwwwwwwwwwwwwwwwwww");
     }
 }

@@ -718,7 +718,8 @@ public class UIManager : MonoBehaviour
         {
             int indice = nivel != null ? nivel.IndiceNivel : 1;
             int encontrados = SaveManager.RecuerdosDelNivel(indice);
-            textoFinalRecuerdos.text = encontrados > 0
+            bool sinRecuerdo = nivel != null && nivel.Definicion != null && string.IsNullOrEmpty(nivel.Definicion.recuerdoIdentificador);
+            textoFinalRecuerdos.text = sinRecuerdo ? "" : encontrados > 0
                 ? "Recuerdos encontrados en este tramo: " + encontrados + " de 1."
                 : "Queda un recuerdo por encontrar. Puedes volver desde la carta de puertos.";
         }

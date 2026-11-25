@@ -3,54 +3,80 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Jefe final (nivel 13, la Sala del Relevo): el Eco del Apagón. Es la grabación de la ruta que hizo
-/// Nilo la noche en que apagó Liria, convertida en un Nilo gigante de tinta que la repite en bucle.
+/// Jefe final (nivel 13, la Sala del Relevo): el Eco del Apagón, la grabación de la ruta que hizo
+/// Nilo la noche en que apagó Liria convertida en un Nilo gigante de tinta. Quiere apagarlo.
 ///
-/// - Pulso del apagón: cada pocos segundos repliega los puentes eléctricos durante dos segundos. Un
-///   condensador con carga aguanta el pulso (pierde un tercio). Quien esté sobre un puente cae.
-/// - Sombra: por donde pasa el Eco la reserva de Nilo se gasta el doble durante unos segundos.
-/// - Señal de Maia: es el reloj. Baja sola, baja de golpe si el pulso alcanza a Nilo y si se
-///   apaga hay que empezar de cero.
-/// Cada torre encendida (palanca L, palanca K) acelera al Eco y acorta el intervalo entre pulsos.
-/// Se vence llevando la batería al núcleo (la salida E). Se monta en ejecución, no se hornea.
+/// Ataques: persigue a Nilo y le golpea al tocarlo; embiste en línea recta (avisa con una línea en el
+/// suelo); lanza pulsos que dañan alrededor y repliegan los puentes eléctricos dos segundos (un
+/// condensador con carga aguanta). Por donde pasa deja sombra que gasta la reserva el doble.
+///
+/// Cómo se le vence: tres torres repartidas por la sala, cada una tras un puzzle. Con la batería
+/// puesta, una torre se carga en dos segundos; si el Eco entra en su radio, la descarga le quita una
+/// vida y lo aturde. Tres descargas y el Eco se deshace: el nivel termina al derrotarlo.
+///
+/// El reloj es la señal de Maia: baja sola y con cada golpe. Si se apaga, todo vuelve a empezar.
+/// Se monta en ejecución, no se hornea.
 /// </summary>
 public sealed class JefeEcoApagon : MonoBehaviour
 {
     public static JefeEcoApagon Activo { get; private set; }
 
-    const float SenalTotal = 225f;
-    const float CastigoPulso = 15f;
+    enum Estado { Persigue, Prepara, Embiste, Aturdido, Vencido }
+
+    const int VidaTotal = 3;
+    const float SenalTotal = 240f;
+    const float Golpe = 20f;
+    const float RadioContacto = 2f;
+    const float RadioPulso = 6.5f;
+    const float RadioTorre = 5f;
+    const float CargaTorre = 2f;
     const float AvisoPulso = 1.5f;
     const float DuracionPulso = 2f;
     const float VidaSombra = 4f;
-    static readonly float[] Velocidad = { 2.2f, 3f, 3.8f };
-    static readonly float[] Intervalo = { 12f, 9f, 6f };
+    const float Invulnerable = 1.6f;
 
-    // Ruta de aquella noche, en casillas del mapa del nivel 13. El Eco flota también sobre el agua.
-    static readonly Vector2Int[] Ruta =
+    static readonly float[] Velocidad = { 2.5f, 3.1f, 3.7f };
+    static readonly float[] EsperaEmbestida = { 6.5f, 5f, 3.8f };
+    static readonly float[] AvisoEmbestida = { 1f, 0.85f, 0.7f };
+    static readonly float[] IntervaloPulso = { 11f, 8.5f, 6.5f };
+    const float VelocidadEmbestida = 13f;
+    const float DuracionEmbestida = 0.9f;
+
+    // Torres: casilla, nombre y dónde está (para el objetivo).
+    static readonly Vector2Int[] CasillaTorre = { new Vector2Int(3, 2), new Vector2Int(19, 2), new Vector2Int(19, 12) };
+    static readonly string[] NombreTorre = { "Torre de Cobre", "Torre de Sal", "Núcleo" };
+    static readonly string[] LugarTorre = { "al oeste, tras la compuerta", "en el islote del norte", "en el islote del sur" };
+
+    sealed class Torre
     {
-        new Vector2Int(3, 7), new Vector2Int(3, 2), new Vector2Int(9, 3), new Vector2Int(11, 7),
-        new Vector2Int(17, 7), new Vector2Int(18, 10), new Vector2Int(11, 10), new Vector2Int(5, 7)
-    };
+        public EnergySocket baseTorre;
+        public Renderer lampara;
+        public Light luz;
+        public LineRenderer rayo;
+        public float carga, relojRayo;
+        public bool usada;
+    }
 
     LevelLayout layout;
-    Transform eco, aro;
-    Material materialAro;
-    int destino = 1;
+    Transform eco, aro, figura;
+    LineRenderer linea;
+    Light brasa;
+    Estado estado = Estado.Persigue;
+    int vida = VidaTotal;
     float senal = SenalTotal;
-    float relojPulso, relojSombra, relojFrase;
-    bool avisando, perdido, vencido;
-    int faseAnterior = -1;
+    float reloj, relojEmbestida, relojPulso, relojSombra, relojFrase, invulnerable, relojOnda, relojDerrota;
+    Vector3 direccion, empuje;
+    float relojEmpuje, pausa;
+    bool avisandoPulso, perdido;
 
+    readonly List<Torre> torres = new List<Torre>();
     readonly List<TemporaryBridge> caidos = new List<TemporaryBridge>();
     float restaurar;
     readonly Dictionary<Vector2Int, float> sombra = new Dictionary<Vector2Int, float>();
     readonly List<Transform> manchas = new List<Transform>();
     int siguienteMancha;
-    readonly Renderer[] torres = new Renderer[3];
-    readonly Light[] lucesTorre = new Light[3];
 
-    Image barra;
+    Image barraVida, barraSenal, destello;
     Text frase;
     string fraseActual = "";
 
@@ -65,13 +91,19 @@ public sealed class JefeEcoApagon : MonoBehaviour
     {
         Activo = this;
         layout = mapa;
-        relojPulso = Intervalo[0];
         CrearEco();
         CrearSombra();
-        CrearTorres();
+        for (int i = 0; i < CasillaTorre.Length; i++) CrearTorre(i);
         CrearPanel();
         ReservaEnergia.MultiplicadorGasto = GastoEnSombra;
-        Decir("Nilo… esa figura eres tú. Es tu ruta de aquella noche. Enciende las torres antes de que me apague.");
+        relojEmbestida = EsperaEmbestida[0];
+        relojPulso = IntervaloPulso[0];
+        Decir("Nilo… esa figura eres tú, la noche del apagón. Viene a por ti. Atráelo a las torres.");
+    }
+
+    void Start()
+    {
+        AudioDirector.Musica("JefeEco", 1f);
     }
 
     void OnDestroy()
@@ -80,102 +112,182 @@ public sealed class JefeEcoApagon : MonoBehaviour
         if (ReservaEnergia.MultiplicadorGasto == GastoEnSombra) ReservaEnergia.MultiplicadorGasto = null;
     }
 
-    // ------------------------------------------------------------------ estado
-
-    public int Fase
-    {
-        get
-        {
-            var nivel = RelevoGame.Nivel;
-            if (nivel == null) return 0;
-            int f = 0;
-            foreach (var p in nivel.Palancas)
-                if (p != null && p.Accionada && (p.Identificador == "L" || p.Identificador == "K")) f++;
-            return Mathf.Min(f, 2);
-        }
-    }
-
+    public int Fase { get { return Mathf.Clamp(VidaTotal - vida, 0, 2); } }
+    public int Vida { get { return vida; } }
+    public bool Derrotado { get { return estado == Estado.Vencido; } }
     public float Senal01 { get { return senal / SenalTotal; } }
-    bool PulsoEnCurso { get { return caidos.Count > 0 || avisando; } }
+
+    // ------------------------------------------------------------------ bucle
 
     void Update()
     {
-        if (vencido) return;
-        if (RelevoGame.Nivel != null && RelevoGame.Nivel.Completado) { Vencer(); return; }
+        float dt = Time.deltaTime;
+        if (estado == Estado.Vencido) { Desvanecer(dt); return; }
+
         bool bloqueado = RelevoGame.UI != null && RelevoGame.UI.BloqueaJuego;
         if (bloqueado || perdido || CaidaAlAgua.Activa) { PintarPanel(); return; }
 
-        float dt = Time.deltaTime;
-        int fase = Fase;
-        if (fase != faseAnterior) CambioDeFase(fase);
+        PlayerController nilo = RelevoGame.Jugador;
+        if (nilo == null) return;
 
-        Mover(fase, dt);
-        Pulsos(fase, dt);
+        invulnerable -= dt;
+        Empujar(nilo, dt);
+        Comportamiento(nilo, dt);
+        Pulsos(nilo, dt);
+        Torres(dt);
         Sombras(dt);
 
-        PlayerController nilo = RelevoGame.Jugador;
-        float gasto = 1f;
-        if (nilo != null && Plano(nilo.transform.position - eco.position).magnitude < 2.4f) gasto += 5f;   // tocar al Eco
-        senal = Mathf.Max(0f, senal - gasto * dt);
+        if (estado != Estado.Aturdido && invulnerable <= 0f
+            && Plano(nilo.transform.position - eco.position).magnitude < RadioContacto)
+            Danar(nilo, "¡Te ha alcanzado! No dejes que te toque.");
+
+        senal = Mathf.Max(0f, senal - dt);
         if (senal <= 0f) Perder();
 
         relojFrase -= dt;
-        if (relojFrase <= 0f && senal < SenalTotal * 0.3f && !fraseActual.StartsWith("No pares"))
-            Decir("No pares, Nilo. Apagarse también es…");
+        if (relojFrase <= 0f && senal < SenalTotal * 0.3f) Decir("No pares, Nilo. Apagarse también es…");
         PintarPanel();
     }
 
-    void CambioDeFase(int fase)
+    void Comportamiento(PlayerController nilo, float dt)
     {
-        if (faseAnterior >= 0)
+        Vector3 haciaNilo = Plano(nilo.transform.position - eco.position);
+        int f = Fase;
+        switch (estado)
         {
-            AudioDirector.Pedir(Tono.Faro);
-            relojPulso = Mathf.Min(relojPulso, Intervalo[fase]);
-            if (fase == 1) Decir("La Torre de Cobre vuelve a respirar. Te oigo… un poco más lejos.");
-            if (fase == 2) Decir("La Torre de Sal está encendida. Lleva tu corazón al núcleo, Nilo.");
+            case Estado.Persigue:
+                if (pausa > 0f) { pausa -= dt; break; }
+                if (haciaNilo.magnitude > 0.2f)
+                {
+                    eco.position += haciaNilo.normalized * Mathf.Min(haciaNilo.magnitude, Velocidad[f] * dt);
+                    Mirar(haciaNilo, dt);
+                }
+                relojEmbestida -= dt;
+                if (relojEmbestida <= 0f && haciaNilo.magnitude > 3f && haciaNilo.magnitude < 16f && !avisandoPulso)
+                {
+                    estado = Estado.Prepara;
+                    reloj = AvisoEmbestida[f];
+                    AudioDirector.Pedir(Tono.Alerta);
+                }
+                break;
+
+            case Estado.Prepara:
+                direccion = haciaNilo.sqrMagnitude > 0.01f ? haciaNilo.normalized : eco.forward;
+                Mirar(direccion, dt * 3f);
+                linea.enabled = true;
+                Vector3 a = eco.position + Vector3.up * 0.12f;
+                linea.SetPosition(0, a);
+                linea.SetPosition(1, a + direccion * VelocidadEmbestida * DuracionEmbestida);
+                reloj -= dt;
+                if (reloj <= 0f)
+                {
+                    estado = Estado.Embiste;
+                    reloj = DuracionEmbestida;
+                    AudioDirector.Pedir(Tono.Empujar);
+                }
+                break;
+
+            case Estado.Embiste:
+                eco.position += direccion * VelocidadEmbestida * dt;
+                reloj -= dt;
+                if (reloj <= 0f)
+                {
+                    linea.enabled = false;
+                    estado = Estado.Persigue;
+                    relojEmbestida = EsperaEmbestida[f];
+                }
+                break;
+
+            case Estado.Aturdido:
+                reloj -= dt;
+                figura.localRotation = Quaternion.Euler(0f, Mathf.Sin(Time.time * 30f) * 6f, 0f);
+                if (reloj <= 0f)
+                {
+                    figura.localRotation = Quaternion.identity;
+                    estado = Estado.Persigue;
+                    relojEmbestida = EsperaEmbestida[f];
+                }
+                break;
         }
-        for (int i = 0; i < torres.Length; i++) Encender(i, i < fase);
-        faseAnterior = fase;
-    }
-
-    // ------------------------------------------------------------------ Eco
-
-    void Mover(int fase, float dt)
-    {
-        Vector3 meta = Centro(Ruta[destino]);
-        Vector3 d = Plano(meta - eco.position);
-        float paso = Velocidad[fase] * dt;
-        if (d.magnitude <= paso) { eco.position = meta; destino = (destino + 1) % Ruta.Length; }
-        else eco.position += d.normalized * paso;
-        if (d.sqrMagnitude > 0.01f)
-            eco.rotation = Quaternion.Slerp(eco.rotation, Quaternion.LookRotation(d), 1f - Mathf.Exp(-4f * dt));
-        float latido = avisando ? 1f + 0.5f * Mathf.PingPong(Time.time * 6f, 1f) : 1f;
+        LimitarAlMapa();
+        float latido = avisandoPulso ? 1f + 0.6f * Mathf.PingPong(Time.time * 6f, 1f) : 1f;
+        if (relojOnda > 0f)
+        {
+            relojOnda -= dt;
+            latido = Mathf.Lerp(RadioPulso / 2.4f, 1f, relojOnda / 0.35f);
+        }
         aro.localScale = Vector3.one * latido;
+        brasa.intensity = estado == Estado.Aturdido ? 0.5f : (estado == Estado.Prepara ? 4f : 2.2f);
     }
 
-    void Pulsos(int fase, float dt)
+    void Mirar(Vector3 d, float dt)
+    {
+        if (d.sqrMagnitude < 0.001f) return;
+        eco.rotation = Quaternion.Slerp(eco.rotation, Quaternion.LookRotation(d), 1f - Mathf.Exp(-5f * dt));
+    }
+
+    void LimitarAlMapa()
+    {
+        Vector3 min = layout.CentroTile(0, 0), max = layout.CentroTile(layout.Columnas - 1, layout.FilasCuenta - 1);
+        Vector3 p = eco.position;
+        p.x = Mathf.Clamp(p.x, Mathf.Min(min.x, max.x), Mathf.Max(min.x, max.x));
+        p.z = Mathf.Clamp(p.z, Mathf.Min(min.z, max.z), Mathf.Max(min.z, max.z));
+        eco.position = p;
+    }
+
+    // ------------------------------------------------------------------ daño a Nilo
+
+    void Danar(PlayerController nilo, string grito)
+    {
+        if (invulnerable > 0f) return;
+        invulnerable = Invulnerable;
+        senal = Mathf.Max(0f, senal - Golpe);
+        AudioDirector.Pedir(Tono.Apagado);
+        Vector3 d = Plano(nilo.transform.position - eco.position);
+        empuje = (d.sqrMagnitude > 0.01f ? d.normalized : -eco.forward) * 7f;
+        relojEmpuje = 0.25f;
+        destello.color = new Color(0.9f, 0.25f, 0.2f, 0.45f);
+        Decir(grito);
+        if (estado == Estado.Embiste) { reloj = 0f; }
+        pausa = 1f;   // tras golpear, el Eco se queda un instante mirando: da tiempo a huir
+    }
+
+    void Empujar(PlayerController nilo, float dt)
+    {
+        if (destello.color.a > 0f) destello.color = new Color(0.9f, 0.25f, 0.2f, Mathf.Max(0f, destello.color.a - dt * 1.2f));
+        if (relojEmpuje <= 0f) return;
+        relojEmpuje -= dt;
+        CharacterController cc = nilo.GetComponent<CharacterController>();
+        if (cc != null && cc.enabled) cc.Move(empuje * (dt / 0.25f));
+    }
+
+    // ------------------------------------------------------------------ pulso
+
+    void Pulsos(PlayerController nilo, float dt)
     {
         if (caidos.Count > 0)
         {
             restaurar -= dt;
             if (restaurar <= 0f) Restaurar();
-            return;
         }
+        if (estado == Estado.Aturdido) return;
+
         relojPulso -= dt;
-        if (!avisando && relojPulso <= AvisoPulso)
+        if (!avisandoPulso && relojPulso <= AvisoPulso)
         {
-            avisando = true;
+            avisandoPulso = true;
             AudioDirector.Pedir(Tono.Alerta);
         }
         if (relojPulso > 0f) return;
 
-        avisando = false;
-        relojPulso = Intervalo[fase];
-        AudioDirector.Pedir(Tono.Apagado);
+        avisandoPulso = false;
+        relojPulso = IntervaloPulso[Fase];
+        relojOnda = 0.35f;
+        AudioDirector.Pedir(Tono.PuenteRetraido);
 
         foreach (TemporaryBridge p in FindObjectsByType<TemporaryBridge>(FindObjectsSortMode.None))
         {
-            if (!p.Desplegado) continue;
+            if (!p.Desplegado || caidos.Contains(p)) continue;
             EnergySocket b = BaseDe(p);
             Condensador c = b != null ? b.Condensador : null;
             if (c != null && c.Carga >= 0.3f) { c.Drenar(0.3f); continue; }
@@ -184,12 +296,8 @@ public sealed class JefeEcoApagon : MonoBehaviour
         }
         if (caidos.Count > 0) restaurar = DuracionPulso;
 
-        PlayerController nilo = RelevoGame.Jugador;
-        if (nilo != null && Plano(nilo.transform.position - eco.position).magnitude < 5f)
-        {
-            senal = Mathf.Max(0f, senal - CastigoPulso);
-            Decir("¡Ah…! El pulso me atraviesa. Aléjate de él cuando brille.");
-        }
+        if (Plano(nilo.transform.position - eco.position).magnitude < RadioPulso)
+            Danar(nilo, "¡El pulso te ha dado! Aléjate cuando brille.");
     }
 
     void Restaurar()
@@ -198,9 +306,7 @@ public sealed class JefeEcoApagon : MonoBehaviour
         {
             if (p == null) continue;
             EnergySocket b = BaseDe(p);
-            bool sostener;
-            if (b != null) sostener = b.TieneBateria || (b.Condensador != null && b.Condensador.Sosteniendo);
-            else sostener = SostenidoPorPlaca(p);
+            bool sostener = b != null ? b.TieneBateria || (b.Condensador != null && b.Condensador.Sosteniendo) : SostenidoPorPlaca(p);
             if (sostener) p.Activar(true);
         }
         caidos.Clear();
@@ -220,12 +326,80 @@ public sealed class JefeEcoApagon : MonoBehaviour
         return false;
     }
 
+    // ------------------------------------------------------------------ torres
+
+    void Torres(float dt)
+    {
+        for (int i = 0; i < torres.Count; i++)
+        {
+            Torre t = torres[i];
+            if (t.relojRayo > 0f)
+            {
+                t.relojRayo -= dt;
+                t.rayo.enabled = t.relojRayo > 0f;
+                if (t.rayo.enabled) Rayo(t);
+            }
+            if (t.usada) continue;
+            bool conBateria = t.baseTorre != null && t.baseTorre.TieneBateria;
+            float antes = t.carga;
+            t.carga = conBateria ? Mathf.Min(1f, t.carga + dt / CargaTorre) : 0f;
+            if (antes < 1f && t.carga >= 1f) AudioDirector.Pedir(Tono.Insertar);
+
+            bool lista = t.carga >= 1f;
+            Material m = RelevoPalette.MaterialDe(lista ? ClaveMaterial.Turquesa
+                : (conBateria && Mathf.Repeat(Time.time * 4f, 1f) < 0.5f ? ClaveMaterial.Ambar : ClaveMaterial.Cobre));
+            if (t.lampara.sharedMaterial != m) t.lampara.sharedMaterial = m;
+            t.luz.intensity = lista ? 3.2f : t.carga * 1.5f;
+
+            if (lista && estado != Estado.Aturdido
+                && Plano(eco.position - t.baseTorre.transform.position).magnitude < RadioTorre)
+                Descargar(i);
+        }
+    }
+
+    void Descargar(int i)
+    {
+        Torre t = torres[i];
+        t.usada = true;
+        t.relojRayo = 0.6f;
+        t.rayo.enabled = true;
+        Rayo(t);
+        t.lampara.sharedMaterial = RelevoPalette.MaterialDe(ClaveMaterial.Ambar);
+        t.luz.intensity = 3f;
+        AudioDirector.Pedir(Tono.Faro);
+        AudioDirector.Pedir(Tono.PuenteActivo);
+
+        vida--;
+        linea.enabled = false;
+        if (vida <= 0) { Vencer(); return; }
+
+        estado = Estado.Aturdido;
+        reloj = 3.5f;
+        relojPulso = Mathf.Max(relojPulso, AvisoPulso + 3.5f);
+        avisandoPulso = false;
+        AudioDirector.Musica("JefeEco", 1f + 0.07f * Fase);
+        Decir(vida == 2 ? "¡La Torre le ha dado! Recupera la batería: quedan dos." : "¡Otra vez! Una más, Nilo. Se ha vuelto más rápido.");
+    }
+
+    void Rayo(Torre t)
+    {
+        Vector3 a = t.baseTorre.transform.position + Vector3.up * 3.4f;
+        Vector3 b = eco.position + Vector3.up * 2.5f;
+        for (int k = 0; k < t.rayo.positionCount; k++)
+        {
+            float f = k / (float)(t.rayo.positionCount - 1);
+            Vector3 p = Vector3.Lerp(a, b, f);
+            if (k > 0 && k < t.rayo.positionCount - 1) p += Random.insideUnitSphere * 0.5f;
+            t.rayo.SetPosition(k, p);
+        }
+    }
+
     // ------------------------------------------------------------------ sombra
 
     void Sombras(float dt)
     {
         relojSombra -= dt;
-        if (relojSombra <= 0f)
+        if (relojSombra <= 0f && estado != Estado.Aturdido)
         {
             relojSombra = 0.3f;
             Vector2Int c = layout.Casilla(eco.position);
@@ -234,8 +408,8 @@ public sealed class JefeEcoApagon : MonoBehaviour
             siguienteMancha = (siguienteMancha + 1) % manchas.Count;
             Vector3 pos = layout.CentroTile(c.x, c.y);
             m.position = new Vector3(pos.x, 0.06f, pos.z);
-            m.gameObject.SetActive(true);
             m.localScale = Vector3.one;
+            m.gameObject.SetActive(true);
         }
         for (int i = 0; i < manchas.Count; i++)
         {
@@ -253,12 +427,13 @@ public sealed class JefeEcoApagon : MonoBehaviour
         return sombra.TryGetValue(layout.Casilla(pos), out hasta) && hasta > Time.time ? 2f : 1f;
     }
 
-    // ------------------------------------------------------------------ fin
+    // ------------------------------------------------------------------ final
 
     void Perder()
     {
         if (perdido) return;
         perdido = true;
+        linea.enabled = false;
         AudioDirector.Pedir(Tono.Apagado);
         DialogoUI dialogo = RelevoGame.UI != null ? RelevoGame.UI.Dialogo : null;
         System.Action reiniciar = delegate { if (RelevoGame.Nivel != null) RelevoGame.Nivel.ReiniciarNivel(); };
@@ -275,15 +450,31 @@ public sealed class JefeEcoApagon : MonoBehaviour
 
     void Vencer()
     {
-        vencido = true;
-        for (int i = 0; i < torres.Length; i++) Encender(i, true);
-        foreach (TemporaryBridge p in caidos) if (p != null && SostenidoPorPlaca(p)) p.Activar(true);
+        estado = Estado.Vencido;
+        relojDerrota = 2.2f;
+        linea.enabled = false;
+        foreach (TemporaryBridge p in caidos) if (p != null) { EnergySocket b = BaseDe(p); if ((b != null && b.TieneBateria) || SostenidoPorPlaca(p)) p.Activar(true); }
         caidos.Clear();
-        eco.gameObject.SetActive(false);
         foreach (Transform m in manchas) m.gameObject.SetActive(false);
         ReservaEnergia.MultiplicadorGasto = null;
-        Decir("");
-        if (barra != null) barra.transform.parent.parent.gameObject.SetActive(false);
+        AudioDirector.Pedir(Tono.Faro);
+        AudioDirector.Musica("MareasDeLiria", 1f);
+        Decir("Se deshace en la luz…");
+    }
+
+    void Desvanecer(float dt)
+    {
+        if (relojDerrota <= 0f) return;
+        relojDerrota -= dt;
+        float f = Mathf.Clamp01(relojDerrota / 2.2f);
+        eco.localScale = Vector3.one * f;
+        eco.position += Vector3.up * dt * 1.5f;
+        brasa.intensity = 6f * f;
+        PintarPanel();
+        if (relojDerrota > 0f) return;
+        eco.gameObject.SetActive(false);
+        if (barraVida != null) barraVida.canvas.gameObject.SetActive(false);
+        if (RelevoGame.Nivel != null) RelevoGame.Nivel.CompletarPorJefe();
     }
 
     // ------------------------------------------------------------------ objetivo
@@ -292,77 +483,71 @@ public sealed class JefeEcoApagon : MonoBehaviour
     {
         get
         {
-            if (PulsoEnCurso) return "¡Pulso del apagón! Sal de los puentes.";
+            string cabeza = "Derrota al Eco del Apagón (" + (VidaTotal - vida) + "/" + VidaTotal + "). ";
+            if (estado == Estado.Vencido) return "El Eco del Apagón se deshace.";
+            if (estado == Estado.Prepara) return cabeza + "¡Va a embestir! Sal de la línea.";
+            if (avisandoPulso) return cabeza + "¡Pulso! Aléjate de él y sal de los puentes.";
+            if (estado == Estado.Aturdido) return cabeza + "Está aturdido: recupera la batería y corre a otra torre.";
+
             BatteryController bat = RelevoGame.Bateria;
-            if (bat == null) return "";
-            string b = bat.BaseActual != null ? bat.BaseActual.Identificador : "";
-            switch (Fase)
+            if (bat == null) return cabeza;
+            for (int i = 0; i < torres.Count; i++)
             {
-                case 0:
-                    if (!CompuertaAbierta()) return "Empuja la caja a la placa: abre el paso a la Torre de Cobre.";
-                    if (b != "A") return bat.EnManos ? "Coloca la batería en la base A y carga su condensador." : "Recupera la batería.";
-                    if (bat.BaseActual.Condensador != null && bat.BaseActual.Condensador.Carga < 0.6f) return "Carga el condensador: aguantará el pulso.";
-                    return "Cruza a la Torre de Cobre y baja su palanca.";
-                case 1:
-                    if (b == "A") return "Recupera la batería y cruza la pasarela al centro.";
-                    if (b != "D") return bat.EnManos ? "Coloca la batería en la base D." : "Recupera la batería.";
-                    return "Cruza entre dos pulsos y baja la palanca de la Torre de Sal. Evita la sombra.";
-                default:
-                    if (b != "") return "Recupera la batería de la base " + b + ".";
-                    if (!PuenteDeNucleo()) return "Empuja el cajón al rombo: tenderá el puente al núcleo.";
-                    return "Lleva la batería al núcleo entre dos pulsos.";
+                if (torres[i].baseTorre == null || bat.BaseActual != torres[i].baseTorre) continue;
+                if (torres[i].usada) return cabeza + "Esta torre ya descargó: recupera la batería.";
+                if (torres[i].carga < 1f) return cabeza + "La torre se carga… aguanta cerca.";
+                return cabeza + "¡Torre lista! Atrae al Eco hasta ella.";
             }
+            if (bat.BaseActual != null) return cabeza + "Recupera la batería de la " + bat.BaseActual.Etiqueta + " cuando puedas.";
+            if (!bat.EnManos) return cabeza + "Recoge la batería.";
+            for (int i = 0; i < torres.Count; i++)
+                if (!torres[i].usada) return cabeza + "Lleva la batería a una torre apagada: " + NombreTorre[i] + ", " + LugarTorre[i] + ".";
+            return cabeza;
         }
-    }
-
-    static bool CompuertaAbierta()
-    {
-        foreach (PlacaPresion p in PlacaPresion.Todas)
-            if (p != null && p.Compuerta != null && !p.PorCaja) return false;
-        return true;
-    }
-
-    static bool PuenteDeNucleo()
-    {
-        foreach (PlacaPresion p in PlacaPresion.Todas)
-            if (p != null && p.Puente != null && p.PorCaja) return true;
-        return false;
     }
 
     // ------------------------------------------------------------------ construcción
 
     void CrearEco()
     {
-        eco = DioramaBuilder.CrearAncla("Eco gigante", transform, Centro(Ruta[0]));
+        Vector3 inicio = layout.CentroTile(12, 3);
+        eco = DioramaBuilder.CrearAncla("Eco gigante", transform, inicio);
+        figura = DioramaBuilder.CrearAncla("Figura", eco, Vector3.zero);
         var kit = KitRelevo.Activo;
         Material tinta = RelevoPalette.MaterialDe(ClaveMaterial.Fondo);
-        Material brasa = RelevoPalette.MaterialDe(ClaveMaterial.Coral);
+        Material ascua = RelevoPalette.MaterialDe(ClaveMaterial.Coral);
         if (kit != null && kit.niloModelo != null)
         {
-            var modelo = KitRelevo.Colocar(kit.niloModelo, eco, Vector3.zero, 0, kit.niloEscala * 3.2f, false);
+            var modelo = KitRelevo.Colocar(kit.niloModelo, figura, Vector3.zero, 0, kit.niloEscala * 3.2f, false);
             foreach (var r in modelo.GetComponentsInChildren<Renderer>(true))
             {
                 var mats = r.sharedMaterials;
-                for (int m = 0; m < mats.Length; m++) mats[m] = m % 3 == 2 ? brasa : tinta;
+                for (int m = 0; m < mats.Length; m++) mats[m] = m % 3 == 2 ? ascua : tinta;
                 r.sharedMaterials = mats;
             }
             foreach (var c in modelo.GetComponentsInChildren<Collider>(true)) Destroy(c);
         }
         else
         {
-            var cuerpo = DioramaBuilder.CrearCilindro("Cuerpo de tinta", eco, Vector3.up * 2.4f, 1.3f, 4.8f, tinta);
+            var cuerpo = DioramaBuilder.CrearCilindro("Cuerpo de tinta", figura, Vector3.up * 2.4f, 1.3f, 4.8f, tinta);
             foreach (var c in cuerpo.GetComponentsInChildren<Collider>(true)) Destroy(c);
         }
-        materialAro = brasa;
-        var anillo = DioramaBuilder.CrearAro("Pulso", eco, Vector3.up * 0.15f, 2.4f, brasa);
-        aro = anillo.transform;
-        var luz = new GameObject("Brasa").AddComponent<Light>();
-        luz.transform.SetParent(eco, false);
-        luz.transform.localPosition = Vector3.up * 3f;
-        luz.type = LightType.Point;
-        luz.color = RelevoPalette.ColorDe(ClaveMaterial.Coral);
-        luz.range = 9f;
-        luz.intensity = 2.2f;
+        aro = DioramaBuilder.CrearAro("Pulso", eco, Vector3.up * 0.15f, 2.4f, ascua).transform;
+
+        brasa = new GameObject("Ascua").AddComponent<Light>();
+        brasa.transform.SetParent(eco, false);
+        brasa.transform.localPosition = Vector3.up * 3f;
+        brasa.type = LightType.Point;
+        brasa.color = RelevoPalette.ColorDe(ClaveMaterial.Coral);
+        brasa.range = 10f;
+        brasa.intensity = 2.2f;
+
+        linea = new GameObject("Aviso de embestida").AddComponent<LineRenderer>();
+        linea.transform.SetParent(transform, false);
+        linea.positionCount = 2;
+        linea.widthMultiplier = 1.6f;
+        linea.sharedMaterial = ascua;
+        linea.enabled = false;
     }
 
     void CrearSombra()
@@ -377,42 +562,35 @@ public sealed class JefeEcoApagon : MonoBehaviour
         }
     }
 
-    void CrearTorres()
+    void CrearTorre(int i)
     {
-        // Torre de Cobre en el islote de L, Torre de Sal junto a K y la del núcleo junto a E.
-        Torre(0, layout.PrimerMarcador('L', Vector3.zero) + new Vector3(-TamanoTile(), 0f, 0f), "Torre de Cobre");
-        Torre(1, layout.PrimerMarcador('K', Vector3.zero) + new Vector3(-TamanoTile() * 2f, 0f, 0f), "Torre de Sal");
-        Torre(2, layout.PrimerMarcador('E', Vector3.zero) + new Vector3(0f, 0f, TamanoTile()), "Núcleo de Liria");
-    }
-
-    float TamanoTile() { return layout.TamanoTile; }
-
-    void Torre(int i, Vector3 pos, string nombre)
-    {
-        var ancla = DioramaBuilder.CrearAncla(nombre, transform, pos);
-        var poste = DioramaBuilder.CrearCilindro("Poste", ancla, Vector3.up * 1.6f, 0.22f, 3.2f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
-        var lampara = DioramaBuilder.CrearEsfera("Lámpara", ancla, Vector3.up * 3.45f, 0.75f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
+        Vector3 pos = layout.CentroTile(CasillaTorre[i].x, CasillaTorre[i].y);
+        var t = new Torre();
+        t.baseTorre = ActorFactory.CrearBaseEnergia(transform, pos, "T" + (i + 1), NombreTorre[i].ToLowerInvariant().Replace("núcleo", "el núcleo"), null, pos + Vector3.forward);
+        var ancla = DioramaBuilder.CrearAncla("Mástil de la " + NombreTorre[i], transform, pos + new Vector3(0.9f, 0f, 0.9f));
+        DioramaBuilder.CrearCilindro("Poste", ancla, Vector3.up * 1.7f, 0.24f, 3.4f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
+        var lampara = DioramaBuilder.CrearEsfera("Lámpara", ancla, Vector3.up * 3.6f, 0.85f, RelevoPalette.MaterialDe(ClaveMaterial.Cobre));
         foreach (var c in ancla.GetComponentsInChildren<Collider>(true)) Destroy(c);
-        torres[i] = lampara.GetComponent<Renderer>();
-        var luz = new GameObject("Luz de la torre").AddComponent<Light>();
-        luz.transform.SetParent(ancla, false);
-        luz.transform.localPosition = Vector3.up * 3.5f;
-        luz.type = LightType.Point;
-        luz.color = RelevoPalette.ColorDe(ClaveMaterial.Ambar);
-        luz.range = 8f;
-        luz.intensity = 0f;
-        lucesTorre[i] = luz;
-    }
-
-    void Encender(int i, bool on)
-    {
-        if (torres[i] != null) torres[i].sharedMaterial = RelevoPalette.MaterialDe(on ? ClaveMaterial.Ambar : ClaveMaterial.Cobre);
-        if (lucesTorre[i] != null) lucesTorre[i].intensity = on ? 3f : 0f;
+        t.lampara = lampara.GetComponent<Renderer>();
+        t.luz = new GameObject("Luz").AddComponent<Light>();
+        t.luz.transform.SetParent(ancla, false);
+        t.luz.transform.localPosition = Vector3.up * 3.6f;
+        t.luz.type = LightType.Point;
+        t.luz.color = RelevoPalette.ColorDe(ClaveMaterial.Ambar);
+        t.luz.range = 9f;
+        t.luz.intensity = 0f;
+        t.rayo = new GameObject("Rayo").AddComponent<LineRenderer>();
+        t.rayo.transform.SetParent(ancla, false);
+        t.rayo.positionCount = 8;
+        t.rayo.widthMultiplier = 0.35f;
+        t.rayo.sharedMaterial = RelevoPalette.MaterialDe(ClaveMaterial.Turquesa);
+        t.rayo.enabled = false;
+        torres.Add(t);
     }
 
     void CrearPanel()
     {
-        var go = new GameObject("Señal de Maia", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+        var go = new GameObject("Combate", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         go.transform.SetParent(transform, false);
         var canvas = go.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -422,32 +600,40 @@ public sealed class JefeEcoApagon : MonoBehaviour
         escala.referenceResolution = new Vector2(1440, 900);
         escala.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
 
-        var marco = RelevoUI.Franja(go.transform, "Marco", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -14), new Vector2(520, 74), RelevoUI.Fondo);
-        RelevoUI.Texto(marco.transform, "Rótulo", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -4), new Vector2(500, 22), 15, TextAnchor.MiddleCenter, RelevoUI.Turquesa).text = "SEÑAL DE MAIA";
-        var fondo = RelevoUI.Franja(marco.transform, "Fondo de la barra", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -30), new Vector2(480, 12), RelevoUI.FondoHondo);
-        barra = RelevoUI.Franja(fondo.transform, "Barra", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(480, 12), RelevoUI.Turquesa);
-        frase = RelevoUI.Texto(marco.transform, "Voz", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -46), new Vector2(510, 24), 15, TextAnchor.MiddleCenter, RelevoUI.AmbarSuave);
+        destello = RelevoUI.Franja(go.transform, "Golpe", Vector2.one * 0.5f, Vector2.one * 0.5f, Vector2.zero, new Vector2(4000, 4000), new Color(0.9f, 0.25f, 0.2f, 0f));
+        destello.raycastTarget = false;
+
+        var marco = RelevoUI.Franja(go.transform, "Marco", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -12), new Vector2(560, 104), RelevoUI.Fondo);
+        RelevoUI.Texto(marco.transform, "Jefe", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -4), new Vector2(540, 22), 16, TextAnchor.MiddleCenter, RelevoUI.Cobre).text = "ECO DEL APAGÓN";
+        var fondoVida = RelevoUI.Franja(marco.transform, "Fondo vida", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -29), new Vector2(520, 16), RelevoUI.FondoHondo);
+        barraVida = RelevoUI.Franja(fondoVida.transform, "Vida", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(520, 16), RelevoPalette.ColorDe(ClaveMaterial.Coral));
+        for (int i = 1; i < VidaTotal; i++)
+            RelevoUI.Franja(fondoVida.transform, "Corte", new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(520f * i / VidaTotal, 0), new Vector2(4, 16), RelevoUI.Fondo);
+        RelevoUI.Texto(marco.transform, "Maia", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20, -50), new Vector2(130, 18), 13, TextAnchor.MiddleLeft, RelevoUI.Turquesa).text = "SEÑAL DE MAIA";
+        var fondoSenal = RelevoUI.Franja(marco.transform, "Fondo señal", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(150, -54), new Vector2(390, 9), RelevoUI.FondoHondo);
+        barraSenal = RelevoUI.Franja(fondoSenal.transform, "Señal", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(390, 9), RelevoUI.Turquesa);
+        frase = RelevoUI.Texto(marco.transform, "Voz", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -78), new Vector2(545, 22), 14, TextAnchor.MiddleCenter, RelevoUI.AmbarSuave);
     }
 
     void PintarPanel()
     {
-        if (barra == null) return;
+        if (barraVida == null) return;
+        barraVida.rectTransform.sizeDelta = new Vector2(520f * Mathf.Max(0, vida) / VidaTotal, 16f);
         float f = Senal01;
-        barra.rectTransform.sizeDelta = new Vector2(480f * f, 12f);
+        barraSenal.rectTransform.sizeDelta = new Vector2(390f * f, 9f);
         Color c = f > 0.5f ? RelevoUI.Turquesa : (f > 0.25f ? RelevoUI.Ambar : RelevoUI.Cobre);
-        if (f < 0.3f && Mathf.Repeat(Time.time * 3f, 1f) < 0.3f) c.a = 0.35f;   // la señal parpadea
-        barra.color = c;
-        if (avisando) frase.text = "¡El Eco va a lanzar un pulso!";
-        else if (frase.text != fraseActual) frase.text = fraseActual;
+        if (f < 0.3f && Mathf.Repeat(Time.time * 3f, 1f) < 0.3f) c.a = 0.35f;
+        barraSenal.color = c;
+        string texto = estado == Estado.Prepara ? "¡Va a embestir!" : (avisandoPulso ? "¡Pulso del apagón!" : fraseActual);
+        if (frase.text != texto) frase.text = texto;
     }
 
     void Decir(string texto)
     {
         fraseActual = texto;
-        relojFrase = 12f;
+        relojFrase = 10f;
         if (frase != null) frase.text = texto;
     }
 
-    Vector3 Centro(Vector2Int c) { return layout.CentroTile(c.x, c.y); }
     static Vector3 Plano(Vector3 v) { v.y = 0f; return v; }
 }

@@ -99,6 +99,28 @@ public class AudioDirector : MonoBehaviour
         musica.Play();
     }
 
+    /// <summary>Cambia el tema que suena (Resources/recurso) y su tono; el jefe final acelera el suyo.</summary>
+    public static void Musica(string recurso, float tono)
+    {
+        if (Instancia == null) return;
+        var tema = Resources.Load<AudioClip>(recurso);
+        if (tema == null) return;
+        if (Instancia.musica == null)
+        {
+            Instancia.musica = Instancia.gameObject.AddComponent<AudioSource>();
+            Instancia.musica.playOnAwake = false;
+            Instancia.musica.spatialBlend = 0f;
+            Instancia.musica.loop = true;
+            Instancia.musica.volume = Instancia.volumenMusica * MezclaMusica;
+        }
+        if (Instancia.musica.clip != tema)
+        {
+            Instancia.musica.clip = tema;
+            Instancia.musica.Play();
+        }
+        Instancia.musica.pitch = tono;
+    }
+
     void OnDestroy()
     {
         GameEvents.SonidoSolicitado -= Reproducir;
