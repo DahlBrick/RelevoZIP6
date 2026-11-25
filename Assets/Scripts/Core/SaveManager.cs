@@ -74,6 +74,14 @@ public static class SaveManager
     {
         SaveData progreso;
         if (IntentarLeer(ruta, out progreso) || IntentarLeer(ruta + ".bak", out progreso)) return progreso;
+        // Antes de llamarse RELEVO el juego guardaba en LocalLow/DefaultCompany/RelevoPrime: se recupera de ahí.
+        try
+        {
+            string localLow = Path.GetDirectoryName(Path.GetDirectoryName(Application.persistentDataPath));
+            string antigua = Path.Combine(localLow, "DefaultCompany", "RelevoPrime", Archivo);
+            if (antigua != ruta && (IntentarLeer(antigua, out progreso) || IntentarLeer(antigua + ".bak", out progreso))) return progreso;
+        }
+        catch (System.Exception) { }
         return new SaveData();
     }
 

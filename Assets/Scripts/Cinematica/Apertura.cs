@@ -126,6 +126,7 @@ public sealed class Apertura : MonoBehaviour
         Application.targetFrameRate = 60;
         GameEvents.Limpiar();
         RelevoGame.Limpiar();
+        acciones = KitRelevo.Acciones(acciones);
         entrada = acciones != null ? new RelevoInput(acciones) : null;
 
         // El juego siempre empieza con la cinemática. La carta de puertos aparece al terminarla

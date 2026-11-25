@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25c7dfdc761985f479c3da2eaa4b9f60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CinematicaFinal
-  acciones: {fileID: 0}
+  acciones: {fileID: -944628639613478452, guid: 974cdce377ad9c245a14169ac1ec10a1, type: 3}
 --- !u!4 &702764308
 Transform:
   m_ObjectHideFlags: 0

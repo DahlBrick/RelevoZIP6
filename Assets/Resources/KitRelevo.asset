@@ -86,3 +86,16 @@ MonoBehaviour:
   niloModelo: {fileID: 919132149155446097, guid: a335e72a90b26fd459e8a889f79c74ef, type: 3}
   niloAnimador: {fileID: 9100000, guid: 126d893d1dbcea344b298857da2e10c4, type: 2}
   niloEscala: 0.4
+  bloquesLiria:
+  - {fileID: 5076188718680947123, guid: 280dbf8b33b0ff34ea2cdff7340452f2, type: 3}
+  - {fileID: 2166963201256599290, guid: a0c6d543d05248e49a42581a887f8d2a, type: 3}
+  - {fileID: 1895874155454242125, guid: 6894fcaa557ce2946bd575b3bc85b305, type: 3}
+  - {fileID: 4933505298855089744, guid: 1dd99f23170206649b881f72f5cf759f, type: 3}
+  - {fileID: 2228387819848868195, guid: c67b37bae07d1a7499b7a4c1f827bc1d, type: 3}
+  - {fileID: 7980025789119079396, guid: 8aba983167c10a949b909a102491f01b, type: 3}
+  - {fileID: 2851755323231835537, guid: 5262d3c7f19aaea499c0920224531fab, type: 3}
+  - {fileID: 7168982350580372196, guid: 2b9fd3ed882c36748a67d6f7ce43d863, type: 3}
+  - {fileID: 235979464316332756, guid: ac116267ecb14314f878be47989652d5, type: 3}
+  - {fileID: 435596420533212660, guid: 719969379ebf93c419ff14e08a20b5df, type: 3}
+  - {fileID: 8150128646190362773, guid: a10ad43ff751f9d438cfded4b1613951, type: 3}
+  acciones: {fileID: -944628639613478452, guid: 974cdce377ad9c245a14169ac1ec10a1, type: 3}

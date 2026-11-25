@@ -32,6 +32,19 @@ public sealed class KitRelevo : ScriptableObject
         }
     }
 
+    [Header("Entrada de respaldo (Assets/Input/Relevo.inputactions)")]
+    public UnityEngine.InputSystem.InputActionAsset acciones;
+
+    /// <summary>'propio' si está asignado; si no, el asset de entrada del kit.</summary>
+    public static UnityEngine.InputSystem.InputActionAsset Acciones(UnityEngine.InputSystem.InputActionAsset propio)
+    {
+        if (propio != null) return propio;
+        return Activo != null ? Activo.acciones : null;
+    }
+
+    [Header("Liria (bloques de Blender, Assets/Prefabs/Liria): ciudad real de las cinemáticas y el título")]
+    public GameObject[] bloquesLiria;
+
     [Header("Agua")]
     public Material agua;
     public Material aguaMar;

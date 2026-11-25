@@ -99,7 +99,7 @@ public sealed class CinematicaAntena : CinematicaBase
         Esfera("Antena", t, new Vector3(0f, 18.2f, 0f), 0.7f, matAntena);
 
         // El barrio, a oscuras.
-        ventanas = Ciudad(Raiz("Barrio", new Vector3(36f, 0f, 36f)), 2, 11, out centrosBarrio);
+        ventanas = Ciudad(Raiz("Barrio", new Vector3(30f, 0f, 78f)), 2, 11, out centrosBarrio);
 
         radio = Radio(transform, new Vector3(3.4f, 0f, 4.4f), 20f, out piloto, out _);
         nilo = CrearNilo(transform, PosNilo, 0f);

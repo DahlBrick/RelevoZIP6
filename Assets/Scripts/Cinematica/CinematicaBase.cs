@@ -67,6 +67,7 @@ public abstract class CinematicaBase : MonoBehaviour
         Time.timeScale = 1f;
         GameEvents.Limpiar();
         RelevoGame.Limpiar();
+        acciones = KitRelevo.Acciones(acciones);
         entrada = acciones != null ? new RelevoInput(acciones) : null;
 
         AmbienteNoche();
@@ -467,8 +468,15 @@ public abstract class CinematicaBase : MonoBehaviour
     /// Una Liria para mirar desde lejos: barrios de casas con ventanas, entre canales. Cada barrio
     /// tiene su propio material de ventana para encenderlo por separado (EncenderBarrio).
     /// </summary>
+    /// <summary>La Liria real (bloques de Blender), si el kit los tiene. Null con la ciudad de cajas.</summary>
+    protected LiriaNocturna liriaReal;
+    static readonly Dictionary<Material, List<Material>> grupos = new Dictionary<Material, List<Material>>();
+
     protected List<Material> Ciudad(Transform padre, int barrios, int semilla, out List<Vector3> centros)
     {
+        KitRelevo kit = KitRelevo.Activo;
+        if (kit != null && kit.bloquesLiria != null && kit.bloquesLiria.Length > 0)
+            return CiudadReal(padre, barrios, kit, out centros);
         var ventanas = new List<Material>();
         centros = new List<Vector3>();
         var rnd = new System.Random(semilla);
@@ -501,9 +509,53 @@ public abstract class CinematicaBase : MonoBehaviour
         return ventanas;
     }
 
+    /// <summary>
+    /// Liria de Liria_Prueba: se levanta en el origen (sus piezas usan coordenadas de mundo) y luego
+    /// cuelga de 'padre'. Sus luces (ventanas de cada bloque y faroles) se reparten en 'barrios'
+    /// tandas, de lejos a cerca, como en el apagón de la apertura.
+    /// </summary>
+    List<Material> CiudadReal(Transform padre, int barrios, KitRelevo kit, out List<Vector3> centros)
+    {
+        grupos.Clear();
+        liriaReal = LiriaNocturna.ConstruirNueva(transform, n => null, kit, kit.bloquesLiria);
+        liriaReal.Raiz.SetParent(padre, false);
+        var ventanas = new List<Material>();
+        centros = new List<Vector3>();
+        var sumas = new List<Vector3>();
+        var cuentas = new List<int>();
+        for (int b = 0; b < barrios; b++) { sumas.Add(Vector3.zero); cuentas.Add(0); }
+        int n = liriaReal.Luces.Count;
+        for (int i = 0; i < n; i++)
+        {
+            LiriaNocturna.Luz l = liriaReal.Luces[i];
+            if (l.luz != null) l.luz.enabled = false;   // el estilo cómic no usa luces puntuales
+            int b = Mathf.Min(barrios - 1, i * barrios / Mathf.Max(1, n));
+            sumas[b] += padre.TransformPoint(l.posicion);
+            cuentas[b]++;
+            foreach (Material m in l.materiales)
+            {
+                if (b >= ventanas.Count) { ventanas.Add(m); grupos[m] = new List<Material>(); }
+                else grupos[ventanas[b]].Add(m);
+            }
+        }
+        while (ventanas.Count < barrios) { var m = Brillo(Color.black, Color.black); ventanas.Add(m); }
+        for (int b = 0; b < barrios; b++) centros.Add(cuentas[b] > 0 ? sumas[b] / cuentas[b] - padre.position : Vector3.zero);
+        return ventanas;
+    }
+
+    /// <summary>Punto del suelo de Liria bajo 'p' (mundo), o 'p' si no hay nada debajo.</summary>
+    protected static Vector3 Suelo(Vector3 p)
+    {
+        RaycastHit h;
+        return Physics.Raycast(p + Vector3.up * 40f, Vector3.down, out h, 80f) ? h.point : p;
+    }
+
     protected static void EncenderBarrio(Material ventana, float k)
     {
-        ventana.SetColor("_EmissionColor", RelevoUI.Ambar * 1.8f * Mathf.Clamp01(k));
+        Color c = RelevoUI.Ambar * 1.8f * Mathf.Clamp01(k);
+        ventana.SetColor("_EmissionColor", c);
+        List<Material> otros;
+        if (grupos.TryGetValue(ventana, out otros)) foreach (Material m in otros) m.SetColor("_EmissionColor", c);
     }
 
     /// <summary>El muelle del Puerto 1: tablado, baranda y la radio. 'rayas' marca la baranda.</summary>

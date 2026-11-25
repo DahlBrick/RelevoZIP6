@@ -247,7 +247,7 @@ public sealed class CinematicaFinal : CinematicaBase
         float u = Tramo(t, a, a + duracion);
         Vector3 centro = Liria + new Vector3(0f, 0f, 22f);
         Colocar(centro + new Vector3(-60f + u * 30f, 55f - u * 10f, -70f + u * 10f), centro, 42f, 0.3f);
-        Luna(0.55f, new Color(0.5f, 0.58f, 0.9f), new Vector3(50f, -25f, 0f));
+        Luna(0.95f, new Color(0.55f, 0.62f, 0.95f), new Vector3(50f, -25f, 0f));
         int n = 0;
         for (int i = 0; i < ventanas.Count; i++)
         {
@@ -341,8 +341,18 @@ public sealed class CinematicaFinal : CinematicaBase
             for (int i = 0; i < ventanas.Count; i += 2) EncenderBarrio(ventanas[i], 1f);
             float k = Tramo(u, 24f, 38f);
             Vector3 desde = Liria + barrios[1] + new Vector3(6f, 0.2f, 0f), hasta = Liria + barrios[2] + new Vector3(-6f, 0.2f, 0f);
-            // Solo el tramo del puente: en los extremos quedaría dentro de los edificios.
-            Poner(niloCiudad, Vector3.Lerp(desde, hasta, Mathf.Lerp(0.35f, 0.8f, k)), 90f);
+            float rumbo = 90f;
+            if (liriaReal != null && liriaReal.UltimoFarol != null)
+            {
+                // Por la calle real de Liria: del farol del detalle al último farol.
+                desde = Suelo(Liria + liriaReal.FarolDetalle);
+                hasta = Suelo(Liria + liriaReal.UltimoFarol.posicion);
+                Vector3 d = hasta - desde; d.y = 0f;
+                if (d.sqrMagnitude > 0.01f) rumbo = Quaternion.LookRotation(d).eulerAngles.y;
+                Poner(niloCiudad, Suelo(Vector3.Lerp(desde, hasta, k)), rumbo);
+            }
+            // Ciudad de cajas: solo el tramo del puente (en los extremos quedaría dentro de los edificios).
+            else Poner(niloCiudad, Vector3.Lerp(desde, hasta, Mathf.Lerp(0.35f, 0.8f, k)), rumbo);
             Vector3 c = niloCiudad.transform.position;
             // Cámara alta: a media altura los edificios tapaban a Nilo.
             Colocar(c + new Vector3(-3f, 16f, -10f), c + new Vector3(1.5f, 0f, 0f), 34f, 0.3f);

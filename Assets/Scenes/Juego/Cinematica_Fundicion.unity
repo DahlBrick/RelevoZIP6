@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 535b7f62db6fada42a9bdd08ae922559, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CinematicaFundicion
-  acciones: {fileID: 0}
+  acciones: {fileID: -944628639613478452, guid: 974cdce377ad9c245a14169ac1ec10a1, type: 3}
   escenaSiguiente: Nivel13_LaSalaDelRelevo
 --- !u!4 &1174172843
 Transform:

@@ -83,6 +83,7 @@ public sealed class CinematicaFundicion : MonoBehaviour
         Time.timeScale = 1f;
         GameEvents.Limpiar();
         RelevoGame.Limpiar();
+        acciones = KitRelevo.Acciones(acciones);
         entrada = acciones != null ? new RelevoInput(acciones) : null;
 
         for (int i = 0; i < 4; i++) tieneRecuerdo[i] = SaveManager.TieneRecuerdo("nivel" + (7 + i) + "_recuerdo");

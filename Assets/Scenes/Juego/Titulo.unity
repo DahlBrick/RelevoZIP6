@@ -227,7 +227,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b8fced903af48140a09cc610e1c8da7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TituloRelevo
-  acciones: {fileID: 0}
+  acciones: {fileID: -944628639613478452, guid: 974cdce377ad9c245a14169ac1ec10a1, type: 3}
 --- !u!4 &481284957
 Transform:
   m_ObjectHideFlags: 0

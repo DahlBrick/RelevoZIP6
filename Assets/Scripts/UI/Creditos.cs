@@ -27,6 +27,7 @@ public class Creditos : MonoBehaviour
         Time.timeScale = 1f;
         GameEvents.Limpiar();
         RelevoGame.Limpiar();
+        acciones = KitRelevo.Acciones(acciones);
         entrada = acciones != null ? new RelevoInput(acciones) : null;
 
         if (FindFirstObjectByType<Camera>() == null)
