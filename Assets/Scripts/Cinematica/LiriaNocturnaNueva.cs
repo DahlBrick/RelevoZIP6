@@ -25,21 +25,41 @@ public sealed partial class LiriaNocturna
         return l;
     }
 
-    void LevantarNueva(Transform padre, IList<GameObject> bloques)
+    /// <summary>
+    /// Igual que ConstruirNueva, pero sobre bloques ya colocados en la escena (el prólogo con Timeline
+    /// los deja puestos en el editor para poder encuadrar las cámaras sin darle Play).
+    /// </summary>
+    public static LiriaNocturna ConstruirSobre(Transform padre, Transform bloquesColocados, KitRelevo kit)
+    {
+        LiriaNocturna l = new LiriaNocturna(n => null, kit);
+        l.LevantarNueva(padre, null, bloquesColocados);
+        return l;
+    }
+
+    void LevantarNueva(Transform padre, IList<GameObject> bloques, Transform colocados = null)
     {
         Raiz = new GameObject("Liria nocturna (nueva)").transform;
         Raiz.SetParent(padre, false);
         aguaAncha = true;
 
-        Transform liria = new GameObject("Liria").transform;
-        liria.SetParent(Raiz, false);
-        liria.rotation = Quaternion.Euler(0f, 180f, 0f);
+        Transform liria = colocados;
         int semilla = 0;
-        foreach (GameObject prefab in bloques)
+        if (liria != null)
         {
-            if (prefab == null || prefab.name.Contains("Limites")) continue;
-            GameObject g = Object.Instantiate(prefab, liria);
-            VentanasDelBloque(g, semilla++);
+            foreach (Transform hijo in liria)
+                if (!hijo.name.Contains("Limites")) VentanasDelBloque(hijo.gameObject, semilla++);
+        }
+        else
+        {
+            liria = new GameObject("Liria").transform;
+            liria.SetParent(Raiz, false);
+            liria.rotation = Quaternion.Euler(0f, 180f, 0f);
+            foreach (GameObject prefab in bloques)
+            {
+                if (prefab == null || prefab.name.Contains("Limites")) continue;
+                GameObject g = Object.Instantiate(prefab, liria);
+                VentanasDelBloque(g, semilla++);
+            }
         }
 
         // Mar: un plano grande a la altura del agua de Blender (-1,5 m).
